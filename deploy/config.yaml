@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometurbo-config
+data:
+  turbo.config: |-
+    {
+        "communicationConfig": {
+            "serverMeta": {
+                "version": "<TURBONOMIC_SERVER_VERSION>",
+                "turboServer": "https://<TURBO-SERVER-ADDRESS>:<PORT>"
+            },
+            "restAPIConfig": {
+                "opsManagerUserName": "administrator",
+                "opsManagerPassword": "<TURBO-SERVER-PASSWORD>"
+            }
+        },
+        "prometurboTargetConfig": {
+            "targetAddress":"<PROMETHEUS-SERVER-ADDRESS>",
+            "scope":"<THE-K8S-TARGET-NAME>"
+        }
+    }

@@ -1,0 +1,72 @@
+{
+	"ImportPath": "github.com/turbonomic/prometurbo",
+	"GoVersion": "go1.9",
+	"GodepVersion": "v79",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+		},
+		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Comment": "v1.0.0-2-ge09c5db",
+			"Rev": "e09c5db296004fbe3f74490e84dcd62c3c5ddb1b"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Comment": "v1.2.0-7-g6f34763",
+			"Rev": "6f34763140ed8887aed6a044912009832b4733d7"
+		},
+		{
+			"ImportPath": "github.com/turbonomic/turbo-api/pkg/api",
+			"Rev": "82c860983629566c406b4bc4c3ce7c8df37715cc"
+		},
+		{
+			"ImportPath": "github.com/turbonomic/turbo-api/pkg/client",
+			"Rev": "82c860983629566c406b4bc4c3ce7c8df37715cc"
+		},
+		{
+			"ImportPath": "github.com/turbonomic/turbo-go-sdk/pkg",
+			"Comment": "v6.0-17-g773315d",
+			"Rev": "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+		},
+		{
+			"ImportPath": "github.com/turbonomic/turbo-go-sdk/pkg/builder",
+			"Comment": "v6.0-17-g773315d",
+			"Rev": "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+		},
+		{
+			"ImportPath": "github.com/turbonomic/turbo-go-sdk/pkg/mediationcontainer",
+			"Comment": "v6.0-17-g773315d",
+			"Rev": "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+		},
+		{
+			"ImportPath": "github.com/turbonomic/turbo-go-sdk/pkg/probe",
+			"Comment": "v6.0-17-g773315d",
+			"Rev": "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+		},
+		{
+			"ImportPath": "github.com/turbonomic/turbo-go-sdk/pkg/proto",
+			"Comment": "v6.0-17-g773315d",
+			"Rev": "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+		},
+		{
+			"ImportPath": "github.com/turbonomic/turbo-go-sdk/pkg/service",
+			"Comment": "v6.0-17-g773315d",
+			"Rev": "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+		},
+		{
+			"ImportPath": "github.com/turbonomic/turbo-go-sdk/pkg/supplychain",
+			"Comment": "v6.0-17-g773315d",
+			"Rev": "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+		},
+		{
+			"ImportPath": "github.com/turbonomic/turbo-go-sdk/pkg/version",
+			"Comment": "v6.0-17-g773315d",
+			"Rev": "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+		}
+	]
+}

@@ -367,7 +367,7 @@ func getLatencyExp(pod bool) string {
 	}
 	du := turboMetricDuration
 
-	result := fmt.Sprintf("rate(%v{response_code=\"200\"}[%v])/rate(%v{response_code=\"200\"}[%v])", name_sum, du, name_count, du)
+	result := fmt.Sprintf("1000.0*rate(%v{response_code=\"200\"}[%v])/rate(%v{response_code=\"200\"}[%v])", name_sum, du, name_count, du)
 	return result
 }
 

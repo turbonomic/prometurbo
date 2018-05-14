@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	LocalDebugConfPath = "configs/prometurbo-config"
+	LocalDebugConfPath = "configs/prometurbo-config.json"
 	DefaultConfPath    = "/etc/prometurbo/turbo.config"
 	defaultEndpoint    = "http://localhost:8081/pod/metrics"
 )

@@ -16,11 +16,38 @@ import (
 
 type disconnectFromTurboFunc func()
 
-type P8sTAPService struct{}
+type P8sTAPService struct {
+	tapService *service.TAPService
+}
+
+func NewP8sTAPService(args *conf.PrometurboArgs) (*P8sTAPService, error) {
+	tapService, err := createTAPService(args)
+
+	if err != nil {
+		glog.Errorf("Error while building turbo TAP service on target %v", err)
+		return nil, err
+	}
+
+	return &P8sTAPService{tapService}, nil
+}
 
 func (p *P8sTAPService) Start() {
 	glog.V(0).Infof("Starting prometheus TAP service...")
 
+	// Before running service, wait for the exporter to start up
+	// TODO: Check the readiness of the exporter
+	time.Sleep(5 * time.Second)
+
+	// Disconnect from Turbo server when Kubeturbo is shutdown
+	handleExit(func() { p.tapService.DisconnectFromTurbo() })
+
+	// Connect to the Turbo server
+	p.tapService.ConnectToTurbo()
+
+	select {}
+}
+
+func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 	confPath := conf.DefaultConfPath
 
 	if os.Getenv("PROMETURBO_LOCAL_DEBUG") == "1" {
@@ -44,30 +71,13 @@ func (p *P8sTAPService) Start() {
 	registrationClient := &registration.P8sRegistrationClient{}
 	discoveryClient := discovery.NewDiscoveryClient(targetAddr, scope, metricExporters)
 
-	tapService, err := service.NewTAPServiceBuilder().
+	return service.NewTAPServiceBuilder().
 		WithTurboCommunicator(communicator).
 		WithTurboProbe(probe.NewProbeBuilder(registration.TargetType, registration.ProbeCategory).
-			//WithDiscoveryOptions(probe.FullRediscoveryIntervalSecondsOption(60)).
+			WithDiscoveryOptions(probe.FullRediscoveryIntervalSecondsOption(int32(*args.DiscoveryIntervalSec))).
 			RegisteredBy(registrationClient).
 			DiscoversTarget(targetAddr, discoveryClient)).
 		Create()
-
-	if err != nil {
-		glog.Errorf("Error while building turbo TAP service on target %v: %v", targetAddr, err)
-		os.Exit(1)
-	}
-
-	// Before running service, wait for the exporter to start up
-	// TODO: Check the readiness of the exporter
-	time.Sleep(5 * time.Second)
-
-	// Disconnect from Turbo server when Kubeturbo is shutdown
-	handleExit(func() { tapService.DisconnectFromTurbo() })
-
-	// Connect to the Turbo server
-	tapService.ConnectToTurbo()
-
-	select {}
 }
 
 // TODO: Move the handle to turbo-sdk-probe as it should be common logic for similar probes

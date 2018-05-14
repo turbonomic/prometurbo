@@ -12,6 +12,9 @@ product: clean
 build: clean
 	go build -o ${OUTPUT_DIR}/prometurbo ./cmd
 
+docker: clean
+	docker build -t turbonomic/prometurbo:6.2dev --build-arg GIT_COMMIT=$(shell git rev-parse --short HEAD) .
+
 test: clean
 	@go test -v -race ./pkg/...
 

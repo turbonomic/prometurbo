@@ -7,7 +7,10 @@ const (
 	VirtualMachineType     = int32(3)
 
 	//CommodityType
-	TPS     = "tps"
+	// transaction/request per second
+	TPS = "tps"
+
+	// unit of latency is millisecond
 	Latency = "latency"
 
 	//Labels

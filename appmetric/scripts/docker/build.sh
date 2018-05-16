@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tag=vmturbo/appmetric:v2.0
+tag=vmturbo/appmetric:6.2dev
 
 make product
 ret=$?
@@ -9,7 +9,9 @@ if [ $ret -ne 0 ] ; then
     exit 1
 fi
 
-docker build -t $tag .
+export GIT_COMMIT=$(git rev-parse HEAD)
+sh scripts/docker/gen.build.info.sh
+docker build -t $tag --build-arg GIT_COMMIT=${GIT_COMMIT} .
 ret=$?
 if [ $ret -ne 0 ] ; then
     echo "[`date`] build docker image failed"

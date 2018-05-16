@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/golang/glog"
+	"os"
 
 	"github.com/songbinliu/xfire/pkg/prometheus"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/addon"
@@ -38,8 +39,15 @@ func test_prometheus(mclient *prometheus.RestClient) {
 	return
 }
 
+func gen_appclient() {
+
+}
+
 func main() {
 	parseFlags()
+	glog.Info("Starting Prometurbo...")
+	glog.Infof("GIT_COMMIT: %s", os.Getenv("GIT_COMMIT"))
+
 	pclient, err := prometheus.NewRestClient(prometheusHost)
 	if err != nil {
 		glog.Fatalf("Failed to generate client: %v", err)

@@ -7,6 +7,12 @@ type EntityMetric struct {
 	Metrics map[string]float64 `json:"metrics,omitempty"`
 }
 
+type MetricResponse struct {
+	Status  int             `json:"status"`
+	Message string          `json:"message:omitemtpy"`
+	Data    []*EntityMetric `json:"data:omitempty"`
+}
+
 func NewEntityMetric(id string, t int32) *EntityMetric {
 	m := &EntityMetric{
 		UID:     id,
@@ -26,11 +32,11 @@ func (e *EntityMetric) SetMetric(name string, value float64) {
 	e.Metrics[name] = value
 }
 
-type MetricResponse struct {
+/*type MetricResponse struct {
 	Status  int             `json:"status"`
 	Message string          `json:"message:omitemtpy"`
 	Data    []*EntityMetric `json:"data:omitempty"`
-}
+}*/
 
 func NewMetricResponse() *MetricResponse {
 	return &MetricResponse{

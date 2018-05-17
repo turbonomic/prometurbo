@@ -24,11 +24,13 @@ func (f *GetterFactory) CreateEntityGetter(category, name string) (alligator.Ent
 		return NewRedisEntityGetter(name), nil
 	case IstioGetterCategory:
 		g := newIstioEntityGetter(name)
-		g.SetType(false)
+		forVapp := false
+		g.SetType(forVapp)
 		return g, nil
 	case IstioVAppGetterCategory:
 		g := newIstioEntityGetter(name)
-		g.SetType(true)
+		forVapp := true
+		g.SetType(forVapp)
 		return g, nil
 	}
 

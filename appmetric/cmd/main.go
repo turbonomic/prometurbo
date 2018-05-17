@@ -14,19 +14,22 @@ import (
 )
 
 const (
-	defaultPort = 8081
+	defaultPort           = 8081
+	defaultSampleDuration = "3m"
 )
 
 var (
 	prometheusHost string
 	port           int
 	configfname    string
+	sampleDuration string
 )
 
 func parseFlags() {
 	flag.StringVar(&prometheusHost, "promUrl", "", "the address of prometheus server")
 	flag.IntVar(&port, "port", 0, "port to expose metrics (default 8081)")
 	flag.StringVar(&configfname, "config", "", "path of the config file")
+	flag.StringVar(&sampleDuration, "sampleDuration", defaultSampleDuration, "the sample duration for prometheus query")
 	flag.Parse()
 }
 
@@ -108,14 +111,14 @@ func main() {
 
 	//1. Application Metrics
 	appClient := ali.NewAlligator(pclient)
-	istioGetter, err := factory.CreateEntityGetter(addon.IstioGetterCategory, "istio.app.metric")
+	istioGetter, err := factory.CreateEntityGetter(addon.IstioGetterCategory, "istio.app.metric", sampleDuration)
 	if err != nil {
 		glog.Errorf("Failed to create Istio App getter: %v", err)
 		return
 	}
 	appClient.AddGetter(istioGetter)
 
-	redisGetter, err := factory.CreateEntityGetter(addon.RedisGetterCategory, "redis.app.metric")
+	redisGetter, err := factory.CreateEntityGetter(addon.RedisGetterCategory, "redis.app.metric", sampleDuration)
 	if err != nil {
 		glog.Errorf("Failed to create Redis App getter: %v", err)
 		return
@@ -124,7 +127,7 @@ func main() {
 
 	//2. Virtual Application Metrics
 	vappClient := ali.NewAlligator(pclient)
-	vappGetter, err := factory.CreateEntityGetter(addon.IstioVAppGetterCategory, "istio.vapp.metric")
+	vappGetter, err := factory.CreateEntityGetter(addon.IstioVAppGetterCategory, "istio.vapp.metric", sampleDuration)
 	if err != nil {
 		glog.Errorf("Failed to create Istio VApp getter: %v", err)
 		return

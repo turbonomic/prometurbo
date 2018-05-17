@@ -18,17 +18,17 @@ func NewGetterFactory() *GetterFactory {
 	return &GetterFactory{}
 }
 
-func (f *GetterFactory) CreateEntityGetter(category, name string) (alligator.EntityMetricGetter, error) {
+func (f *GetterFactory) CreateEntityGetter(category, name, du string) (alligator.EntityMetricGetter, error) {
 	switch category {
 	case RedisGetterCategory:
-		return NewRedisEntityGetter(name), nil
+		return NewRedisEntityGetter(name, du), nil
 	case IstioGetterCategory:
-		g := newIstioEntityGetter(name)
+		g := newIstioEntityGetter(name, du)
 		forVapp := false
 		g.SetType(forVapp)
 		return g, nil
 	case IstioVAppGetterCategory:
-		g := newIstioEntityGetter(name)
+		g := newIstioEntityGetter(name, du)
 		forVapp := true
 		g.SetType(forVapp)
 		return g, nil

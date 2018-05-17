@@ -21,7 +21,7 @@ const (
 	turbo_POD_LATENCY_COUNT = "istio_turbo_pod_latency_time_ms_count"
 	turbo_POD_REQUEST_COUNT = "istio_turbo_pod_request_count"
 
-	turboMetricDuration = "3m"
+	//turboMetricDuration = "3m"
 
 	k8sPrefix    = "kubernetes://"
 	k8sPrefixLen = len(k8sPrefix)
@@ -44,11 +44,11 @@ type IstioEntityGetter struct {
 // ensure IstioEntityGetter implement the requisite interfaces
 var _ alligator.EntityMetricGetter = &IstioEntityGetter{}
 
-func newIstioEntityGetter(name string) *IstioEntityGetter {
+func newIstioEntityGetter(name, du string) *IstioEntityGetter {
 	return &IstioEntityGetter{
 		name:  name,
 		etype: podType,
-		query: newIstioQuery(),
+		query: newIstioQuery(du),
 	}
 }
 
@@ -170,6 +170,7 @@ func (istio *IstioEntityGetter) mergeTPSandLatency(tpsDat, latencyDat []xfire.Me
 //       3: service.latency
 type istioQuery struct {
 	qtype    int
+	du       string
 	queryMap map[int]string
 }
 
@@ -182,18 +183,19 @@ type istioMetricData struct {
 }
 
 // NewIstioQuery : create a new IstioQuery
-func newIstioQuery() *istioQuery {
+func newIstioQuery(du string) *istioQuery {
 	q := &istioQuery{
 		qtype:    0,
+		du:       du,
 		queryMap: make(map[int]string),
 	}
 
 	isPod := true
-	q.queryMap[podTPS] = getRPSExp(isPod)
-	q.queryMap[1] = getLatencyExp(isPod)
+	q.queryMap[podTPS] = q.getRPSExp(isPod)
+	q.queryMap[1] = q.getLatencyExp(isPod)
 	isPod = false
-	q.queryMap[2] = getRPSExp(isPod)
-	q.queryMap[3] = getLatencyExp(isPod)
+	q.queryMap[2] = q.getRPSExp(isPod)
+	q.queryMap[3] = q.getLatencyExp(isPod)
 
 	return q
 }
@@ -244,6 +246,36 @@ func (q *istioQuery) String() string {
 	}
 
 	return buffer.String()
+}
+
+func (q *istioQuery) getLatencyExp(pod bool) string {
+	name_sum := ""
+	name_count := ""
+	if pod {
+		name_sum = turbo_POD_LATENCY_SUM
+		name_count = turbo_POD_LATENCY_COUNT
+	} else {
+		name_sum = turbo_SVC_LATENCY_SUM
+		name_count = turbo_SVC_LATENCY_COUNT
+	}
+
+	du := q.du
+	result := fmt.Sprintf("1000.0*rate(%v{response_code=\"200\"}[%v])/rate(%v{response_code=\"200\"}[%v])",
+		name_sum, du, name_count, du)
+	return result
+}
+
+// exp = rate(turbo_request_count{response_code="200",  source_service="unknown"}[3m])
+func (q *istioQuery) getRPSExp(pod bool) string {
+	name_count := ""
+	if pod {
+		name_count = turbo_POD_REQUEST_COUNT
+	} else {
+		name_count = turbo_SVC_REQUEST_COUNT
+	}
+
+	result := fmt.Sprintf("rate(%v{response_code=\"200\"}[%v])", name_count, q.du)
+	return result
 }
 
 func newIstioMetricData() *istioMetricData {
@@ -353,36 +385,6 @@ func (d *istioMetricData) String() string {
 	buffer.WriteString(content)
 
 	return buffer.String()
-}
-
-func getLatencyExp(pod bool) string {
-	name_sum := ""
-	name_count := ""
-	if pod {
-		name_sum = turbo_POD_LATENCY_SUM
-		name_count = turbo_POD_LATENCY_COUNT
-	} else {
-		name_sum = turbo_SVC_LATENCY_SUM
-		name_count = turbo_SVC_LATENCY_COUNT
-	}
-	du := turboMetricDuration
-
-	result := fmt.Sprintf("1000.0*rate(%v{response_code=\"200\"}[%v])/rate(%v{response_code=\"200\"}[%v])", name_sum, du, name_count, du)
-	return result
-}
-
-// exp = rate(turbo_request_count{response_code="200",  source_service="unknown"}[3m])
-func getRPSExp(pod bool) string {
-	name_count := ""
-	if pod {
-		name_count = turbo_POD_REQUEST_COUNT
-	} else {
-		name_count = turbo_SVC_REQUEST_COUNT
-	}
-	du := turboMetricDuration
-
-	result := fmt.Sprintf("rate(%v{response_code=\"200\"}[%v])", name_count, du)
-	return result
 }
 
 // convert the UID from "kubernetes://<podName>.<namespace>" to "<namespace>/<podName>"

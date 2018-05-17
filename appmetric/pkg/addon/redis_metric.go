@@ -25,10 +25,10 @@ type RedisEntityGetter struct {
 // ensure RedisEntityGetter implement the requisite interfaces
 var _ alligator.EntityMetricGetter = &RedisEntityGetter{}
 
-func NewRedisEntityGetter(name string) *RedisEntityGetter {
+func NewRedisEntityGetter(name, du string) *RedisEntityGetter {
 	return &RedisEntityGetter{
 		name:  name,
-		query: newRedisQuery(),
+		query: newRedisQuery(du),
 	}
 }
 
@@ -131,12 +131,14 @@ func (r *RedisEntityGetter) parseIP(addr string) (string, string, error) {
 //    1: Latency
 type redisQuery struct {
 	qtype    int
+	du       string // summary sample duration
 	queryMap map[int]string
 }
 
-func newRedisQuery() *redisQuery {
+func newRedisQuery(du string) *redisQuery {
 	q := &redisQuery{
 		qtype:    0,
+		du:       du,
 		queryMap: make(map[int]string),
 	}
 
@@ -159,7 +161,7 @@ func (q *redisQuery) GetQuery() string {
 
 // rate(redis_commands_processed_total[3m])
 func (q *redisQuery) getRPSExp() string {
-	result := fmt.Sprintf("rate(%v[%v])", redis_OPS_TOTAL, turboMetricDuration)
+	result := fmt.Sprintf("rate(%v[%v])", redis_OPS_TOTAL, q.du)
 	glog.V(3).Infof("Redis TPS: %v", result)
 	return result
 }

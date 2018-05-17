@@ -3,14 +3,13 @@ package alligator
 import (
 	"github.com/golang/glog"
 
-	"github.com/songbinliu/xfire/pkg/prometheus"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/inter"
+	"github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
 )
 
 type EntityMetricGetter interface {
 	GetEntityMetric(client *prometheus.RestClient) ([]*inter.EntityMetric, error)
 	Name() string
-	//Category() string
 }
 
 // Alligator: aggregates several kinds of Entity metric getters

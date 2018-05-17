@@ -2,7 +2,7 @@ package addon
 
 import (
 	"fmt"
-	pclient "github.com/songbinliu/xfire/pkg/prometheus"
+	pclient "github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
 	"strings"
 	"testing"
 )

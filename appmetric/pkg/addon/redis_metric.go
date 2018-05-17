@@ -3,9 +3,9 @@ package addon
 import (
 	"fmt"
 	"github.com/golang/glog"
-	xfire "github.com/songbinliu/xfire/pkg/prometheus"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/alligator"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/inter"
+	xfire "github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
 	"strings"
 )
 

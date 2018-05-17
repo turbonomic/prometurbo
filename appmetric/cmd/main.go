@@ -4,22 +4,29 @@ import (
 	"flag"
 	"github.com/golang/glog"
 	"os"
+	"strconv"
 
-	"github.com/songbinliu/xfire/pkg/prometheus"
+	"fmt"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/addon"
 	ali "github.com/turbonomic/prometurbo/appmetric/pkg/alligator"
+	"github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/server"
+)
+
+const (
+	defaultPort = 8081
 )
 
 var (
 	prometheusHost string
 	port           int
+	configfname    string
 )
 
 func parseFlags() {
-	flag.Set("logtostderr", "true")
-	flag.StringVar(&prometheusHost, "promUrl", "http://localhost:9090", "the address of prometheus server")
-	flag.IntVar(&port, "port", 8081, "port to expose metrics")
+	flag.StringVar(&prometheusHost, "promUrl", "", "the address of prometheus server")
+	flag.IntVar(&port, "port", 0, "port to expose metrics (default 8081)")
+	flag.StringVar(&configfname, "config", "", "path of the config file")
 	flag.Parse()
 }
 
@@ -39,14 +46,56 @@ func test_prometheus(mclient *prometheus.RestClient) {
 	return
 }
 
-func gen_appclient() {
+func parseConf() error {
+	if prometheusHost == "" && configfname == "" {
+		err := fmt.Errorf("neither promUrl nor config flags is set")
+		glog.Errorf(err.Error())
+		return err
+	}
 
+	if len(configfname) > 0 {
+		mconf, err := readConfig(configfname)
+		if err != nil {
+			glog.Errorf("Failed to load config file: %v", err)
+			return err
+		}
+
+		if len(prometheusHost) < 1 {
+			prometheusHost = mconf.Address
+		}
+
+		if port < 1 && len(mconf.Port) > 1 {
+			port, err = strconv.Atoi(mconf.Port)
+			if err != nil {
+				glog.Errorf("Failed to convert port from string to int: %v", err)
+				return err
+			}
+		}
+	}
+
+	if len(prometheusHost) < 1 {
+		err := fmt.Errorf("Failed to get prometheus server address")
+		glog.Error(err.Error())
+		return err
+	}
+
+	if port < 1 {
+		port = defaultPort
+	}
+
+	return nil
 }
 
 func main() {
 	parseFlags()
 	glog.Info("Starting Prometurbo...")
 	glog.Infof("GIT_COMMIT: %s", os.Getenv("GIT_COMMIT"))
+
+	if err := parseConf(); err != nil {
+		glog.Errorf("Failed to parse configurations : %v", err)
+		glog.Errorf("Quit now")
+		return
+	}
 
 	pclient, err := prometheus.NewRestClient(prometheusHost)
 	if err != nil {

@@ -31,7 +31,7 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/songbinliu/xfire"
+  name = "github.com/prometheus/common"
 
 [prune]
   go-tests = true

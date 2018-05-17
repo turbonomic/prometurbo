@@ -15,7 +15,6 @@ import (
 const (
 	apiPath      = "/api/v1/"
 	apiQueryPath = "/api/v1/query"
-	apiRangePath = "/api/v1/query_range"
 
 	defaultTimeOut = time.Duration(60 * time.Second)
 )

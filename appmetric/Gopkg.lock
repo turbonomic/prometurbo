@@ -13,15 +13,9 @@
   packages = ["model"]
   revision = "d811d2e9bf898806ecfb6ef6296774b13ffc314c"
 
-[[projects]]
-  branch = "master"
-  name = "github.com/songbinliu/xfire"
-  packages = ["pkg/prometheus"]
-  revision = "1667ae6ade0c27b7c30c514574b9bd3e886b5258"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "34585941701f3c0324309cbe1eb3d61a180a2001651bfc49e3e83596396533fa"
+  inputs-digest = "9ba082e7e20c0b3fd31ea4cfd971f764e38fa334d509905587530d7f0bc5cebd"
   solver-name = "gps-cdcl"
   solver-version = 1

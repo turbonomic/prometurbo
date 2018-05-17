@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/golang/glog"
-	pclient "github.com/songbinliu/xfire/pkg/prometheus"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/alligator"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/inter"
+	xfire "github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
 	"math"
 	"strings"
 )
@@ -72,7 +72,7 @@ func (istio *IstioEntityGetter) Category() string {
 	return "Istio.VApp"
 }
 
-func (istio *IstioEntityGetter) GetEntityMetric(client *pclient.RestClient) ([]*inter.EntityMetric, error) {
+func (istio *IstioEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*inter.EntityMetric, error) {
 	result := []*inter.EntityMetric{}
 
 	if istio.etype == podType {
@@ -113,7 +113,7 @@ func (istio *IstioEntityGetter) assignMetric(entity *inter.EntityMetric, metric 
 	entity.SetLabel(inter.Category, istio.Category())
 }
 
-func (istio *IstioEntityGetter) mergeTPSandLatency(tpsDat, latencyDat []pclient.MetricData) []*inter.EntityMetric {
+func (istio *IstioEntityGetter) mergeTPSandLatency(tpsDat, latencyDat []xfire.MetricData) []*inter.EntityMetric {
 	result := []*inter.EntityMetric{}
 	midresult := make(map[string]*inter.EntityMetric)
 	etype := inter.ApplicationType
@@ -224,7 +224,7 @@ func (q *istioQuery) GetQuery() string {
 	return q.queryMap[q.qtype]
 }
 
-func (q *istioQuery) Parse(m *pclient.RawMetric) (pclient.MetricData, error) {
+func (q *istioQuery) Parse(m *xfire.RawMetric) (xfire.MetricData, error) {
 	d := newIstioMetricData()
 	d.SetType(q.qtype)
 	if err := d.Parse(m); err != nil {
@@ -252,7 +252,7 @@ func newIstioMetricData() *istioMetricData {
 	}
 }
 
-func (d *istioMetricData) Parse(m *pclient.RawMetric) error {
+func (d *istioMetricData) Parse(m *xfire.RawMetric) error {
 	d.Value = float64(m.Value.Value)
 	if math.IsNaN(d.Value) {
 		return fmt.Errorf("Failed to convert value: NaN")

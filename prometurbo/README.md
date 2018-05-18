@@ -30,8 +30,8 @@ This is a GO SDK probe that aims to discover applications and nodes from [Promet
 Turbonomic Operations Manager.
 
 As of currently, this probe supports:
-* Creating Application entities based on the Prometheus [istio](https://)
-and the [redis](https://) exporters.  More will be gradually added in the future.
+* Creating Application entities based on the Prometheus [istio](https://istio.io/docs/reference/config/adapters/prometheus.html)
+and the [redis](https://github.com/oliver006/redis_exporter) exporters.  More will be gradually added in the future.
 * Collecting app response time and transaction data.  More will be gradually added in the future.
 
 ## Prerequisites

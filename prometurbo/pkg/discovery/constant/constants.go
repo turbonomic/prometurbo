@@ -21,10 +21,12 @@ const (
 	LatencyCap = 500.0 //millisec
 
 	// The default namespace of entity property
-	DefaultPropertyNamespace string = "DEFAULT"
+	DefaultPropertyNamespace = "DEFAULT"
 
 	// The attribute used for stitching with other probes (e.g., prometurbo) with app and vapp
 	StitchingAttr string = "IP"
+
+	VAppPrefix = "vApp-"
 )
 
 var EntityTypeMap = map[int32]proto.EntityDTO_EntityType{

@@ -123,6 +123,10 @@ func (m *mockExporter) Query() ([]*exporter.EntityMetric, error) {
 	return m.metrics, m.err
 }
 
+func (m *mockExporter) Validate() bool {
+	return true
+}
+
 func newMetric(ip string, tpsUsed, latUsed float64, entityType int32) *exporter.EntityMetric {
 	m := map[string]float64{
 		constant.TPS:     tpsUsed,

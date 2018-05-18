@@ -40,5 +40,5 @@ and the [redis](https://) exporters.  More will be gradually added in the future
 * Install your Prometheus server and supported exporters (as listed above).
 
 ## Kubeturbo Installation
-* See[Deploy Prometurbo](https://github.com/turbonomic/prometurbo/tree/master/deploy)
+* [Deploy Prometurbo](https://github.com/turbonomic/prometurbo/prometurbo/tree/master/deploy)
 * Once deployed, corresponding targets will show up in Turbonomic UI

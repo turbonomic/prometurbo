@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"fmt"
-	"github.com/turbonomic/prometurbo/pkg/discovery/constant"
-	"github.com/turbonomic/prometurbo/pkg/discovery/exporter"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/constant"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
 	"github.com/turbonomic/turbo-go-sdk/pkg/builder"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 	"math"

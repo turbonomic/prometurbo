@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"github.com/golang/glog"
-	"github.com/turbonomic/prometurbo/pkg"
-	"github.com/turbonomic/prometurbo/pkg/conf"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/conf"
 	"os"
 )
 
@@ -21,7 +21,6 @@ func main() {
 
 	glog.Infof("GIT_COMMIT: %s", os.Getenv("GIT_COMMIT"))
 	glog.Info("Starting Prometurbo...")
-	glog.V(3).Infof("Arguments: %++v", args)
 	s, err := pkg.NewP8sTAPService(args)
 
 	if err != nil {

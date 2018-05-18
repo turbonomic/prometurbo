@@ -3,9 +3,9 @@ package discovery
 import (
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/turbonomic/prometurbo/pkg/discovery/dtofactory"
-	"github.com/turbonomic/prometurbo/pkg/discovery/exporter"
-	"github.com/turbonomic/prometurbo/pkg/registration"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/dtofactory"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/registration"
 	"github.com/turbonomic/turbo-go-sdk/pkg/probe"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 )

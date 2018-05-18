@@ -3,8 +3,8 @@ package dtofactory
 import (
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/turbonomic/prometurbo/pkg/discovery/constant"
-	"github.com/turbonomic/prometurbo/pkg/discovery/exporter"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/constant"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
 	"github.com/turbonomic/turbo-go-sdk/pkg/builder"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 )
@@ -55,14 +55,9 @@ func (b *entityBuilder) Build() ([]*proto.EntityDTO, error) {
 			continue
 		}
 
-		// TODO: Remove this if using 'millisec' unit at exporter side
-		if commType == proto.CommodityDTO_RESPONSE_TIME {
-			//value *= 1000 // Convert second to millisecond
-		}
-
-		// Adjust the capacity in case utilization > 1
+		// Adjust the capacity in case utilization > 1 as Market doesn't allow it
 		if value >= capacity {
-			capacity = value // + 1
+			capacity = value
 		}
 
 		commodity, err := builder.NewCommodityDTOBuilder(commType).

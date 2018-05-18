@@ -1,0 +1,43 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: prometurbo
+  namespace: turbo
+  labels:
+    app: prometurbo
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prometurbo
+    spec:
+      serviceAccount: turbo-user
+      containers:
+        - name: prometurbo
+          image: vmturbo/prometurbo:6.2dev
+          imagePullPolicy: IfNotPresent
+          args:
+            - --v=2
+          volumeMounts:
+          - name: prometurbo-config
+            mountPath: /etc/prometurbo
+            readOnly: true
+          - name: varlog
+            mountPath: /var/log
+        - image: docker.io/beekman9527/appmetric:v2
+          imagePullPolicy: IfNotPresent
+          name: appmetric
+          args:
+          - --promUrl=http://prometheus.istio-system:9090
+          - --v=2
+          ports:
+          - containerPort: 8081
+      volumes:
+      - name: prometurbo-config
+        configMap: 
+          name: prometurbo-config
+      - name: varlog
+        emptyDir: {}
+      restartPolicy: Always
+

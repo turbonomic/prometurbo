@@ -99,7 +99,7 @@ func (r *RedisEntityGetter) addEntity(mdat []xfire.MetricData, result map[string
 		//2. add entity metrics
 		entity, ok := result[ip]
 		if !ok {
-			entity = inter.NewEntityMetric(ip, inter.ApplicationType)
+			entity = inter.NewEntityMetric(ip, inter.ApplicationEntity)
 			entity.SetLabel(inter.IP, ip)
 			entity.SetLabel(inter.Port, port)
 			entity.SetLabel(inter.Category, r.Category())

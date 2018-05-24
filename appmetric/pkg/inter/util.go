@@ -4,7 +4,7 @@ func GenerateFakeMetrics() []*EntityMetric {
 	result := []*EntityMetric{}
 
 	ip1 := "10.0.2.3"
-	em := NewEntityMetric(ip1, ApplicationType)
+	em := NewEntityMetric(ip1, ApplicationEntity)
 	em.SetLabel("name", "default/curl-1xfj")
 	em.SetLabel("ip", ip1)
 
@@ -13,7 +13,7 @@ func GenerateFakeMetrics() []*EntityMetric {
 	result = append(result, em)
 
 	ip2 := "10.0.3.2"
-	em2 := NewEntityMetric(ip2, ApplicationType)
+	em2 := NewEntityMetric(ip2, ApplicationEntity)
 	em2.SetLabel("name", "istio/music-ftaf2")
 	em2.SetLabel("ip", ip2)
 

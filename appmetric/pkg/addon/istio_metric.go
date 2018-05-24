@@ -116,9 +116,9 @@ func (istio *IstioEntityGetter) assignMetric(entity *inter.EntityMetric, metric 
 func (istio *IstioEntityGetter) mergeTPSandLatency(tpsDat, latencyDat []xfire.MetricData) []*inter.EntityMetric {
 	result := []*inter.EntityMetric{}
 	midresult := make(map[string]*inter.EntityMetric)
-	etype := inter.ApplicationType
+	etype := inter.ApplicationEntity
 	if istio.etype == svcType {
-		etype = inter.VirtualApplicationType
+		etype = inter.VirtualApplicationEntity
 	}
 
 	for _, dat := range tpsDat {

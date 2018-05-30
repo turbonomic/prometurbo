@@ -54,7 +54,16 @@ func (d *P8sDiscoveryClient) GetAccountValues() *probe.TurboTargetInfo {
 func (d *P8sDiscoveryClient) Validate(accountValues []*proto.AccountValue) (*proto.ValidationResponse, error) {
 	// TODO: Add logic for validation
 	validationResponse := &proto.ValidationResponse{}
-	return validationResponse, nil
+
+	// Validation fails if no exporter responses
+	for _, metricExporter := range d.metricExporters {
+		if metricExporter.Validate() {
+			return validationResponse, nil
+		}
+
+		glog.Errorf("Unable to connect to metric exporter %v", metricExporter)
+	}
+	return d.failValidation(), nil
 }
 
 // Discover the Target Topology
@@ -111,7 +120,6 @@ func (d *P8sDiscoveryClient) buildEntities(metricExporter exporter.MetricExporte
 func (d *P8sDiscoveryClient) failDiscovery() *proto.DiscoveryResponse {
 	description := fmt.Sprintf("All exporter queries failed: %v", d.metricExporters)
 	glog.Errorf(description)
-	// If there is error during discovery, return an ErrorDTO.
 	severity := proto.ErrorDTO_CRITICAL
 	errorDTO := &proto.ErrorDTO{
 		Severity:    &severity,
@@ -121,4 +129,19 @@ func (d *P8sDiscoveryClient) failDiscovery() *proto.DiscoveryResponse {
 		ErrorDTO: []*proto.ErrorDTO{errorDTO},
 	}
 	return discoveryResponse
+}
+
+func (d *P8sDiscoveryClient) failValidation() *proto.ValidationResponse {
+	description := fmt.Sprintf("All exporter queries failed: %v", d.metricExporters)
+	glog.Errorf(description)
+	severity := proto.ErrorDTO_CRITICAL
+	errorDto := &proto.ErrorDTO{
+		Severity:    &severity,
+		Description: &description,
+	}
+
+	validationResponse := &proto.ValidationResponse{
+		ErrorDTO: []*proto.ErrorDTO{errorDto},
+	}
+	return validationResponse
 }

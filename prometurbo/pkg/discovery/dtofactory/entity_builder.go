@@ -25,6 +25,105 @@ func NewEntityBuilder(scope string, metric *exporter.EntityMetric) *entityBuilde
 
 func (b *entityBuilder) Build() ([]*proto.EntityDTO, error) {
 	metric := b.metric
+	ip := metric.UID
+
+	entityDto, err := b.createEntityDto()
+
+	if err != nil {
+		glog.Errorf("Error building EntityDTO from metric %v: %s", metric, err)
+		return nil, err
+	}
+
+	dtos := []*proto.EntityDTO{entityDto}
+
+	consumerDto, err := b.createConsumerEntity(entityDto, ip)
+
+	if err != nil {
+		glog.Errorf("Error building consumer EntityDTO from metric %v: %s", metric, err)
+	} else {
+		dtos = append(dtos, consumerDto)
+	}
+
+	return dtos, nil
+}
+
+func (b *entityBuilder) getEntityId(entityType proto.EntityDTO_EntityType, entityName string) string {
+	eType := proto.EntityDTO_EntityType_name[int32(entityType)]
+
+	return fmt.Sprintf("%s-%s/%s", eType, b.scope, entityName)
+}
+
+func getReplacementMetaData(entityType proto.EntityDTO_EntityType, commTypes []proto.CommodityDTO_CommodityType, bought bool) *proto.EntityDTO_ReplacementEntityMetaData {
+	attr := constant.StitchingAttr
+	useTopoExt := true
+
+	b := builder.NewReplacementEntityMetaDataBuilder().
+		Matching(attr).
+		MatchingExternal(&proto.ServerEntityPropDef{
+			Entity:     &entityType,
+			Attribute:  &attr,
+			UseTopoExt: &useTopoExt,
+		})
+
+	for _, commType := range commTypes {
+		if bought {
+			b.PatchBuyingWithProperty(commType, []string{constant.Used})
+		} else {
+			b.PatchSellingWithProperty(commType, []string{constant.Used, constant.Capacity})
+		}
+	}
+
+	return b.Build()
+}
+
+func getEntityProperty(value string) *proto.EntityDTO_EntityProperty {
+	attr := constant.StitchingAttr
+	ns := constant.DefaultPropertyNamespace
+
+	return &proto.EntityDTO_EntityProperty{
+		Namespace: &ns,
+		Name:      &attr,
+		Value:     &value,
+	}
+}
+
+// Creates consumer entity from a given provider entity. Currently, the use case is to create vApp from Application.
+func (b *entityBuilder) createConsumerEntity(provider *proto.EntityDTO, ip string) (*proto.EntityDTO, error) {
+	entityType := *provider.EntityType
+	id := b.getEntityId(entityType, ip)
+	commodities := provider.CommoditiesSold
+
+	commTypes := []proto.CommodityDTO_CommodityType{}
+	for _, comm := range commodities {
+		commTypes = append(commTypes, *comm.CommodityType)
+	}
+
+	// For application entity, we also want to create proxy enitites for vApp.
+	// The logic may or may not apply to other entity types depending on future use cases, if any.
+	if entityType == proto.EntityDTO_APPLICATION {
+		provider := builder.CreateProvider(entityType, id)
+		vAppType := proto.EntityDTO_VIRTUAL_APPLICATION
+		vappDto, err := builder.NewEntityDTOBuilder(vAppType, constant.VAppPrefix+id).
+			DisplayName(constant.VAppPrefix + id).
+			Provider(provider).
+			BuysCommodities(commodities).
+			WithProperty(getEntityProperty(constant.VAppPrefix + ip)).
+			ReplacedBy(getReplacementMetaData(vAppType, commTypes, true)).
+			Create()
+
+		if err != nil {
+			return nil, err
+		}
+
+		return vappDto, nil
+	}
+
+	return nil, fmt.Errorf("Unsupported provider type %v to create consumer", entityType)
+}
+
+// Creates entity DTO from the EntityMetric
+func (b *entityBuilder) createEntityDto() (*proto.EntityDTO, error) {
+	metric := b.metric
 
 	entityType, ok := constant.EntityTypeMap[metric.Type]
 	if !ok {
@@ -38,8 +137,16 @@ func (b *entityBuilder) Build() ([]*proto.EntityDTO, error) {
 	commodities := []*proto.CommodityDTO{}
 	commTypes := []proto.CommodityDTO_CommodityType{}
 	commMetrics := metric.Metrics
+
+	// If metric exporter doesn't provide the necessary commodity usage, create one with value 0.
+	// TODO: This is to match the supply chain and should be removed.
+	for commType := range constant.CommodityTypeMap {
+		if _, ok := commMetrics[commType]; !ok {
+			commMetrics[commType] = 0
+		}
+	}
+
 	for key, value := range commMetrics {
-		var commType proto.CommodityDTO_CommodityType
 		commType, ok := constant.CommodityTypeMap[key]
 
 		if !ok {
@@ -74,11 +181,11 @@ func (b *entityBuilder) Build() ([]*proto.EntityDTO, error) {
 
 	id := b.getEntityId(entityType, ip)
 
-	dto, err := builder.NewEntityDTOBuilder(entityType, id).
+	entityDto, err := builder.NewEntityDTOBuilder(entityType, id).
 		DisplayName(id).
 		SellsCommodities(commodities).
 		WithProperty(getEntityProperty(ip)).
-		ReplacedBy(getReplacementMetaData(entityType, commTypes)).
+		ReplacedBy(getReplacementMetaData(entityType, commTypes, false)).
 		Create()
 
 	if err != nil {
@@ -86,43 +193,5 @@ func (b *entityBuilder) Build() ([]*proto.EntityDTO, error) {
 		return nil, err
 	}
 
-	dtos := []*proto.EntityDTO{dto}
-
-	return dtos, nil
-}
-
-func (b *entityBuilder) getEntityId(entityType proto.EntityDTO_EntityType, entityName string) string {
-	eType := proto.EntityDTO_EntityType_name[int32(entityType)]
-
-	return fmt.Sprintf("%s-%s/%s", eType, b.scope, entityName)
-}
-
-func getReplacementMetaData(entityType proto.EntityDTO_EntityType, commTypes []proto.CommodityDTO_CommodityType) *proto.EntityDTO_ReplacementEntityMetaData {
-	attr := constant.StitchingAttr
-	useTopoExt := true
-
-	b := builder.NewReplacementEntityMetaDataBuilder().
-		Matching(attr).
-		MatchingExternal(&proto.ServerEntityPropDef{
-			Entity:     &entityType,
-			Attribute:  &attr,
-			UseTopoExt: &useTopoExt,
-		})
-
-	for _, commType := range commTypes {
-		b.PatchSellingWithProperty(commType, []string{constant.Used, constant.Capacity})
-	}
-
-	return b.Build()
-}
-
-func getEntityProperty(value string) *proto.EntityDTO_EntityProperty {
-	attr := constant.StitchingAttr
-	ns := constant.DefaultPropertyNamespace
-
-	return &proto.EntityDTO_EntityProperty{
-		Namespace: &ns,
-		Name:      &attr,
-		Value:     &value,
-	}
+	return entityDto, nil
 }

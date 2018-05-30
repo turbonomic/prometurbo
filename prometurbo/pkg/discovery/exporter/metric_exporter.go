@@ -5,10 +5,12 @@ import (
 	"github.com/golang/glog"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type MetricExporter interface {
 	Query() ([]*EntityMetric, error)
+	Validate() bool
 }
 
 type metricExporter struct {
@@ -19,6 +21,20 @@ func NewMetricExporter(endpoint string) *metricExporter {
 	return &metricExporter{
 		endpoint: endpoint,
 	}
+}
+
+func (m *metricExporter) Validate() bool {
+	if _, err := sendRequest(m.endpoint); err != nil {
+		glog.Error("Failed connecting to the exporter. Retrying...")
+		// Retry once with 5-second wait
+		time.Sleep(5 * time.Second)
+		if _, err = sendRequest(m.endpoint); err != nil {
+			glog.Error("Failed connecting to the exporter.")
+			return false
+		}
+	}
+
+	return true
 }
 
 func (m *metricExporter) Query() ([]*EntityMetric, error) {

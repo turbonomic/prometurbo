@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 type disconnectFromTurboFunc func()
@@ -33,10 +32,6 @@ func NewP8sTAPService(args *conf.PrometurboArgs) (*P8sTAPService, error) {
 
 func (p *P8sTAPService) Start() {
 	glog.V(0).Infof("Starting prometheus TAP service...")
-
-	// Before running service, wait for the exporter to start up
-	// TODO: Check the readiness of the exporter
-	time.Sleep(5 * time.Second)
 
 	// Disconnect from Turbo server when Kubeturbo is shutdown
 	handleExit(func() { p.tapService.DisconnectFromTurbo() })

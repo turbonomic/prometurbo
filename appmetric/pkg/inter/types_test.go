@@ -40,8 +40,8 @@ func TestNewMetricResponse(t *testing.T) {
 	em.SetLabel("ip", "10.0.2.3")
 	em.SetLabel("scope", "k8s1")
 
-	em.SetMetric(Latency, 133.2)
-	em.SetMetric(TPS, 12)
+	em.SetMetric(LatencySoldMetric, 133.2)
+	em.SetMetric(TPSSoldMetric, 12)
 	em.SetMetric("readLatency", 50)
 
 	em2 := NewEntityMetric("aid2", ApplicationEntity)
@@ -49,8 +49,8 @@ func TestNewMetricResponse(t *testing.T) {
 	em2.SetLabel("ip", "10.0.3.2")
 	em2.SetLabel("scope", "k8s1")
 
-	em2.SetMetric(Latency, 13.2)
-	em2.SetMetric(TPS, 10)
+	em2.SetMetric(LatencySoldMetric, 13.2)
+	em2.SetMetric(TPSSoldMetric, 10)
 	em2.SetMetric("readLatency", 5)
 
 	res := NewMetricResponse()

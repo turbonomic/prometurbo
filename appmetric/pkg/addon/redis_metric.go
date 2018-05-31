@@ -51,7 +51,7 @@ func (r *RedisEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*inter.
 		glog.Errorf("Failed to get Redis TPS metrics: %v", err)
 		return result, err
 	} else {
-		r.addEntity(tpsDat, midResult, inter.TPS)
+		r.addEntity(tpsDat, midResult, inter.TPSSoldMetric)
 	}
 
 	//2. get Latency data
@@ -61,7 +61,7 @@ func (r *RedisEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*inter.
 		glog.Errorf("Failed to get Redis Latency metrics: %v", err)
 		//return result, err
 	} else {
-		r.addEntity(latencyDat, midResult, inter.Latency)
+		r.addEntity(latencyDat, midResult, inter.LatencySoldMetric)
 	}
 
 	//3. reform map to list
@@ -73,7 +73,7 @@ func (r *RedisEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*inter.
 }
 
 // key should be inter.TPS or inter.Latency
-func (r *RedisEntityGetter) addEntity(mdat []xfire.MetricData, result map[string]*inter.EntityMetric, key string) error {
+func (r *RedisEntityGetter) addEntity(mdat []xfire.MetricData, result map[string]*inter.EntityMetric, key inter.MetricType) error {
 	addrName := "addr"
 
 	for _, dat := range mdat {

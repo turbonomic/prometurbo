@@ -28,8 +28,8 @@ func (e *EntityMetric) SetLabel(name, value string) {
 	e.Labels[name] = value
 }
 
-func (e *EntityMetric) SetMetric(name string, value float64) {
-	e.Metrics[name] = value
+func (e *EntityMetric) SetMetric(mname MetricType, value float64) {
+	e.Metrics[string(mname)] = value
 }
 
 /*type MetricResponse struct {

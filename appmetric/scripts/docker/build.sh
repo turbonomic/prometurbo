@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tag=vmturbo/appmetric:6.2dev-pt
+tag=vmturbo/appmetric:6.2dev
 
 make product
 ret=$?

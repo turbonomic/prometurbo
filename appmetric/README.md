@@ -84,11 +84,11 @@ type MetricResponse struct {
 # Deploy
 
 ## Prerequisites
-* Kubernetes 1.7.3 +
-* Istio 0.3 + (with Prometheus addon)
+* [Kubernetes](https://kubernetes.io) 1.7.3 +
+* [Istio](https://istio.io) 0.3 + (with Prometheus addon)
 
 ## Deploy metrics and rules in Istio
-Isito metrics, handlers and rules are defined in [script](https://github.com/songbinliu/appMetric/tree/v2.0/scripts/istio/ip.turbo.metric.yaml), deploy it with:
+Isito metrics, handlers and rules are defined in [script](https://github.com/turbonomic/prometurbo/blob/master/appmetric/scripts/istio/ip.turbo.metric.yaml), deploy it with:
 ```console
 istioctl create -f scripts/istio/ip.turbo.metric.yaml
 ```

@@ -116,9 +116,9 @@ func (istio *IstioEntityGetter) assignMetric(entity *inter.EntityMetric, metric 
 func (istio *IstioEntityGetter) mergeTPSandLatency(tpsDat, latencyDat []xfire.MetricData) []*inter.EntityMetric {
 	result := []*inter.EntityMetric{}
 	midresult := make(map[string]*inter.EntityMetric)
-	etype := inter.ApplicationType
+	etype := inter.ApplicationEntity
 	if istio.etype == svcType {
-		etype = inter.VirtualApplicationType
+		etype = inter.VirtualApplicationEntity
 	}
 
 	for _, dat := range tpsDat {
@@ -131,7 +131,7 @@ func (istio *IstioEntityGetter) mergeTPSandLatency(tpsDat, latencyDat []xfire.Me
 		entity := inter.NewEntityMetric(tps.uuid, etype)
 
 		istio.assignMetric(entity, tps)
-		entity.SetMetric(inter.TPS, tps.GetValue())
+		entity.SetMetric(inter.TPSSoldMetric, tps.GetValue())
 		midresult[entity.UID] = entity
 		glog.V(5).Infof("uid=%v,uid2=%v, %+v", entity.UID, tps.uuid, entity)
 	}
@@ -150,7 +150,7 @@ func (istio *IstioEntityGetter) mergeTPSandLatency(tpsDat, latencyDat []xfire.Me
 			midresult[entity.UID] = entity
 			istio.assignMetric(entity, latency)
 		}
-		entity.SetMetric(inter.Latency, latency.GetValue())
+		entity.SetMetric(inter.LatencySoldMetric, latency.GetValue())
 		glog.V(5).Infof("uid=%v, %+v", entity.UID, entity)
 	}
 

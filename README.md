@@ -24,10 +24,12 @@ limitations under the License.
 
 # prometurbo
 
-## Overview
+<img width="717" alt="prometurbo" src="https://user-images.githubusercontent.com/27221807/41005210-91c0c8f2-68ea-11e8-95be-7599610383aa.png">
 
-This is a GO SDK probe that aims to discover applications and nodes from [Prometheus](https://prometheus.io/) for the
-Turbonomic Operations Manager.
+## Overview
+Prometurbo is a framework to get metrics from Prometheus for Turbonomic.
+It is implemented as a GO SDK probe that aims to discover applications and nodes from [Prometheus](https://prometheus.io/) for the Turbonomic Operations Manager.
+
 
 As of currently, this probe supports:
 * Creating Application entities based on the Prometheus [istio](https://istio.io/docs/reference/config/adapters/prometheus.html)
@@ -35,10 +37,12 @@ and the [redis](https://github.com/oliver006/redis_exporter) exporters.  More wi
 * Collecting app response time and transaction data.  More will be gradually added in the future.
 
 ## Prerequisites
-* Turbonomic 6.2+ installation
+* Turbonomic 6.2+ 
 * Kubernetes 1.7.3+
-* Install your Prometheus server and supported exporters (as listed above).
+* Istio 0.3+ (with Prometheus addon)
+* supported exporters (as listed above).
 
-## Kubeturbo Installation
+## Prometurbo Installation
 * [Deploy Prometurbo](https://github.com/turbonomic/prometurbo/prometurbo/tree/master/deploy)
 * Once deployed, corresponding targets will show up in Turbonomic UI
+

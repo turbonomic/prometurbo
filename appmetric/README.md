@@ -1,11 +1,14 @@
 # appMetric
 Get metrics from [Prometheus](https://prometheus.io) for applications, and expose these applications via REST API.
 
+<img width="800" alt="appmetric" src="https://user-images.githubusercontent.com/27221807/41060294-2d58206e-699d-11e8-93f8-dae4cc775e49.png">
+
+
 Applications are distinguished by mainly their IP address. For example, each [Kubernetes](https://kubernetes.io/docs/concepts/workloads/pods/pod/) Pod corresponds to one Application.
 Currently, it can get applications from [Istio exporter](https://istio.io/docs/reference/config/adapters/prometheus.html) and [Redis exporter](https://github.com/oliver006/redis_exporter). More exporters can be supported by implementing
 their [`addon`](https://github.com/songbinliu/appMetric/tree/v2.0/pkg/addon).
 
-# Applications with their metrics
+# Output of appMetric: Applications with their metrics
 The application metrics are served via REST API. Access endpoint `/pod/metrics`, and will get json data:
 ```json
 {
@@ -80,6 +83,8 @@ type MetricResponse struct {
 
 
 # Deploy
+**appMetric** can be deployed in the same Pod with *Prometurbo*, as suggested [here](../deploy/). It can also be deployed
+a standalone service in Kubernetes as specified in following steps.
 
 ## Prerequisites
 * [Kubernetes](https://kubernetes.io) 1.7.3 +

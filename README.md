@@ -3,38 +3,33 @@
 </p>
 
 
-<!--
-http://www.apache.org/licenses/LICENSE-2.0.txt
-
-
-Copyright 2018 Turbonomic
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
--->
-
-# prometurbo
+# PromeTurbo
 
 <img width="717" alt="prometurbo" src="https://user-images.githubusercontent.com/27221807/41005210-91c0c8f2-68ea-11e8-95be-7599610383aa.png">
 
+
 ## Overview
 Prometurbo is a framework to get metrics from Prometheus for Turbonomic.
-It is implemented as a GO SDK probe that aims to discover applications and nodes from [Prometheus](https://prometheus.io/) for the Turbonomic Operations Manager.
+It is implemented as a SDK probe that aims to discover applications and nodes from [Prometheus](https://prometheus.io/) for the Turbonomic Operations Manager. 
 
+## Two components
+It has two components: [`appMetric`](./appmetric) and [`Probe`](prometurbo).
 
-Currently, this probe supports:
-* Creating Application entities based on the Prometheus [istio](https://istio.io/docs/reference/config/adapters/prometheus.html)
-and the [redis](https://github.com/oliver006/redis_exporter) exporters.  
-* Collecting app response time and transaction data. 
+**Main functions of appMetric** : 
+   * Get entity metrics from Prometheus, or other sources;
+   * Expose the entity metrics via REST API;
+   
+**Main functions of Probe** :
+   * Fetch entity metrics from appMetric, convert them into EntityDTO;
+   * Probe regristration with TurboServer;
+   * Execute the validation/discovery command from TurboServer;
+
+Since these two components interact with each other via REST API, so they can be deployed in the same pod, or seperately as different services.
+
+## Metric sources and entities
+Currently, Prometurbo can get metrics from [Istio](https://istio.io/docs/reference/config/adapters/prometheus.html) and [redis](https://github.com/oliver006/redis_exporter) exporters.
+It will generate `ResponseTime` and `Transaction` commodities for `Application Entity`.
+
 
  More exporters will be supported, and more entity types/commodities will be gradually added in the future.
 
@@ -46,5 +41,4 @@ and the [redis](https://github.com/oliver006/redis_exporter) exporters.
 
 ## Prometurbo Installation
 * [Deploy Prometurbo](./deploy)
-* Once deployed, corresponding targets will show up in Turbonomic UI
 

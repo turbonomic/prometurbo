@@ -6,6 +6,7 @@ import (
 	"github.com/turbonomic/prometurbo/appmetric/pkg/alligator"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/inter"
 	xfire "github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
+	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 	"strings"
 )
 
@@ -51,7 +52,7 @@ func (r *RedisEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*inter.
 		glog.Errorf("Failed to get Redis TPS metrics: %v", err)
 		return result, err
 	} else {
-		r.addEntity(tpsDat, midResult, inter.TPSSoldMetric)
+		r.addEntity(tpsDat, midResult, inter.TpsType)
 	}
 
 	//2. get Latency data
@@ -61,7 +62,7 @@ func (r *RedisEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*inter.
 		glog.Errorf("Failed to get Redis Latency metrics: %v", err)
 		//return result, err
 	} else {
-		r.addEntity(latencyDat, midResult, inter.LatencySoldMetric)
+		r.addEntity(latencyDat, midResult, inter.LatencyType)
 	}
 
 	//3. reform map to list
@@ -73,7 +74,7 @@ func (r *RedisEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*inter.
 }
 
 // key should be inter.TPS or inter.Latency
-func (r *RedisEntityGetter) addEntity(mdat []xfire.MetricData, result map[string]*inter.EntityMetric, key inter.MetricType) error {
+func (r *RedisEntityGetter) addEntity(mdat []xfire.MetricData, result map[string]*inter.EntityMetric, key proto.CommodityDTO_CommodityType) error {
 	addrName := "addr"
 
 	for _, dat := range mdat {
@@ -99,7 +100,7 @@ func (r *RedisEntityGetter) addEntity(mdat []xfire.MetricData, result map[string
 		//2. add entity metrics
 		entity, ok := result[ip]
 		if !ok {
-			entity = inter.NewEntityMetric(ip, inter.ApplicationEntity)
+			entity = inter.NewEntityMetric(ip, inter.AppEntity)
 			entity.SetLabel(inter.IP, ip)
 			entity.SetLabel(inter.Port, port)
 			entity.SetLabel(inter.Category, r.Category())

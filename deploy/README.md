@@ -5,7 +5,7 @@ Prometurbo can be deployed in Kubernetes with the following steps:
 
 Creating some Istio resources to collect  http-related metrics of the Pods and Services. 
 
-The definition of these Isito metrics, handlers and rule are defined in [`appmetric/scripts/istio/ip.turbo.metric.yaml`](../appmetric/scripts/istio/ip.turbo.metric.yaml), and can be deployed with:
+The definition of these Istio metrics, handlers and rule are defined in [`appmetric/scripts/istio/ip.turbo.metric.yaml`](../appmetric/scripts/istio/ip.turbo.metric.yaml), and can be deployed with:
 
 ```bash
 istioctl create -f appmetric/scripts/istio/ip.turbo.metric.yaml

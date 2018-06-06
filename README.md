@@ -24,7 +24,7 @@ It has two components: [`appMetric`](./appmetric) and [`Probe`](prometurbo).
    * Probe regristration with TurboServer;
    * Execute the validation/discovery command from TurboServer;
 
-Since these two components interact with each other via REST API, so they can be deployed in the same pod, or seperately as different services.
+Since these two components interact with each other via REST API, so they can be deployed in the same pod, or separately as different services.
 
 ## Metric sources and entities
 Currently, Prometurbo can get metrics from [Istio](https://istio.io/docs/reference/config/adapters/prometheus.html) and [redis](https://github.com/oliver006/redis_exporter) exporters.

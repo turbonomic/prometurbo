@@ -1,6 +1,18 @@
-> NOTE: The user performing the steps to create a namespace, service account, and `cluster-admin` clusterrolebinding, will need to have cluster-admin role.
 
-Deploy the prometurbo pod with the following resources:
+Prometurbo can be deployed in Kubernetes with the following steps:
+
+0. Setup Istio prometheus exporter
+
+Creating some Istio resources to collect  http-related metrics of the Pods and Services. 
+
+The definition of these Istio metrics, handlers and rule are defined in [`appmetric/scripts/istio/ip.turbo.metric.yaml`](../appmetric/scripts/istio/ip.turbo.metric.yaml), and can be deployed with:
+
+```bash
+istioctl create -f appmetric/scripts/istio/ip.turbo.metric.yaml
+```
+ 
+ With these resources, `Response time` and `Transactions` of Applications can be monitored through Istio.
+ 
 
 1. Create a namespace
 
@@ -20,23 +32,6 @@ kind: ServiceAccount
 metadata:
   name: turbo-user
   namespace: turbo
-```
-
-Assign `cluster-admin` role by cluster role binding:
-```yaml
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1    
-metadata:
-  name: turbo-all-binding
-  namespace: turbo
-subjects:
-- kind: ServiceAccount
-  name: turbo-user
-  namespace: turbo
-roleRef:
-  kind: ClusterRole
-  name: cluster-admin
-  apiGroup: rbac.authorization.k8s.io  
 ```
 
 3. create a configMap for prometurbo, The <TURBONOMIC_SERVER_VERSION> is Turbonomic release version, e.g. 6.2.0

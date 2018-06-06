@@ -3,7 +3,7 @@ Deploy the prometurbo pod with the following steps:
 
 0. Setup Istio prometheus exporter
 
-Creating some Istio metrics/handler/rule to collect Pod/service's http-related metrics to Prometheus. 
+Creating some Istio resources to collect  http-related metrics of the Pods and Services. 
 
 The definition of these Isito metrics, handlers and rule are defined in [`appmetric/scripts/istio/ip.turbo.metric.yaml`](../appmetric/scripts/istio/ip.turbo.metric.yaml), and can be deployed with:
 
@@ -11,7 +11,7 @@ The definition of these Isito metrics, handlers and rule are defined in [`appmet
 istioctl create -f appmetric/scripts/istio/ip.turbo.metric.yaml
 ```
  
- With these settings, `Response time` and `Transactions` of **HTTP** Applications can be monitored through Istio.
+ With these resources, `Response time` and `Transactions` of Applications can be monitored through Istio.
  
 
 1. Create a namespace

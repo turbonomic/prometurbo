@@ -1,5 +1,5 @@
 
-Deploy the prometurbo pod with the following steps:
+Prometurbo can be deployed in Kubernetes with the following steps:
 
 0. Setup Istio prometheus exporter
 

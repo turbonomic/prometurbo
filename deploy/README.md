@@ -1,9 +1,10 @@
 
 Deploy the prometurbo pod with the following steps:
 
-0. Setup Istio exporter
+0. Setup Istio prometheus exporter
 
-The Istio prometheus exporter is set up by creating some Istio metrics/handler/rule to collect Pod/service metrics to Prometheus. 
+Creating some Istio metrics/handler/rule to collect Pod/service's http-related metrics to Prometheus. 
+
 The definition of these Isito metrics, handlers and rule are defined in [`appmetric/scripts/istio/ip.turbo.metric.yaml`](../appmetric/scripts/istio/ip.turbo.metric.yaml), and can be deployed with:
 
 ```bash

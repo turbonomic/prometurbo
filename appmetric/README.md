@@ -1,5 +1,5 @@
 # appMetric
-Get metrics from [Prometheus](https://prometheus.io) for applications, and expose these applications via REST API.
+Get metrics from [Prometheus](https://prometheus.io) for applications, and expose these applications via REST API. [`probe`](../prometurbo) will access the REST API, and consume the results.
 
 <img width="800" alt="appmetric" src="https://user-images.githubusercontent.com/27221807/41060294-2d58206e-699d-11e8-93f8-dae4cc775e49.png">
 

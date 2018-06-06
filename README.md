@@ -31,10 +31,12 @@ Prometurbo is a framework to get metrics from Prometheus for Turbonomic.
 It is implemented as a GO SDK probe that aims to discover applications and nodes from [Prometheus](https://prometheus.io/) for the Turbonomic Operations Manager.
 
 
-As of currently, this probe supports:
+Currently, this probe supports:
 * Creating Application entities based on the Prometheus [istio](https://istio.io/docs/reference/config/adapters/prometheus.html)
-and the [redis](https://github.com/oliver006/redis_exporter) exporters.  More will be gradually added in the future.
-* Collecting app response time and transaction data.  More will be gradually added in the future.
+and the [redis](https://github.com/oliver006/redis_exporter) exporters.  
+* Collecting app response time and transaction data. 
+
+ More exporters will be supported, and more entity types/commodities will be gradually added in the future.
 
 ## Prerequisites
 * Turbonomic 6.2+ 

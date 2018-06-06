@@ -45,6 +45,6 @@ and the [redis](https://github.com/oliver006/redis_exporter) exporters.
 * supported exporters (as listed above).
 
 ## Prometurbo Installation
-* [Deploy Prometurbo](https://github.com/turbonomic/prometurbo/prometurbo/tree/master/deploy)
+* [Deploy Prometurbo](./deploy)
 * Once deployed, corresponding targets will show up in Turbonomic UI
 

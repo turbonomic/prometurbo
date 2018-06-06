@@ -91,7 +91,7 @@ a standalone service in Kubernetes as specified in following steps.
 * [Istio](https://istio.io) 0.3 + (with Prometheus addon)
 
 ## Deploy metrics and rules in Istio
-Isito metrics, handlers and rules are defined in [script](https://github.com/turbonomic/prometurbo/blob/master/appmetric/scripts/istio/ip.turbo.metric.yaml), deploy it with:
+Istio metrics, handlers and rules are defined in [script](https://github.com/turbonomic/prometurbo/blob/master/appmetric/scripts/istio/ip.turbo.metric.yaml), deploy it with:
 ```console
 istioctl create -f scripts/istio/ip.turbo.metric.yaml
 ```

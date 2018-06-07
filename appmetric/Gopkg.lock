@@ -8,14 +8,26 @@
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 
 [[projects]]
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/prometheus/common"
   packages = ["model"]
   revision = "d811d2e9bf898806ecfb6ef6296774b13ffc314c"
 
+[[projects]]
+  branch = "6.1"
+  name = "github.com/turbonomic/turbo-go-sdk"
+  packages = ["pkg/proto"]
+  revision = "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9ba082e7e20c0b3fd31ea4cfd971f764e38fa334d509905587530d7f0bc5cebd"
+  inputs-digest = "1789c3388c57437de589906562a068e7fc332ff0dbb21ee9b8f10a03fed17aa6"
   solver-name = "gps-cdcl"
   solver-version = 1

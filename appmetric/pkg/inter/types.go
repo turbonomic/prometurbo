@@ -1,10 +1,14 @@
 package inter
 
+import (
+	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
+)
+
 type EntityMetric struct {
-	UID     string             `json:"uid"`
-	Type    EntityType         `json:"type,omitempty"`
-	Labels  map[string]string  `json:"labels,omitempty"`
-	Metrics map[string]float64 `json:"metrics,omitempty"`
+	UID     string                                       `json:"uid"`
+	Type    proto.EntityDTO_EntityType                   `json:"type,omitempty"`
+	Labels  map[string]string                            `json:"labels,omitempty"`
+	Metrics map[proto.CommodityDTO_CommodityType]float64 `json:"metrics,omitempty"`
 }
 
 type MetricResponse struct {
@@ -13,12 +17,12 @@ type MetricResponse struct {
 	Data    []*EntityMetric `json:"data:omitempty"`
 }
 
-func NewEntityMetric(id string, t EntityType) *EntityMetric {
+func NewEntityMetric(id string, t proto.EntityDTO_EntityType) *EntityMetric {
 	m := &EntityMetric{
 		UID:     id,
 		Type:    t,
 		Labels:  make(map[string]string),
-		Metrics: make(map[string]float64),
+		Metrics: make(map[proto.CommodityDTO_CommodityType]float64),
 	}
 
 	return m
@@ -28,15 +32,9 @@ func (e *EntityMetric) SetLabel(name, value string) {
 	e.Labels[name] = value
 }
 
-func (e *EntityMetric) SetMetric(mname MetricType, value float64) {
-	e.Metrics[string(mname)] = value
+func (e *EntityMetric) SetMetric(cname proto.CommodityDTO_CommodityType, value float64) {
+	e.Metrics[cname] = value
 }
-
-/*type MetricResponse struct {
-	Status  int             `json:"status"`
-	Message string          `json:"message:omitemtpy"`
-	Data    []*EntityMetric `json:"data:omitempty"`
-}*/
 
 func NewMetricResponse() *MetricResponse {
 	return &MetricResponse{

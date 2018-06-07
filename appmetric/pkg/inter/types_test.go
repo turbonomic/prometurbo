@@ -7,14 +7,13 @@ import (
 )
 
 func TestEntityMetric_Marshall(t *testing.T) {
-	em := NewEntityMetric("aid1", ApplicationEntity)
+	em := NewEntityMetric("aid1", AppEntity)
 	em.SetLabel("name", "default/curl-1xfj")
 	em.SetLabel("ip", "10.0.2.3")
 	em.SetLabel("scope", "k8s1")
 
-	em.SetMetric("latency", 133.2)
-	em.SetMetric("tps", 12)
-	em.SetMetric("readLatency", 50)
+	em.SetMetric(LatencyType, 133.2)
+	em.SetMetric(TpsType, 12)
 
 	//1. marshal
 	ebytes, err := json.Marshal(em)
@@ -35,23 +34,21 @@ func TestEntityMetric_Marshall(t *testing.T) {
 }
 
 func TestNewMetricResponse(t *testing.T) {
-	em := NewEntityMetric("aid1", ApplicationEntity)
+	em := NewEntityMetric("aid1", AppEntity)
 	em.SetLabel("name", "default/curl-1xfj")
 	em.SetLabel("ip", "10.0.2.3")
 	em.SetLabel("scope", "k8s1")
 
-	em.SetMetric(LatencySoldMetric, 133.2)
-	em.SetMetric(TPSSoldMetric, 12)
-	em.SetMetric("readLatency", 50)
+	em.SetMetric(LatencyType, 133.2)
+	em.SetMetric(TpsType, 12)
 
-	em2 := NewEntityMetric("aid2", ApplicationEntity)
+	em2 := NewEntityMetric("aid2", AppEntity)
 	em2.SetLabel("name", "istio/music-ftaf2")
 	em2.SetLabel("ip", "10.0.3.2")
 	em2.SetLabel("scope", "k8s1")
 
-	em2.SetMetric(LatencySoldMetric, 13.2)
-	em2.SetMetric(TPSSoldMetric, 10)
-	em2.SetMetric("readLatency", 5)
+	em2.SetMetric(LatencyType, 13.2)
+	em2.SetMetric(TpsType, 10)
 
 	res := NewMetricResponse()
 	res.SetStatus(0, "good")

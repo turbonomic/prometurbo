@@ -29,13 +29,13 @@ const (
 	VAppPrefix = "vApp-"
 )
 
-var EntityTypeMap = map[int32]proto.EntityDTO_EntityType{
-	ApplicationType: proto.EntityDTO_APPLICATION,
+var EntityTypeMap = map[proto.EntityDTO_EntityType]struct{}{
+	proto.EntityDTO_APPLICATION: {},
 }
 
-var CommodityTypeMap = map[string]proto.CommodityDTO_CommodityType{
-	TPS:     proto.CommodityDTO_TRANSACTION,
-	Latency: proto.CommodityDTO_RESPONSE_TIME,
+var CommodityTypeMap = map[proto.CommodityDTO_CommodityType]struct{}{
+	proto.CommodityDTO_TRANSACTION:   {},
+	proto.CommodityDTO_RESPONSE_TIME: {},
 }
 
 var CommodityCapMap = map[proto.CommodityDTO_CommodityType]float64{

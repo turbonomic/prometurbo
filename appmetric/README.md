@@ -56,10 +56,10 @@ The application metrics are served via REST API. Access endpoint `/pod/metrics`,
 The output json format is defined as:
 ```golang
 type EntityMetric struct {
-	UID     string             `json:"uid"`
-	Type    int32              `json:"type,omitempty"`
-	Labels  map[string]string  `json:"labels,omitempty"`
-	Metrics map[string]float64 `json:"metrics,omitempty"`
+	UID     string                                       `json:"uid"`
+	Type    proto.EntityDTO_EntityType                   `json:"type,omitempty"`
+	Labels  map[string]string                            `json:"labels,omitempty"`
+	Metrics map[proto.CommodityDTO_CommodityType]float64 `json:"metrics,omitempty"`
 }
 
 type MetricResponse struct {

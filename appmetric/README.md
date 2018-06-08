@@ -38,6 +38,17 @@ The application metrics are served via REST API. Access endpoint `/pod/metrics`,
 			"49": 3.1314285714285712,
 			"52": 2388.7400252478587
 		}
+	}, {
+		"uid": "10.2.3.31",
+		"type": 33,
+		"labels": {
+			"category": "Redis",
+			"ip": "10.2.3.31",
+			"port": "6379"
+		},
+		"metrics": {
+			"49": 1.5028571428571427
+		}
 	}]
 }
 ```

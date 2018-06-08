@@ -15,50 +15,28 @@ The application metrics are served via REST API. Access endpoint `/pod/metrics`,
 	"status": 0,
 	"message:omitemtpy": "Success",
 	"data:omitempty": [{
-		"uid": "10.2.1.104",
-		"type": 1,
+		"uid": "10.2.6.38",
+		"type": 33,
 		"labels": {
 			"category": "Istio",
-			"ip": "10.2.1.104",
-			"name": "default/httpbin-74bc86dcd5-dl745"
+			"ip": "10.2.6.38",
+			"name": "default/image-nkqq6"
 		},
 		"metrics": {
-			"latency": 0.0029995380270269887,
-			"tps": 0.21142857142857138
+			"49": 0.2857142857142857,
+			"52": 3758.488515119534
 		}
 	}, {
-		"uid": "10.2.2.127",
-		"type": 1,
+		"uid": "10.2.7.55",
+		"type": 33,
 		"labels": {
 			"category": "Istio",
-			"ip": "10.2.2.127",
-			"name": "default/httpbin-74bc86dcd5-5bz22"
+			"ip": "10.2.7.55",
+			"name": "default/music-jfrpw"
 		},
 		"metrics": {
-			"latency": 0.002993016999999995,
-			"tps": 0.22285714285714286
-		}
-	}, {
-		"uid": "10.2.2.65",
-		"type": 1,
-		"labels": {
-			"category": "Redis",
-			"ip": "10.2.2.65",
-			"port": "6379"
-		},
-		"metrics": {
-			"tps": 1.5028571428571427
-		}
-	}, {
-		"uid": "10.2.3.31",
-		"type": 1,
-		"labels": {
-			"category": "Redis",
-			"ip": "10.2.3.31",
-			"port": "6379"
-		},
-		"metrics": {
-			"tps": 1.5028571428571427
+			"49": 3.1314285714285712,
+			"52": 2388.7400252478587
 		}
 	}]
 }

@@ -33,10 +33,10 @@ var (
 		Build()
 
 	metrics = []*exporter.EntityMetric{
-		newMetric("1.2.3.4", 13.4, 66.7, constant.ApplicationType),
-		newMetric("5.6.7.8", 0, 0, constant.ApplicationType),
-		newMetric("15.16.17.18", constant.TPSCap, constant.LatencyCap, constant.ApplicationType),
-		newMetric("115.116.117.118", constant.TPSCap+10, constant.LatencyCap+10, constant.ApplicationType),
+		newMetric("1.2.3.4", 13.4, 66.7, appType),
+		newMetric("5.6.7.8", 0, 0, appType),
+		newMetric("15.16.17.18", constant.TPSCap, constant.LatencyCap, appType),
+		newMetric("115.116.117.118", constant.TPSCap+10, constant.LatencyCap+10, appType),
 	}
 )
 
@@ -127,10 +127,10 @@ func (m *mockExporter) Validate() bool {
 	return true
 }
 
-func newMetric(ip string, tpsUsed, latUsed float64, entityType int32) *exporter.EntityMetric {
-	m := map[string]float64{
-		constant.TPS:     tpsUsed,
-		constant.Latency: latUsed,
+func newMetric(ip string, tpsUsed, latUsed float64, entityType proto.EntityDTO_EntityType) *exporter.EntityMetric {
+	m := map[proto.CommodityDTO_CommodityType]float64{
+		proto.CommodityDTO_TRANSACTION:   tpsUsed,
+		proto.CommodityDTO_RESPONSE_TIME: latUsed,
 	}
 
 	return &exporter.EntityMetric{
@@ -142,8 +142,8 @@ func newMetric(ip string, tpsUsed, latUsed float64, entityType int32) *exporter.
 
 func checkAppResult(metric *exporter.EntityMetric, entity *proto.EntityDTO) error {
 	ip := metric.UID
-	tpsUsed := metric.Metrics[constant.TPS]
-	latUsed := metric.Metrics[constant.Latency]
+	tpsUsed := metric.Metrics[proto.CommodityDTO_TRANSACTION]
+	latUsed := metric.Metrics[proto.CommodityDTO_RESPONSE_TIME]
 
 	commodities := []*proto.CommodityDTO{
 		newTrasactionCommodity(tpsUsed, ip),

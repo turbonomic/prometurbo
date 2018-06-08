@@ -125,8 +125,8 @@ func (b *entityBuilder) createConsumerEntity(provider *proto.EntityDTO, ip strin
 func (b *entityBuilder) createEntityDto() (*proto.EntityDTO, error) {
 	metric := b.metric
 
-	entityType, ok := constant.EntityTypeMap[metric.Type]
-	if !ok {
+	entityType := metric.Type
+	if _, ok := constant.EntityTypeMap[entityType]; !ok {
 		err := fmt.Errorf("Unsupported entity type %v", metric.Type)
 		glog.Errorf(err.Error())
 		return nil, err
@@ -147,9 +147,9 @@ func (b *entityBuilder) createEntityDto() (*proto.EntityDTO, error) {
 	}
 
 	for key, value := range commMetrics {
-		commType, ok := constant.CommodityTypeMap[key]
+		commType := key
 
-		if !ok {
+		if _, ok := constant.CommodityTypeMap[commType]; !ok {
 			err := fmt.Errorf("Unsupported commodity type %s", key)
 			glog.Errorf(err.Error())
 			continue

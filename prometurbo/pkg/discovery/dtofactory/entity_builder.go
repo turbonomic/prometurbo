@@ -109,6 +109,7 @@ func (b *entityBuilder) createConsumerEntity(provider *proto.EntityDTO, ip strin
 			BuysCommodities(commodities).
 			WithProperty(getEntityProperty(constant.VAppPrefix + ip)).
 			ReplacedBy(getReplacementMetaData(vAppType, commTypes, true)).
+			Monitored(false).
 			Create()
 
 		if err != nil {
@@ -186,6 +187,7 @@ func (b *entityBuilder) createEntityDto() (*proto.EntityDTO, error) {
 		SellsCommodities(commodities).
 		WithProperty(getEntityProperty(ip)).
 		ReplacedBy(getReplacementMetaData(entityType, commTypes, false)).
+		Monitored(false).
 		Create()
 
 	if err != nil {

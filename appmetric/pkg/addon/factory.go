@@ -7,6 +7,7 @@ import (
 
 const (
 	RedisGetterCategory     = "Redis"
+	CassandraGetterCategory = "Cassandra"
 	IstioGetterCategory     = "Istio"
 	IstioVAppGetterCategory = "Istio.VApp"
 )
@@ -22,6 +23,8 @@ func (f *GetterFactory) CreateEntityGetter(category, name, du string) (alligator
 	switch category {
 	case RedisGetterCategory:
 		return NewRedisEntityGetter(name, du), nil
+	case CassandraGetterCategory:
+		return NewCassandraEntityGetter(name, du), nil
 	case IstioGetterCategory:
 		g := newIstioEntityGetter(name, du)
 		forVapp := false

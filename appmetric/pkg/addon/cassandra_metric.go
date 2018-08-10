@@ -1,13 +1,12 @@
 package addon
 
 import (
-	"fmt"
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/alligator"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/inter"
 	xfire "github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
+	"github.com/turbonomic/prometurbo/appmetric/pkg/util"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
-	"strings"
 )
 
 const (
@@ -92,7 +91,7 @@ func (r *CassandraEntityGetter) addEntity(mdat []xfire.MetricData, result map[st
 			continue
 		}
 
-		ip, port, err := r.parseIP(addr)
+		ip, port, err := util.ParseIP(addr, default_Cassandra_Port)
 		if err != nil {
 			glog.Errorf("Failed to parse IP from addr[%v]: %v", addr, err)
 			continue
@@ -112,19 +111,6 @@ func (r *CassandraEntityGetter) addEntity(mdat []xfire.MetricData, result map[st
 	}
 
 	return nil
-}
-
-func (r *CassandraEntityGetter) parseIP(addr string) (string, string, error) {
-	addr = strings.TrimSpace(addr)
-	if len(addr) < 2 {
-		return "", "", fmt.Errorf("Illegal addr[%v]", addr)
-	}
-
-	items := strings.Split(addr, ":")
-	if len(items) >= 2 {
-		return items[0], items[1], nil
-	}
-	return items[0], fmt.Sprintf("%v", default_Cassandra_Port), nil
 }
 
 //------------------ Get and Parse the metrics ---------------

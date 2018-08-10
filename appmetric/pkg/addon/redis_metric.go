@@ -6,8 +6,8 @@ import (
 	"github.com/turbonomic/prometurbo/appmetric/pkg/alligator"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/inter"
 	xfire "github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
+	"github.com/turbonomic/prometurbo/appmetric/pkg/util"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
-	"strings"
 )
 
 const (
@@ -91,7 +91,7 @@ func (r *RedisEntityGetter) addEntity(mdat []xfire.MetricData, result map[string
 			continue
 		}
 
-		ip, port, err := r.parseIP(addr)
+		ip, port, err := util.ParseIP(addr, default_Redis_Port)
 		if err != nil {
 			glog.Errorf("Failed to parse IP from addr[%v]: %v", addr, err)
 			continue
@@ -111,19 +111,6 @@ func (r *RedisEntityGetter) addEntity(mdat []xfire.MetricData, result map[string
 	}
 
 	return nil
-}
-
-func (r *RedisEntityGetter) parseIP(addr string) (string, string, error) {
-	addr = strings.TrimSpace(addr)
-	if len(addr) < 2 {
-		return "", "", fmt.Errorf("Illegal addr[%v]", addr)
-	}
-
-	items := strings.Split(addr, ":")
-	if len(items) >= 2 {
-		return items[0], items[1], nil
-	}
-	return items[0], fmt.Sprintf("%v", default_Redis_Port), nil
 }
 
 //------------------ Get and Parse the metrics ---------------

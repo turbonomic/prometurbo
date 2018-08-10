@@ -90,6 +90,11 @@ func parseConf() error {
 }
 
 func main() {
+	flag.Set("logtostderr", "false")
+	flag.Set("alsologtostderr", "true")
+	flag.Set("log_dir", "/var/log")
+	defer glog.Flush()
+
 	parseFlags()
 	glog.Info("Starting Prometurbo...")
 	glog.Infof("GIT_COMMIT: %s", os.Getenv("GIT_COMMIT"))
@@ -124,6 +129,14 @@ func main() {
 		return
 	}
 	appClient.AddGetter(redisGetter)
+
+	cassandraGetter, err := factory.CreateEntityGetter(addon.CassandraGetterCategory, "cassandra.app.metric", sampleDuration)
+	if err != nil {
+		glog.Errorf("Failed to create Cassandra App getter: %v", err)
+		return
+	}
+	glog.V(2).Infof("Added cassandraGetter: %+v", cassandraGetter)
+	appClient.AddGetter(cassandraGetter)
 
 	//2. Virtual Application Metrics
 	vappClient := ali.NewAlligator(pclient)

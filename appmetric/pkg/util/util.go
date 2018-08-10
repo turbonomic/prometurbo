@@ -77,3 +77,16 @@ func FileExists(name string) bool {
 	}
 	return true
 }
+
+func ParseIP(addr string, default_port int) (string, string, error) {
+	addr = strings.TrimSpace(addr)
+	if len(addr) < 2 {
+		return "", "", fmt.Errorf("Illegal addr[%v]", addr)
+	}
+
+	items := strings.Split(addr, ":")
+	if len(items) >= 2 {
+		return items[0], items[1], nil
+	}
+	return items[0], fmt.Sprintf("%v", default_port), nil
+}

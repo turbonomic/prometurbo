@@ -5,7 +5,7 @@ Get metrics from [Prometheus](https://prometheus.io) for applications, and expos
 
 
 Applications are distinguished by mainly their IP address. For example, each [Kubernetes](https://kubernetes.io/docs/concepts/workloads/pods/pod/) Pod corresponds to one Application.
-Currently, it can get applications from [Istio exporter](https://istio.io/docs/reference/config/adapters/prometheus.html) and [Redis exporter](https://github.com/oliver006/redis_exporter). More exporters can be supported by implementing
+Currently, it can get applications from [Istio exporter](https://istio.io/docs/reference/config/adapters/prometheus.html), [Redis exporter](https://github.com/oliver006/redis_exporter) and [Cassandra exporter](https://github.com/criteo/cassandra_exporter). More exporters can be supported by implementing
 their [`addon`](https://github.com/songbinliu/appMetric/tree/v2.0/pkg/addon).
 
 # Output of appMetric: Applications with their metrics

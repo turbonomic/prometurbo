@@ -44,7 +44,7 @@ func (d *P8sDiscoveryClient) GetAccountValues() *probe.TurboTargetInfo {
 		scopeVal,
 	}
 
-	targetInfo := probe.NewTurboTargetInfoBuilder(registration.ProbeCategory, registration.TargetType,
+	targetInfo := probe.NewTurboTargetInfoBuilder(registration.ProbeCategory, registration.TargetType(d.targetAddr),
 		registration.TargetIdField, accountValues).Create()
 
 	return targetInfo
@@ -52,7 +52,6 @@ func (d *P8sDiscoveryClient) GetAccountValues() *probe.TurboTargetInfo {
 
 // Validate the Target
 func (d *P8sDiscoveryClient) Validate(accountValues []*proto.AccountValue) (*proto.ValidationResponse, error) {
-	// TODO: Add logic for validation
 	validationResponse := &proto.ValidationResponse{}
 
 	// Validation fails if no exporter responses

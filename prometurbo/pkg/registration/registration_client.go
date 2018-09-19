@@ -1,15 +1,17 @@
 package registration
 
 import (
+	"fmt"
 	"github.com/golang/glog"
 	"github.com/turbonomic/turbo-go-sdk/pkg/builder"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
+	"hash/fnv"
 )
 
 const (
 	TargetIdField string = "targetIdentifier"
 	ProbeCategory string = "Cloud Native"
-	TargetType    string = "Prometheus"
+	targetType    string = "Prometheus"
 	Scope         string = "Scope"
 )
 
@@ -46,4 +48,19 @@ func (p *P8sRegistrationClient) GetAccountDefinition() []*proto.AccountDefEntry 
 		targetIDAcctDefEntry,
 		scopeAcctDefEntry,
 	}
+}
+
+// Return the target type as the default target type appended with hash number from target Id
+func TargetType(targetId string) string {
+	return appendRandomName(targetType, targetId)
+}
+
+func appendRandomName(name, append string) string {
+	return name + "-" + fmt.Sprint(hash(append))
+}
+
+func hash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
 }

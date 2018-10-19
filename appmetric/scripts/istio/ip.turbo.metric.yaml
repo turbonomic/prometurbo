@@ -94,7 +94,23 @@ spec:
 apiVersion: "config.istio.io/v1alpha2"
 kind: rule
 metadata:
-  name: turbo
+  name: turbo-grpc
+  namespace: istio-system
+spec:
+  match: context.protocol == "grpc"
+  actions:
+  - handler: turbohandler.prometheus.default
+    instances:
+    - turbosvclatency.metric.default
+    - turbosvcrequestcount.metric.default
+    - turbopodlatency.metric.default
+    - turbopodrequestcount.metric.default
+---
+# Rule to send metric instances to a Prometheus handler
+apiVersion: "config.istio.io/v1alpha2"
+kind: rule
+metadata:
+  name: turbo-http
   namespace: istio-system
 spec:
   match: context.protocol == "http"

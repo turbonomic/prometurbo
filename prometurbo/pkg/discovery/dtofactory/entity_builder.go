@@ -9,6 +9,8 @@ import (
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 )
 
+var keepStandalone = false
+
 type entityBuilder struct {
 	// TODO: Add the scope to the property for stitching, which needs corresponding change at kubeturbo side
 	scope string
@@ -116,6 +118,8 @@ func (b *entityBuilder) createConsumerEntity(provider *proto.EntityDTO, ip strin
 			return nil, err
 		}
 
+		vappDto.KeepStandalone = &keepStandalone
+
 		return vappDto, nil
 	}
 
@@ -194,6 +198,8 @@ func (b *entityBuilder) createEntityDto() (*proto.EntityDTO, error) {
 		glog.Errorf("Error building EntityDTO from metric %v: %s", metric, err)
 		return nil, err
 	}
+
+	entityDto.KeepStandalone = &keepStandalone
 
 	return entityDto, nil
 }

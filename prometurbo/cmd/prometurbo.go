@@ -24,7 +24,7 @@ func main() {
 	s, err := pkg.NewP8sTAPService(args)
 
 	if err != nil {
-		glog.Fatal("Failed creating Prometurbo: %v", err)
+		glog.Fatalf("Failed creating Prometurbo: %v", err)
 	}
 
 	s.Start()

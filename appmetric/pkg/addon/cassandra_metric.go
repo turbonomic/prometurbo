@@ -19,7 +19,7 @@ const (
 	default_Cassandra_Port = 8080
 )
 
-// Map of commodity type to Cassandra query
+// Map of Turbo metric type to Cassandra query
 var queryMap = map[proto.CommodityDTO_CommodityType]string{
 	inter.LatencyType: cassandra_latency_query,
 	inter.TpsType:     cassandra_ops_query,

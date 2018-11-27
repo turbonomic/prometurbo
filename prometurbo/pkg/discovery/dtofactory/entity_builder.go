@@ -71,7 +71,7 @@ func getReplacementMetaData(entityType proto.EntityDTO_EntityType, commTypes []p
 		if bought {
 			b.PatchBuyingWithProperty(commType, []string{constant.Used})
 		} else {
-			b.PatchSellingWithProperty(commType, []string{constant.Used, constant.Capacity})
+			b.PatchSellingWithProperty(commType, []string{constant.Used})
 		}
 	}
 
@@ -160,20 +160,8 @@ func (b *entityBuilder) createEntityDto() (*proto.EntityDTO, error) {
 			continue
 		}
 
-		capacity, ok := constant.CommodityCapMap[commType]
-		if !ok {
-			err := fmt.Errorf("Missing commodity capacity for type %s", commType)
-			glog.Errorf(err.Error())
-			continue
-		}
-
-		// Adjust the capacity in case utilization > 1 as Market doesn't allow it
-		if value >= capacity {
-			capacity = value
-		}
-
 		commodity, err := builder.NewCommodityDTOBuilder(commType).
-			Used(value).Capacity(capacity).Key(ip).Create()
+			Used(value).Key(ip).Create()
 
 		if err != nil {
 			glog.Errorf("Error building a commodity: %s", err)

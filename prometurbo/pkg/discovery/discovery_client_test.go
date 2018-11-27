@@ -9,7 +9,6 @@ import (
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
 	"github.com/turbonomic/turbo-go-sdk/pkg/builder"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
-	"math"
 )
 
 var (
@@ -28,15 +27,13 @@ var (
 			Attribute:  &ipAttr,
 			UseTopoExt: &useTopoExt,
 		}).
-		PatchSellingWithProperty(proto.CommodityDTO_TRANSACTION, []string{constant.Used, constant.Capacity}).
-		PatchSellingWithProperty(proto.CommodityDTO_RESPONSE_TIME, []string{constant.Used, constant.Capacity}).
+		PatchSellingWithProperty(proto.CommodityDTO_TRANSACTION, []string{constant.Used}).
+		PatchSellingWithProperty(proto.CommodityDTO_RESPONSE_TIME, []string{constant.Used}).
 		Build()
 
 	metrics = []*exporter.EntityMetric{
 		newMetric("1.2.3.4", 13.4, 66.7, appType),
 		newMetric("5.6.7.8", 0, 0, appType),
-		newMetric("15.16.17.18", constant.TPSCap, constant.LatencyCap, appType),
-		newMetric("115.116.117.118", constant.TPSCap+10, constant.LatencyCap+10, appType),
 	}
 )
 
@@ -175,16 +172,14 @@ func checkAppResult(metric *exporter.EntityMetric, entity *proto.EntityDTO) erro
 }
 
 func newTrasactionCommodity(used float64, key string) *proto.CommodityDTO {
-	capacity := math.Max(used, constant.TPSCap)
 	comm, _ := builder.NewCommodityDTOBuilder(proto.CommodityDTO_TRANSACTION).
-		Used(used).Capacity(capacity).Key(key).Create()
+		Used(used).Key(key).Create()
 	return comm
 }
 
 func newResponseTimeCommodity(used float64, key string) *proto.CommodityDTO {
-	capacity := math.Max(used, constant.LatencyCap)
 	comm, _ := builder.NewCommodityDTOBuilder(proto.CommodityDTO_RESPONSE_TIME).
-		Used(used).Capacity(capacity).Key(key).Create()
+		Used(used).Key(key).Create()
 	return comm
 }
 

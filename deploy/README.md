@@ -80,7 +80,7 @@ spec:
       serviceAccount: turbo-user
       containers:
         - name: prometurbo
-          image: vmturbo/prometurbo:6.2dev
+          image: docker.io/maxwang/prometurbo:6.2dev
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
@@ -90,7 +90,7 @@ spec:
             readOnly: true
           - name: varlog
             mountPath: /var/log
-        - image: docker.io/beekman9527/appmetric:v2
+        - image: docker.io/maxwang/appmetric:dev
           imagePullPolicy: IfNotPresent
           name: appmetric
           args:

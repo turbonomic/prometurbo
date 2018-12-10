@@ -90,7 +90,7 @@ spec:
             readOnly: true
           - name: varlog
             mountPath: /var/log
-        - image: docker.io/maxwang/appmetric:dev
+        - image: docker.io/maxwang/appmetric:6.2dev
           imagePullPolicy: IfNotPresent
           name: appmetric
           args:

@@ -102,6 +102,10 @@ func (pb *ProbeBuilder) Create() (*TurboProbe, error) {
 		turboProbe.RegistrationClient.IActionPolicyProvider = pb.actionPolicyProvider
 	}
 
+	if pb.entityMetadataProvider != nil {
+		turboProbe.RegistrationClient.IEntityMetadataProvider = pb.entityMetadataProvider
+	}
+
 	turboProbe.ActionClient = pb.actionClient
 	for targetId, discoveryClient := range pb.discoveryClientMap {
 		targetDiscoveryAgent := NewTargetDiscoveryAgent(targetId)

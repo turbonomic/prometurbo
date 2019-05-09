@@ -39,7 +39,7 @@ func CreateRemoteMediationClient(allProbes map[string]*ProbeProperties,
 		stopMediationClientCh: make(chan struct{}),
 	}
 
-	glog.V(4).Infof("Created channels : probeResponseChan %s, stopMediationClientCh %s\n",
+	glog.V(4).Infof("Created channels : probeResponseChan %+v, stopMediationClientCh %+v",
 		remoteMediationClient.probeResponseChan, remoteMediationClient.stopMediationClientCh)
 
 	// Create message handlers
@@ -94,7 +94,7 @@ func (remoteMediationClient *remoteMediationClient) Init(probeRegisteredMsgCh ch
 
 	status := <-sdkProtocolDoneCh
 
-	glog.V(4).Infof("Sdk client protocol complete, status = ", status)
+	glog.V(4).Infof("Sdk client protocol completed with status %v", status)
 	if !status {
 		glog.Errorf("Registration with server failed")
 		probeRegisteredMsgCh <- status
@@ -119,7 +119,7 @@ func (remoteMediationClient *remoteMediationClient) Init(probeRegisteredMsgCh ch
 				err := transport.Connect()
 				// handle WebSocket creation errors
 				if err != nil { //transport.ws == nil {
-					glog.Errorf("[Reconnect] Initialization of remote mediation client failed, null transport")
+					glog.Errorf("[Reconnect] Initialization of remote mediation client failed: %v", err)
 					remoteMediationClient.Stop()
 					break
 				}
@@ -147,7 +147,7 @@ func (remoteMediationClient *remoteMediationClient) Init(probeRegisteredMsgCh ch
 	// Send registration status to the upper layer
 	defer close(sdkProtocolDoneCh)
 	probeRegisteredMsgCh <- status
-	glog.V(3).Infof("Sent registration status on channel %s\n", probeRegisteredMsgCh)
+	glog.V(3).Infof("Sent registration status on channel %v", probeRegisteredMsgCh)
 
 	glog.V(3).Infof("Remote mediation initialization complete")
 	// --------- Wait for exit notification
@@ -223,7 +223,6 @@ func (remoteMediationClient *remoteMediationClient) RunServerMessageHandler(tran
 			}
 		} //end select
 	} //end for
-	glog.Infof(logPrefix + "DONE")
 }
 
 // Run probe callback to the probe response to the server.
@@ -244,7 +243,6 @@ func (remoteMediationClient *remoteMediationClient) runProbeCallback(endpoint Pr
 			endpoint.Send(endMsg)
 		} // end select
 	}
-	glog.V(4).Infof("[probeCallback] DONE")
 }
 
 // ======================== Message Handlers ============================
@@ -279,7 +277,8 @@ type RequestHandler interface {
 func (remoteMediationClient *remoteMediationClient) createMessageHandlers(probeMsgChan chan *proto.MediationClientMessage) {
 	allProbes := remoteMediationClient.allProbes
 	remoteMediationClient.MessageHandlers[DISCOVERY_REQUEST] = &DiscoveryRequestHandler{
-		probes: allProbes,
+		probes:                  allProbes,
+		discoveryResponseSender: DiscoveryResponseSender{},
 	}
 	remoteMediationClient.MessageHandlers[VALIDATION_REQUEST] = &ValidationRequestHandler{
 		probes: allProbes,
@@ -300,7 +299,8 @@ func (remoteMediationClient *remoteMediationClient) createMessageHandlers(probeM
 
 // -------------------------------- Discovery Request Handler -----------------------------------
 type DiscoveryRequestHandler struct {
-	probes map[string]*ProbeProperties
+	probes                  map[string]*ProbeProperties
+	discoveryResponseSender DiscoveryResponseSender
 }
 
 func (discReqHandler *DiscoveryRequestHandler) HandleMessage(serverRequest proto.MediationServerMessage,
@@ -327,7 +327,7 @@ func (discReqHandler *DiscoveryRequestHandler) HandleMessage(serverRequest proto
 			t := time.NewTimer(time.Second * 10)
 			select {
 			case <-stopCh:
-				glog.V(4).Infof("Cancel keep alive for msgID ", msgID)
+				glog.V(4).Infof("Cancel keep alive for msgID %d", msgID)
 				return
 			case <-t.C:
 			}
@@ -348,18 +348,13 @@ func (discReqHandler *DiscoveryRequestHandler) HandleMessage(serverRequest proto
 		discoveryResponse = turboProbe.DiscoverTarget(accountValues)
 	}
 
-	clientMsg := NewClientMessageBuilder(msgID).SetDiscoveryResponse(discoveryResponse).Create()
+	glog.V(3).Infof("Sending discovery response for %d:%s", msgID, request.GetDiscoveryType())
 
 	// Send the response on the callback channel to send to the server
-	probeMsgChan <- clientMsg // This will block till the channel is ready to receive
-	glog.V(3).Infof("Sent discovery response for %d:%s", clientMsg.GetMessageID(), request.GetDiscoveryType())
+	// This will block till the channel is ready to receive
+	discReqHandler.discoveryResponseSender.Send(discoveryResponse, msgID, probeMsgChan)
 
-	// Send empty response to signal completion of discovery
-	discoveryResponse = &proto.DiscoveryResponse{}
-	clientMsg = NewClientMessageBuilder(msgID).SetDiscoveryResponse(discoveryResponse).Create()
-
-	probeMsgChan <- clientMsg // This will block till the channel is ready to receive
-	glog.V(2).Infof("Discovery has finished for %d:%s", clientMsg.GetMessageID(), request.GetDiscoveryType())
+	glog.V(2).Infof("Discovery has finished for %d:%s", msgID, request.GetDiscoveryType())
 
 	// Cancel keep alive
 	// Note  : Keep alive routine is cancelled when the stopCh is closed at the end of this method
@@ -387,10 +382,10 @@ func (valReqHandler *ValidationRequestHandler) HandleMessage(serverRequest proto
 	probeType := request.ProbeType
 	probeProps, exist := valReqHandler.probes[*probeType]
 	if !exist {
-		glog.Errorf("Received: validation request for unknown probe type : %s", *probeType)
+		glog.Errorf("Received: validation request for unknown probe type: %s", *probeType)
 		return
 	}
-	glog.V(3).Infof("Received: validation for probe type: %s\n ", *probeType)
+	glog.V(3).Infof("Received: validation for probe type: %s", *probeType)
 	turboProbe := probeProps.Probe
 
 	var validationResponse *proto.ValidationResponse
@@ -414,15 +409,15 @@ type ActionMessageHandler struct {
 
 func (actionReqHandler *ActionMessageHandler) HandleMessage(serverRequest proto.MediationServerMessage,
 	probeMsgChan chan *proto.MediationClientMessage) {
-	glog.V(4).Infof("[ActionMessageHandler] Received: action %s request", serverRequest)
+	glog.V(4).Infof("[ActionMessageHandler] Received: action request %s", &serverRequest)
 	request := serverRequest.GetActionRequest()
 	probeType := request.ProbeType
 	if actionReqHandler.probes[*probeType] == nil {
-		glog.Errorf("Received: Action request for unknown probe type : %s", *probeType)
+		glog.Errorf("Received: action request for unknown probe type : %s", *probeType)
 		return
 	}
 
-	glog.V(3).Infof("Received: action %s request for probe type: %s\n ",
+	glog.V(3).Infof("Received: action request %s for probe type: %s",
 		request.ActionExecutionDTO.ActionType, *probeType)
 	probeProps := actionReqHandler.probes[*probeType]
 	turboProbe := probeProps.Probe
@@ -454,7 +449,7 @@ func NewActionResponseWorker(msgId int32, turboProbe *probe.TurboProbe,
 		accountValues:      accountValues,
 		probeMsgChan:       probeMsgChan,
 	}
-	glog.V(4).Infof("New ActionResponseProtocolWorker for %s %s %s", msgId, turboProbe,
+	glog.V(4).Infof("New ActionResponseProtocolWorker for %d %+v %s", msgId, turboProbe,
 		actionExecutionDto.ActionType)
 	return worker
 }
@@ -499,5 +494,5 @@ func (intMsgHandler *InterruptMessageHandler) HandleMessage(serverRequest proto.
 	probeMsgChan chan *proto.MediationClientMessage) {
 
 	msgID := serverRequest.GetMessageID()
-	glog.V(3).Infof("Received: Interrupt Message for message ID: %d, %s\n ", msgID, serverRequest)
+	glog.V(3).Infof("Received: Interrupt Message for message ID: %d, %s", msgID, &serverRequest)
 }

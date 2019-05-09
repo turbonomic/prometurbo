@@ -54,6 +54,8 @@ type EntityDTOBuilder struct {
 	storageControllerData  *proto.EntityDTO_StorageControllerData
 	logicalPoolData        *proto.EntityDTO_LogicalPoolData
 	virtualApplicationData *proto.EntityDTO_VirtualApplicationData
+	containerPodData       *proto.EntityDTO_ContainerPodData
+	containerData          *proto.EntityDTO_ContainerData
 
 	virtualMachineRelatedData    *proto.EntityDTO_VirtualMachineRelatedData
 	physicalMachineRelatedData   *proto.EntityDTO_PhysicalMachineRelatedData
@@ -112,6 +114,10 @@ func (eb *EntityDTOBuilder) Create() (*proto.EntityDTO, error) {
 		entityDTO.EntityData = &proto.EntityDTO_LogicalPoolData_{eb.logicalPoolData}
 	} else if eb.virtualApplicationData != nil {
 		entityDTO.EntityData = &proto.EntityDTO_VirtualApplicationData_{eb.virtualApplicationData}
+	} else if eb.containerPodData != nil {
+		entityDTO.EntityData = &proto.EntityDTO_ContainerPodData_{eb.containerPodData}
+	} else if eb.containerData != nil {
+		entityDTO.EntityData = &proto.EntityDTO_ContainerData_{eb.containerData}
 	}
 
 	if eb.virtualMachineRelatedData != nil {
@@ -261,6 +267,14 @@ func (eb *EntityDTOBuilder) Monitored(monitored bool) *EntityDTOBuilder {
 	return eb
 }
 
+func (eb *EntityDTOBuilder) ConsumerPolicy(cp *proto.EntityDTO_ConsumerPolicy) *EntityDTOBuilder {
+	if eb.err != nil {
+		return eb
+	}
+	eb.consumerPolicy = cp
+	return eb
+}
+
 func (eb *EntityDTOBuilder) ApplicationData(appData *proto.EntityDTO_ApplicationData) *EntityDTOBuilder {
 	if eb.err != nil {
 		return eb
@@ -285,6 +299,34 @@ func (eb *EntityDTOBuilder) VirtualMachineData(vmData *proto.EntityDTO_VirtualMa
 		return eb
 	}
 	eb.virtualMachineData = vmData
+	eb.entityDataHasSet = true
+	return eb
+}
+
+func (eb *EntityDTOBuilder) ContainerPodData(podData *proto.EntityDTO_ContainerPodData) *EntityDTOBuilder {
+	if eb.err != nil {
+		return eb
+	}
+	if eb.entityDataHasSet {
+		eb.err = fmt.Errorf("EntityData has already been set. Cannot use %v as entity data.", podData)
+
+		return eb
+	}
+	eb.containerPodData = podData
+	eb.entityDataHasSet = true
+	return eb
+}
+
+func (eb *EntityDTOBuilder) ContainerData(containerData *proto.EntityDTO_ContainerData) *EntityDTOBuilder {
+	if eb.err != nil {
+		return eb
+	}
+	if eb.entityDataHasSet {
+		eb.err = fmt.Errorf("EntityData has already been set. Cannot use %v as entity data.", containerData)
+
+		return eb
+	}
+	eb.containerData = containerData
 	eb.entityDataHasSet = true
 	return eb
 }

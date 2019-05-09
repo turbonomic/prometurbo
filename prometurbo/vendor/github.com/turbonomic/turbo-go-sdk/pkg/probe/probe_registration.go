@@ -124,7 +124,7 @@ func checkSecondaryDiscoveryInterval(secondaryDiscoverySec int32, discoveryType 
 
 	if secondaryDiscoverySec < pkg.DEFAULT_MIN_DISCOVERY_IN_SECS {
 		glog.Warningf("%s discovery interval value of %d is below minimum value allowed."+
-			" Setting %s discovery interval to minimum allowed value of %d seconds.",
+			" Setting discovery interval to minimum allowed value of %d seconds.",
 			discoveryType, secondaryDiscoverySec, pkg.DEFAULT_MIN_DISCOVERY_IN_SECS)
 		return pkg.DEFAULT_MIN_DISCOVERY_IN_SECS
 	}

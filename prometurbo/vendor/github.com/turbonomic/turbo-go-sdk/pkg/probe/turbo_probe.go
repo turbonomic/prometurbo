@@ -2,6 +2,7 @@ package probe
 
 import (
 	"fmt"
+
 	"github.com/turbonomic/turbo-go-sdk/pkg/builder"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 
@@ -73,7 +74,7 @@ func newTurboProbe(probeConf *ProbeConfig) (*TurboProbe, error) {
 		RegistrationClient: NewProbeRegistrator(),
 	}
 
-	glog.V(2).Infof("[NewTurboProbe] Created TurboProbe: %s", myProbe)
+	glog.V(2).Infof("[NewTurboProbe] Created TurboProbe: %v", myProbe)
 	return myProbe, nil
 }
 
@@ -121,12 +122,14 @@ func (theProbe *TurboProbe) DiscoverTarget(accountValues []*proto.AccountValue) 
 	target, exists := theProbe.DiscoveryClientMap[targetId]
 
 	if !exists {
+		glog.Errorf("Failed to discover target (id=%v): cannot find target in %++v", targetId, theProbe.DiscoveryClientMap)
 		return theProbe.createNonExistentTargetDiscoveryErrorDTO(targetId)
 	}
 
 	var handler TurboDiscoveryClient
 	handler = target.TurboDiscoveryClient
 	if handler == nil {
+		glog.Errorf("Failed to discover target (id=%v): cannot find discovery handler.", targetId)
 		return theProbe.createNonSupportedDiscoveryErrorDTO("Full", targetId)
 	}
 
@@ -147,12 +150,14 @@ func (theProbe *TurboProbe) ValidateTarget(accountValues []*proto.AccountValue) 
 	targetId := findTargetId(accountValues, theProbe.RegistrationClient.GetIdentifyingFields())
 	target, exists := theProbe.DiscoveryClientMap[targetId]
 	if !exists {
+		glog.Errorf("Failed to validate target (id=%v): cannot find target in %++v", targetId, theProbe.DiscoveryClientMap)
 		return theProbe.createNonExistentTargetValidationErrorDTO(targetId)
 	}
 
 	var handler TurboDiscoveryClient
 	handler = target.TurboDiscoveryClient //theProbe.GetTurboDiscoveryClient(accountValues)
 	if handler == nil {
+		glog.Errorf("Failed to discover target (id=%v): cannot find discovery handler.", targetId)
 		return theProbe.createNonSupportedValidationErrorDTO(targetId)
 	}
 
@@ -177,22 +182,21 @@ func (theProbe *TurboProbe) ValidateTarget(accountValues []*proto.AccountValue) 
 func (theProbe *TurboProbe) DiscoverTargetIncremental(accountValues []*proto.AccountValue) *proto.DiscoveryResponse {
 	glog.V(2).Infof("Incremental discovery for Target: %s", accountValues)
 	targetId := findTargetId(accountValues, theProbe.RegistrationClient.GetIdentifyingFields())
-	var handler IIncrementalDiscovery
 	target, exists := theProbe.DiscoveryClientMap[targetId]
 
 	if !exists {
+		glog.Errorf("Failed to incrementally discover target (id=%v): cannot find target in %++v", targetId, theProbe.DiscoveryClientMap)
 		return theProbe.createNonExistentTargetDiscoveryErrorDTO(targetId)
 	}
 
-	handler = target.IIncrementalDiscovery
+	handler := target.IIncrementalDiscovery
 	if handler == nil {
+		glog.Errorf("Failed to incrementally discover target (id=%v): cannot find discovery handler.", targetId)
 		return theProbe.createNonSupportedDiscoveryErrorDTO("Incremental", targetId)
 	}
-	var discoveryResponse *proto.DiscoveryResponse
 
 	glog.V(4).Infof("Send incremental discovery request to handler %v", handler)
 	discoveryResponse, err := handler.DiscoverIncremental(accountValues)
-
 	if err != nil {
 		discoveryResponse = theProbe.createDiscoveryTargetErrorDTO("Incremental", targetId, err)
 		glog.Errorf("Error during incremental discovery of target %s", discoveryResponse)
@@ -204,22 +208,20 @@ func (theProbe *TurboProbe) DiscoverTargetIncremental(accountValues []*proto.Acc
 func (theProbe *TurboProbe) DiscoverTargetPerformance(accountValues []*proto.AccountValue) *proto.DiscoveryResponse {
 	glog.V(2).Infof("Performance discovery for Target: %s", accountValues)
 	targetId := findTargetId(accountValues, theProbe.RegistrationClient.GetIdentifyingFields())
-	var handler IPerformanceDiscovery
 	target, exists := theProbe.DiscoveryClientMap[targetId]
-
 	if !exists {
+		glog.Errorf("Failed to Performance discover target (id=%v): cannot find target in %++v", targetId, theProbe.DiscoveryClientMap)
 		return theProbe.createNonExistentTargetDiscoveryErrorDTO(targetId)
 	}
 
-	handler = target.IPerformanceDiscovery
+	handler := target.IPerformanceDiscovery
 	if handler == nil {
+		glog.Errorf("Failed to performance discover target (id=%v): cannot find discovery handler.", targetId)
 		return theProbe.createNonSupportedDiscoveryErrorDTO("Performance", targetId)
 	}
-	var discoveryResponse *proto.DiscoveryResponse
 
 	glog.V(4).Infof("Send performance discovery request to handler %v", handler)
 	discoveryResponse, err := handler.DiscoverPerformance(accountValues)
-
 	if err != nil {
 		discoveryResponse = theProbe.createDiscoveryTargetErrorDTO("Performance", targetId, err)
 		glog.Errorf("Error during performance discovery of target %s", discoveryResponse)
@@ -231,7 +233,7 @@ func (theProbe *TurboProbe) DiscoverTargetPerformance(accountValues []*proto.Acc
 func (theProbe *TurboProbe) ExecuteAction(actionExecutionDTO *proto.ActionExecutionDTO, accountValues []*proto.AccountValue,
 	progressTracker ActionProgressTracker) *proto.ActionResult {
 	if theProbe.ActionClient == nil {
-		glog.V(3).Infof("ActionClient not defined for Probe %s", theProbe.ProbeConfiguration.ProbeType)
+		glog.Errorf("ActionClient not defined for Probe %s", theProbe.ProbeConfiguration.ProbeType)
 		return theProbe.createActionErrorDTO("ActionClient not defined for Probe " + theProbe.ProbeConfiguration.ProbeType)
 	}
 	glog.V(3).Infof("Execute Action for Target: %s", accountValues)

@@ -5,8 +5,9 @@ import (
 	"github.com/turbonomic/turbo-go-sdk/pkg/version"
 
 	"fmt"
-	"github.com/golang/glog"
 	"time"
+
+	"github.com/golang/glog"
 )
 
 const (
@@ -158,7 +159,7 @@ func (clientProtocol *SdkClientProtocol) MakeContainerInfo() (*proto.ContainerIn
 	var probes []*proto.ProbeInfo
 
 	for k, v := range clientProtocol.allProbes {
-		glog.V(2).Infof("SdkClientProtocol] Creating Probe Info for", k)
+		glog.V(2).Infof("SdkClientProtocol] Creating Probe Info for %s", k)
 		turboProbe := v.Probe
 		var probeInfo *proto.ProbeInfo
 		var err error

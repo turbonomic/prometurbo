@@ -8,10 +8,8 @@
   name = "github.com/prometheus/common"
 
 [[constraint]]
-  branch = "6.1"
+  branch = "master"
   name = "github.com/turbonomic/turbo-go-sdk"
-
-
 
 [prune]
   go-tests = true

@@ -227,8 +227,6 @@ func (clientTransport *ClientWebSocketTransport) ListenForMessages() {
 			glog.V(4).Infof("[ListenForMessages] delivered websocket message, continue listening for server messages...")
 		} //end select
 	} //end for
-
-	glog.V(4).Infof("[ListenForMessages] : END")
 }
 
 func (clientTransport *ClientWebSocketTransport) queueRawMessage(data []byte) {
@@ -296,7 +294,7 @@ func (clientTransport *ClientWebSocketTransport) performWebSocketConnection() er
 			return nil
 		}
 	}
-	glog.V(4).Infof("[performWebSocketConnection] exit connect routine, close = %s ", clientTransport.closeRequested)
+	glog.V(4).Infof("[performWebSocketConnection] exit connect routine, close = %v ", clientTransport.closeRequested)
 	return errors.New("Abort client socket connect, transport is closed")
 }
 

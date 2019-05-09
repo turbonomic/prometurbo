@@ -3,31 +3,42 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:1ba1d79f2810270045c328ae5d674321db34e3aae468eb4233883b473c5c0467"
   name = "github.com/golang/glog"
   packages = ["."]
+  pruneopts = "UT"
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 
 [[projects]]
+  digest = "1:318f1c959a8a740366fce4b1e1eb2fd914036b4af58fbd0a003349b305f118ad"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "e09c5db296004fbe3f74490e84dcd62c3c5ddb1b"
+  pruneopts = "UT"
+  revision = "b5d812f8a3706043e23a9cd5babf2e5423744d30"
+  version = "v1.3.1"
 
 [[projects]]
+  digest = "1:7b5c6e2eeaa9ae5907c391a91c132abfd5c9e8a784a341b5625e750c67e6825d"
   name = "github.com/gorilla/websocket"
   packages = ["."]
-  revision = "6f34763140ed8887aed6a044912009832b4733d7"
+  pruneopts = "UT"
+  revision = "66b9c49e59c6c48f0ffce28c2d8b8a5678502c6d"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:521fb161d383496732c7d8f87cd11e8fdeb4f7eb86186419417966d118b19d6f"
   name = "github.com/turbonomic/turbo-api"
   packages = [
     "pkg/api",
-    "pkg/client"
+    "pkg/client",
   ]
+  pruneopts = "UT"
   revision = "82c860983629566c406b4bc4c3ce7c8df37715cc"
 
 [[projects]]
-  branch = "6.1"
+  branch = "master"
+  digest = "1:5b6ee0528a498bfbc182e81697c4fb7d5e8d39d1a2a716d36071c69863ed6181"
   name = "github.com/turbonomic/turbo-go-sdk"
   packages = [
     "pkg",
@@ -37,13 +48,21 @@
     "pkg/proto",
     "pkg/service",
     "pkg/supplychain",
-    "pkg/version"
+    "pkg/version",
   ]
-  revision = "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+  pruneopts = "UT"
+  revision = "82d4e5f6462dc7dc62106ae8de427f2fdb25d093"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1b3c8086a5e140ad0fd49cfd0f3878cf36efca35587a9c0386ae1c23f512c600"
+  input-imports = [
+    "github.com/golang/glog",
+    "github.com/turbonomic/turbo-go-sdk/pkg/builder",
+    "github.com/turbonomic/turbo-go-sdk/pkg/probe",
+    "github.com/turbonomic/turbo-go-sdk/pkg/proto",
+    "github.com/turbonomic/turbo-go-sdk/pkg/service",
+    "github.com/turbonomic/turbo-go-sdk/pkg/supplychain",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

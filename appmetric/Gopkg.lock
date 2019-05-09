@@ -3,31 +3,43 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:1ba1d79f2810270045c328ae5d674321db34e3aae468eb4233883b473c5c0467"
   name = "github.com/golang/glog"
   packages = ["."]
+  pruneopts = "UT"
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 
 [[projects]]
+  digest = "1:15042ad3498153684d09f393bbaec6b216c8eec6d61f63dff711de7d64ed8861"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
+  pruneopts = "UT"
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
   version = "v1.1.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:644d7e65ea431241ea1b95ae423634da11e6a2776a36f0049b49eac9defb877b"
   name = "github.com/prometheus/common"
   packages = ["model"]
+  pruneopts = "UT"
   revision = "d811d2e9bf898806ecfb6ef6296774b13ffc314c"
 
 [[projects]]
-  branch = "6.1"
+  branch = "master"
+  digest = "1:65281ce2858cac5ede7d1af11591321275af716fe023c4f92c55c701d81e7dbd"
   name = "github.com/turbonomic/turbo-go-sdk"
   packages = ["pkg/proto"]
-  revision = "773315de6e27bf3aabc72e1ccec3c7de2b3db2eb"
+  pruneopts = "UT"
+  revision = "82d4e5f6462dc7dc62106ae8de427f2fdb25d093"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1789c3388c57437de589906562a068e7fc332ff0dbb21ee9b8f10a03fed17aa6"
+  input-imports = [
+    "github.com/golang/glog",
+    "github.com/prometheus/common/model",
+    "github.com/turbonomic/turbo-go-sdk/pkg/proto",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

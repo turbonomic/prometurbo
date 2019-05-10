@@ -70,6 +70,7 @@ func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 		WithTurboCommunicator(communicator).
 		WithTurboProbe(probe.NewProbeBuilder(registration.TargetType(targetAddr), registration.ProbeCategory).
 			WithDiscoveryOptions(probe.FullRediscoveryIntervalSecondsOption(int32(*args.DiscoveryIntervalSec))).
+			WithEntityMetadata(registrationClient).
 			RegisteredBy(registrationClient).
 			DiscoversTarget(targetAddr, discoveryClient)).
 		Create()

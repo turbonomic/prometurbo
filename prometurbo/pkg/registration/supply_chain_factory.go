@@ -23,31 +23,42 @@ var (
 	}
 )
 
-const (
-	StitchingAttr string = "IP"
-	DEFAULT_DELIMITER string = ","
-)
-
 type SupplyChainFactory struct{}
 
 func (f *SupplyChainFactory) CreateSupplyChain() ([]*proto.TemplateDTO, error) {
+	// Application node
 	appNode, err := f.buildAppSupplyBuilder()
 
 	if err != nil {
 		return nil, err
 	}
 
-	f.setAppStitchingMetaData(appNode)
+	// Stitching metadata for the application node
+	appMetadata, err := f.getAppStitchingMetaData()
+	if err != nil {
+		return nil, err
+	}
 
+	appNode.MergedEntityMetaData = appMetadata
+
+	// vApplication node
 	vAppNode, err := f.buildVAppSupplyBuilder()
 
 	if err != nil {
 		return nil, err
 	}
 
-	f.setVAppStitchingMetaData(vAppNode)
+	// Stitching metadata for the vApp node
+	vAppMetadata, err := f.getVAppStitchingMetaData()
+	if err != nil {
+		return nil, err
+	}
 
-	return supplychain.NewSupplyChainBuilder().Top(vAppNode).Entity(appNode).
+	vAppNode.MergedEntityMetaData = vAppMetadata
+
+	return supplychain.NewSupplyChainBuilder().
+		Top(vAppNode).
+		Entity(appNode).
 		Create()
 }
 
@@ -74,7 +85,7 @@ func (f *SupplyChainFactory) buildVAppSupplyBuilder() (*proto.TemplateDTO, error
 	return builder.Create()
 }
 
-func (f *SupplyChainFactory) setAppStitchingMetaData(appNode *proto.TemplateDTO) {
+func (f *SupplyChainFactory) getAppStitchingMetaData() (*proto.MergedEntityMetadata, error) {
 	commodityList := []proto.CommodityDTO_CommodityType{respTimeType, transactionType}
 
 	var mbuilder *builder.MergedEntityMetadataBuilder
@@ -86,22 +97,30 @@ func (f *SupplyChainFactory) setAppStitchingMetaData(appNode *proto.TemplateDTO)
 		ExternalMatchingType(builder.MergedEntityMetadata_STRING).
 		PatchSoldList(commodityList)
 
-	metadata, _ := mbuilder.Build()
-	appNode.MergedEntityMetaData = metadata
-	return
+	metadata, err := mbuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata, nil
 }
 
-func (f *SupplyChainFactory) setVAppStitchingMetaData(vappNode *proto.TemplateDTO) {
+func (f *SupplyChainFactory) getVAppStitchingMetaData() (*proto.MergedEntityMetadata, error) {
 	commodityList := []proto.CommodityDTO_CommodityType{respTimeType, transactionType}
 
-	mbuilder := builder.NewMergedEntityMetadataBuilder().
+	var mbuilder *builder.MergedEntityMetadataBuilder
+
+	mbuilder = builder.NewMergedEntityMetadataBuilder().
 		InternalMatchingProperty(constant.StitchingAttr).
 		InternalMatchingType(builder.MergedEntityMetadata_STRING).
 		ExternalMatchingProperty(constant.StitchingAttr).
 		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
 		PatchBoughtList(proto.EntityDTO_APPLICATION, commodityList)
 
-	metadata, _ := mbuilder.Build()
-	vappNode.MergedEntityMetaData = metadata
-	return
+	metadata, err := mbuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata, nil
 }

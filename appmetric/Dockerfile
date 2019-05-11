@@ -8,7 +8,7 @@ ENV APP_ROOT=/opt/turbonomic
 ENV PATH=$PATH:${APP_ROOT}/bin
 
 RUN mkdir -p ${APP_ROOT}/bin
-COPY appMetric.linux ${APP_ROOT}/bin/appMetric
+COPY ./_output/appMetric.linux ${APP_ROOT}/bin/appMetric
 RUN chmod -R ug+x ${APP_ROOT}/bin && sync && \
     chmod -R g=u ${APP_ROOT}
 

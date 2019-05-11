@@ -15,7 +15,7 @@ spec:
       serviceAccount: turbo-user
       containers:
         - name: prometurbo
-          image: vmturbo/prometurbo:6.2dev
+          image: turbonomic/prometurbo:6.4dev
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
@@ -25,7 +25,7 @@ spec:
             readOnly: true
           - name: varlog
             mountPath: /var/log
-        - image: docker.io/beekman9527/appmetric:v2
+        - image: turbonomic/appmetric:6.4dev
           imagePullPolicy: IfNotPresent
           name: appmetric
           args:

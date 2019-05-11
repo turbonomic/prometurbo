@@ -80,7 +80,7 @@ spec:
       serviceAccount: turbo-user
       containers:
         - name: prometurbo
-          image: docker.io/maxwang/prometurbo:6.2dev
+          image: turbonomic/prometurbo:6.4dev
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
@@ -90,12 +90,12 @@ spec:
             readOnly: true
           - name: varlog
             mountPath: /var/log
-        - image: docker.io/maxwang/appmetric:6.2dev
+        - image: turbonomic/appmetric:6.4dev
           imagePullPolicy: IfNotPresent
           name: appmetric
           args:
-          - --promUrl=http://prometheus.istio-system:9090
-          - --v=2
+            - --promUrl=http://prometheus.istio-system:9090
+            - --v=2
           ports:
           - containerPort: 8081
       volumes:

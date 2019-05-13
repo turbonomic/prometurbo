@@ -27,14 +27,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:521fb161d383496732c7d8f87cd11e8fdeb4f7eb86186419417966d118b19d6f"
+  digest = "1:64510e935a9274334439ed06996736b13d97ead708cba43901bb572ae4daea23"
   name = "github.com/turbonomic/turbo-api"
   packages = [
     "pkg/api",
     "pkg/client",
   ]
   pruneopts = "UT"
-  revision = "82c860983629566c406b4bc4c3ce7c8df37715cc"
+  revision = "ed948ba97e7008d35683d082f8c69e3d38d146d0"
 
 [[projects]]
   branch = "master"

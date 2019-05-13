@@ -3,6 +3,10 @@
   name = "github.com/golang/glog"
 
 [[constraint]]
+	  branch = "master"
+	  name = "github.com/turbonomic/turbo-api"
+
+[[constraint]]
   branch = "master"
   name = "github.com/turbonomic/turbo-go-sdk"
 

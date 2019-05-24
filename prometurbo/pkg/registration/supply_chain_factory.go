@@ -113,7 +113,7 @@ func (f *SupplyChainFactory) getVAppStitchingMetaData() (*proto.MergedEntityMeta
 	mbuilder = builder.NewMergedEntityMetadataBuilder().
 		InternalMatchingProperty(constant.StitchingAttr).
 		InternalMatchingType(builder.MergedEntityMetadata_STRING).
-		ExternalMatchingProperty(constant.StitchingAttr).
+		ExternalMatchingPropertyWithDelimiter(constant.StitchingAttr, ",").
 		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
 		PatchBoughtList(proto.EntityDTO_APPLICATION, commodityList)
 

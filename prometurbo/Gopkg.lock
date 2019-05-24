@@ -38,7 +38,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5b6ee0528a498bfbc182e81697c4fb7d5e8d39d1a2a716d36071c69863ed6181"
+  digest = "1:27069712bfe430742783dfb472caa694704a5b251bb9445f17a288dbc74b2c2c"
   name = "github.com/turbonomic/turbo-go-sdk"
   packages = [
     "pkg",
@@ -51,7 +51,7 @@
     "pkg/version",
   ]
   pruneopts = "UT"
-  revision = "82d4e5f6462dc7dc62106ae8de427f2fdb25d093"
+  revision = "d851da967aee33469d4d4d1c27d048eea9d12be5"
 
 [solve-meta]
   analyzer-name = "dep"

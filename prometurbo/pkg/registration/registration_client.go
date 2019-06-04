@@ -10,7 +10,7 @@ import (
 
 const (
 	TargetIdField string = "targetIdentifier"
-	ProbeCategory string = "Cloud Native"
+	ProbeCategory string = "Guest OS Processes"
 	targetType    string = "Prometheus"
 	Scope         string = "Scope"
 	propertyId    string = "id"

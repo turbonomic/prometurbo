@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// NOTO: for istio 2.x, the prefix "istio_" should be removed
+	// NOTE: for istio 2.x, the prefix "istio_" should be removed
 	turbo_SVC_LATENCY_SUM   = "istio_turbo_service_latency_time_ms_sum"
 	turbo_SVC_LATENCY_COUNT = "istio_turbo_service_latency_time_ms_count"
 	turbo_SVC_REQUEST_COUNT = "istio_turbo_service_request_count"
@@ -322,6 +322,45 @@ func (d *istioMetricData) Parse(m *xfire.RawMetric) error {
 
 	//NOTO: set uuid to its IP if available
 	d.uuid = ip
+
+	//3. pod/svc Name
+	v, ok = labels["destination_svc"]
+	if !ok {
+		err := fmt.Errorf("No content for destination service: %v+", m.Labels)
+		return err
+	}
+	svc, err := d.parseService(v)
+	if err != nil {
+		glog.Errorf("Failed to parse service(%v): %v", v, err)
+		return err
+	}
+	d.Labels[inter.Service] = svc
+
+	//4. pod/svc Name
+	v, ok = labels["destination_svc_ns"]
+	if !ok {
+		err := fmt.Errorf("No content for destination service namespace: %v+", m.Labels)
+		return err
+	}
+	svc_ns, err := d.parseService(v)
+	if err != nil {
+		glog.Errorf("Failed to parse service(%v): %v", v, err)
+		return err
+	}
+	d.Labels[inter.ServiceNamespace] = svc_ns
+
+	v, ok = labels["destination_svc_name"]
+	if !ok {
+		err := fmt.Errorf("No content for destination service name: %v+", m.Labels)
+		return err
+	}
+	svc_name, err := d.parseService(v)
+	if err != nil {
+		glog.Errorf("Failed to parse service(%v): %v", v, err)
+		return err
+	}
+	d.Labels[inter.ServiceName] = svc_name
+
 	return nil
 }
 
@@ -342,6 +381,12 @@ func (d *istioMetricData) parseIP(raw string) (string, error) {
 	if len(raw) < 1 {
 		return "", fmt.Errorf("IP is empty: %v", raw)
 	}
+
+	return raw, nil
+}
+
+func (d *istioMetricData) parseService(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
 
 	return raw, nil
 }

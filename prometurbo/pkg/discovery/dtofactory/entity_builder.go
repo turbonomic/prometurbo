@@ -138,6 +138,23 @@ func (b *entityBuilder) createEntityDto() (*proto.EntityDTO, error) {
 	}
 
 	ip := metric.UID
+	labels := metric.Labels
+
+	var commKey, serviceName, serviceNamespace string
+	serviceName, serviceNameExists := labels["service_name"]
+	serviceNamespace, serviceNamespaceExists := labels["service_ns"]
+
+	if serviceNameExists && serviceNamespaceExists {
+		commKey = fmt.Sprintf("%s/%s", serviceNamespace, serviceName)
+	} else {
+		commKey = ip
+	}
+
+	if serviceNamespace != "" && serviceName != "" {
+		commKey = fmt.Sprintf("%s/%s", serviceNamespace, serviceName)
+	} else {
+		commKey = ip
+	}
 
 	commodities := []*proto.CommodityDTO{}
 	commTypes := []proto.CommodityDTO_CommodityType{}
@@ -161,7 +178,7 @@ func (b *entityBuilder) createEntityDto() (*proto.EntityDTO, error) {
 		}
 
 		commodity, err := builder.NewCommodityDTOBuilder(commType).
-			Used(value).Key(ip).Create()
+			Used(value).Key(commKey).Create()
 
 		if err != nil {
 			glog.Errorf("Error building a commodity: %s", err)
@@ -189,5 +206,6 @@ func (b *entityBuilder) createEntityDto() (*proto.EntityDTO, error) {
 
 	entityDto.KeepStandalone = &keepStandalone
 
+	glog.V(4).Infof("Entity DTO: %++v", entityDto)
 	return entityDto, nil
 }

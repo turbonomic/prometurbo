@@ -7,6 +7,8 @@ metadata:
 spec:
   value: response.duration | "0ms"
   dimensions:
+    destination_svc_name: destination.service.name | "unknown"
+    destination_svc_ns: destination.service.namespace | "unknown"
     destination_uid: destination.uid | "unknown"
     destination_ip: destination.ip | ip("0.0.0.0")
     response_code: response.code | 200
@@ -33,6 +35,8 @@ spec:
   value: "1"
   dimensions:
     destination_uid: destination.uid | "unknown"
+    destination_svc_name: destination.service.name | "unknown"
+    destination_svc_ns: destination.service.namespace | "unknown"
     response_code: response.code | 200
     destination_ip: destination.ip | ip("0.0.0.0")
   monitored_resource_type: '"UNSPECIFIED"'
@@ -72,6 +76,8 @@ spec:
     label_names:
     - destination_uid
     - destination_ip
+    - destination_svc_name
+    - destination_svc_ns
     - response_code
     buckets:
       explicit_buckets:
@@ -88,6 +94,8 @@ spec:
     label_names:
     - destination_uid
     - destination_ip
+    - destination_svc_name
+    - destination_svc_ns
     - response_code
 ---
 # Rule to send metric instances to a Prometheus handler

@@ -323,19 +323,6 @@ func (d *istioMetricData) Parse(m *xfire.RawMetric) error {
 	//NOTO: set uuid to its IP if available
 	d.uuid = ip
 
-	////3. pod/svc Name
-	//v, ok = labels["destination_svc"]
-	//if !ok {
-	//	err := fmt.Errorf("No content for destination service: %v+", m.Labels)
-	//	return err
-	//}
-	//svc, err := d.parseService(v)
-	//if err != nil {
-	//	glog.Errorf("Failed to parse service(%v): %v", v, err)
-	//	return err
-	//}
-	//d.Labels[inter.Service] = svc
-
 	//3. pod service Name and Namespace
 	v, ok = labels["destination_svc_ns"]
 	if !ok {

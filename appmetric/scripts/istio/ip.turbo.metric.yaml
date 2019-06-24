@@ -7,7 +7,6 @@ metadata:
 spec:
   value: response.duration | "0ms"
   dimensions:
-    destination_svc: destination.service | "unknown"
     destination_svc_name: destination.service.name | "unknown"
     destination_svc_ns: destination.service.namespace | "unknown"
     destination_uid: destination.uid | "unknown"
@@ -36,7 +35,6 @@ spec:
   value: "1"
   dimensions:
     destination_uid: destination.uid | "unknown"
-    destination_svc: destination.service | "unknown"
     destination_svc_name: destination.service.name | "unknown"
     destination_svc_ns: destination.service.namespace | "unknown"
     response_code: response.code | 200
@@ -78,7 +76,6 @@ spec:
     label_names:
     - destination_uid
     - destination_ip
-    - destination_svc
     - destination_svc_name
     - destination_svc_ns
     - response_code
@@ -97,7 +94,6 @@ spec:
     label_names:
     - destination_uid
     - destination_ip
-    - destination_svc
     - destination_svc_name
     - destination_svc_ns
     - response_code

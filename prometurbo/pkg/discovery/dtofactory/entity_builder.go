@@ -141,13 +141,13 @@ func (b *entityBuilder) createEntityDto() (*proto.EntityDTO, error) {
 	labels := metric.Labels
 
 	var commKey, serviceName, serviceNamespace string
-	for key, val := range labels {
-		if key == "service_name" {
-			serviceName = val
-		}
-		if key == "service_ns" {
-			serviceNamespace = val
-		}
+	serviceName, serviceNameExists := labels["service_name"]
+	serviceNamespace, serviceNamespaceExists := labels["service_ns"]
+
+	if serviceNameExists && serviceNamespaceExists {
+		commKey = fmt.Sprintf("%s/%s", serviceNamespace, serviceName)
+	} else {
+		commKey = ip
 	}
 
 	if serviceNamespace != "" && serviceName != "" {

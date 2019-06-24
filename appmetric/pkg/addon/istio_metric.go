@@ -323,30 +323,27 @@ func (d *istioMetricData) Parse(m *xfire.RawMetric) error {
 	//NOTO: set uuid to its IP if available
 	d.uuid = ip
 
-	//3. pod/svc Name
-	v, ok = labels["destination_svc"]
-	if !ok {
-		err := fmt.Errorf("No content for destination service: %v+", m.Labels)
-		return err
-	}
-	svc, err := d.parseService(v)
-	if err != nil {
-		glog.Errorf("Failed to parse service(%v): %v", v, err)
-		return err
-	}
-	d.Labels[inter.Service] = svc
+	////3. pod/svc Name
+	//v, ok = labels["destination_svc"]
+	//if !ok {
+	//	err := fmt.Errorf("No content for destination service: %v+", m.Labels)
+	//	return err
+	//}
+	//svc, err := d.parseService(v)
+	//if err != nil {
+	//	glog.Errorf("Failed to parse service(%v): %v", v, err)
+	//	return err
+	//}
+	//d.Labels[inter.Service] = svc
 
-	//4. pod/svc Name
+	//3. pod service Name and Namespace
 	v, ok = labels["destination_svc_ns"]
 	if !ok {
 		err := fmt.Errorf("No content for destination service namespace: %v+", m.Labels)
 		return err
 	}
-	svc_ns, err := d.parseService(v)
-	if err != nil {
-		glog.Errorf("Failed to parse service(%v): %v", v, err)
-		return err
-	}
+
+	svc_ns := strings.TrimSpace(v)
 	d.Labels[inter.ServiceNamespace] = svc_ns
 
 	v, ok = labels["destination_svc_name"]
@@ -354,11 +351,8 @@ func (d *istioMetricData) Parse(m *xfire.RawMetric) error {
 		err := fmt.Errorf("No content for destination service name: %v+", m.Labels)
 		return err
 	}
-	svc_name, err := d.parseService(v)
-	if err != nil {
-		glog.Errorf("Failed to parse service(%v): %v", v, err)
-		return err
-	}
+
+	svc_name := strings.TrimSpace(v)
 	d.Labels[inter.ServiceName] = svc_name
 
 	return nil

@@ -27,7 +27,7 @@ spec:
           args:
             - --v={{ .Values.args.logginglevel }}
           volumeMounts:
-          - name: prometurbo-volume
+          - name: prometurbo-config
             mountPath: /etc/prometurbo
             readOnly: true
           - name: varlog

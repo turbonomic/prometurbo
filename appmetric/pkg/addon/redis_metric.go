@@ -56,14 +56,14 @@ func (r *RedisEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*inter.
 	}
 
 	//2. get Latency data
-	r.query.SetQueryType(true)
-	latencyDat, err := client.GetMetrics(r.query)
-	if err != nil {
-		glog.Errorf("Failed to get Redis Latency metrics: %v", err)
-		//return result, err
-	} else {
-		r.addEntity(latencyDat, midResult, inter.LatencyType)
-	}
+	//r.query.SetQueryType(true)
+	//latencyDat, err := client.GetMetrics(r.query)
+	//if err != nil {
+	//	glog.Errorf("Failed to get Redis Latency metrics: %v", err)
+	//	return result, err
+	//} else {
+	//	r.addEntity(latencyDat, midResult, inter.LatencyType)
+	//}
 
 	//3. reform map to list
 	for _, v := range midResult {
@@ -155,7 +155,7 @@ func (q *redisQuery) getRPSExp() string {
 }
 
 func (q *redisQuery) getLatencyExp() string {
-	glog.Errorf("Redis has no Latency metric.")
+	//glog.Errorf("Redis has no Latency metric.")
 	return ""
 }
 

@@ -20,7 +20,7 @@ const (
 )
 
 // Map of Turbo metric type to Cassandra query
-var queryMap = map[proto.CommodityDTO_CommodityType]string{
+var cassandraQueryMap = map[proto.CommodityDTO_CommodityType]string{
 	inter.LatencyType: cassandra_latency_query,
 	inter.TpsType:     cassandra_ops_query,
 }
@@ -54,8 +54,8 @@ func (r *CassandraEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*in
 	midResult := make(map[string]*inter.EntityMetric)
 
 	// Get metrics from Prometheus server
-	for metricType := range queryMap {
-		query := &cassandraQuery{queryMap[metricType]}
+	for metricType := range cassandraQueryMap {
+		query := &cassandraQuery{cassandraQueryMap[metricType]}
 		metrics, err := client.GetMetrics(query)
 		if err != nil {
 			glog.Errorf("Failed to get Cassandra Latency metrics: %v", err)

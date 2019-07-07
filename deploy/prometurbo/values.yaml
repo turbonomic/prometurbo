@@ -6,7 +6,7 @@
 image:
   promerepository: turbonomic/prometurbo
   prometag: 6.4dev
-  apprepository: turbonomic/prometurbo
+  apprepository: turbonomic/appmetric
   apptag: 6.4dev
   pullPolicy: IfNotPresent
 
@@ -15,7 +15,7 @@ image:
 
 # Turbo server version and address
 serverMeta:
-  version: 6.3
+  version: 6.4
   turboServer: https://Turbo_server_URL
 
 # Turbo server api user and password
@@ -26,7 +26,7 @@ restAPIConfig:
 
 prometurboTargetConfig:
   targetAddress: http://prometheus.istio-system:9090
-  scope: THE-K8S-TARGET-NAME
+  scope: prometheus
 
 args:
   # logging level

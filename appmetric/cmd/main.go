@@ -138,14 +138,29 @@ func main() {
 	glog.V(2).Infof("Added cassandraGetter: %+v", cassandraGetter)
 	appClient.AddGetter(cassandraGetter)
 
+	webdriverGetter, err := factory.CreateEntityGetter(addon.WebdriverGetterCategory, "webdriver.app.metric", sampleDuration)
+	if err != nil {
+		glog.Errorf("Failed to create Webdriver App getter: %v", err)
+		return
+	}
+	glog.V(2).Infof("Added webdriverGetter: %+v", webdriverGetter)
+	appClient.AddGetter(webdriverGetter)
+
 	//2. Virtual Application Metrics
 	vappClient := ali.NewAlligator(pclient)
-	vappGetter, err := factory.CreateEntityGetter(addon.IstioVAppGetterCategory, "istio.vapp.metric", sampleDuration)
+	istioVAppGetter, err := factory.CreateEntityGetter(addon.IstioVAppGetterCategory, "istio.vapp.metric", sampleDuration)
 	if err != nil {
 		glog.Errorf("Failed to create Istio VApp getter: %v", err)
 		return
 	}
-	vappClient.AddGetter(vappGetter)
+	vappClient.AddGetter(istioVAppGetter)
+
+	webdriverVAppGetter, err := factory.CreateEntityGetter(addon.WebdriverVAppGetterCategory, "webdriver.vapp.metric", sampleDuration)
+	if err != nil {
+		glog.Errorf("Failed to create Webdriver VApp getter: %v", err)
+		return
+	}
+	vappClient.AddGetter(webdriverVAppGetter)
 
 	s := server.NewMetricServer(port, appClient, vappClient)
 	s.Run()

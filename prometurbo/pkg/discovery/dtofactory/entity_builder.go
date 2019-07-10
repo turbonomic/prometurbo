@@ -52,7 +52,7 @@ func (b *entityBuilder) Build() ([]*proto.EntityDTO, error) {
 func (b *entityBuilder) getEntityId(entityType proto.EntityDTO_EntityType, entityName string) string {
 	eType := proto.EntityDTO_EntityType_name[int32(entityType)]
 
-	return fmt.Sprintf("%s-%s/%s", eType, b.scope, entityName)
+	return fmt.Sprintf("%s-%s:%s", eType, b.scope, entityName)
 }
 
 func getReplacementMetaData(entityType proto.EntityDTO_EntityType, commTypes []proto.CommodityDTO_CommodityType, bought bool) *proto.EntityDTO_ReplacementEntityMetaData {

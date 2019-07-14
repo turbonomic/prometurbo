@@ -155,13 +155,6 @@ func main() {
 	}
 	vappClient.AddGetter(istioVAppGetter)
 
-	webdriverVAppGetter, err := factory.CreateEntityGetter(addon.WebdriverVAppGetterCategory, "webdriver.vapp.metric", sampleDuration)
-	if err != nil {
-		glog.Errorf("Failed to create Webdriver VApp getter: %v", err)
-		return
-	}
-	vappClient.AddGetter(webdriverVAppGetter)
-
 	s := server.NewMetricServer(port, appClient, vappClient)
 	s.Run()
 	return

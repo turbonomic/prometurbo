@@ -15,9 +15,6 @@ const (
 	webdriver_latency_query = `navigation_timing_load_event_end_seconds{job="webdriver"}-navigation_timing_start_seconds{job="webdriver"}`
 
 	default_Webdriver_Port = 80
-
-	appType  = 1
-	vAppType = 2
 )
 
 // Map of Turbo metric type to Webdriver query
@@ -37,9 +34,8 @@ var _ alligator.EntityMetricGetter = &WebdriverEntityGetter{}
 
 func NewWebdriverEntityGetter(name, du string) *WebdriverEntityGetter {
 	return &WebdriverEntityGetter{
-		name:  name,
-		du:    du,
-		etype: appType,
+		name: name,
+		du:   du,
 	}
 }
 
@@ -47,20 +43,8 @@ func (webdriver *WebdriverEntityGetter) Name() string {
 	return webdriver.name
 }
 
-func (webdriver *WebdriverEntityGetter) SetType(isVirtualApp bool) {
-	if isVirtualApp {
-		webdriver.etype = vAppType
-	} else {
-		webdriver.etype = appType
-	}
-}
-
 func (webdriver *WebdriverEntityGetter) Category() string {
-	if webdriver.etype == appType {
-		return "Webdriver"
-	}
-
-	return "Webdriver.VApp"
+	return "Webdriver"
 }
 
 func (r *WebdriverEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*inter.EntityMetric, error) {
@@ -114,11 +98,8 @@ func (r *WebdriverEntityGetter) addEntity(mdat []xfire.MetricData, result map[st
 		//2. add entity metrics
 		entity, ok := result[ip]
 		if !ok {
-			if r.etype == vAppType {
-				entity = inter.NewEntityMetric(ip, inter.VAppEntity)
-			} else {
-				entity = inter.NewEntityMetric(ip, inter.AppEntity)
-			}
+			// Create Application Entity
+			entity = inter.NewEntityMetric(ip, inter.AppEntity)
 			entity.SetLabel(inter.IP, ip)
 			entity.SetLabel(inter.Port, port)
 			entity.SetLabel(inter.Category, r.Category())

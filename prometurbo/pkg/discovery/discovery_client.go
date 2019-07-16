@@ -13,13 +13,17 @@ import (
 // Implements the TurboDiscoveryClient interface
 type P8sDiscoveryClient struct {
 	targetAddr      string
+	keepStandalone  bool
+	createProxyVM   bool
 	scope           string
 	metricExporters []exporter.MetricExporter
 }
 
-func NewDiscoveryClient(targetAddr, scope string, metricExporters []exporter.MetricExporter) *P8sDiscoveryClient {
+func NewDiscoveryClient(targetAddr string, keepStandalone bool, createProxyVM bool, scope string, metricExporters []exporter.MetricExporter) *P8sDiscoveryClient {
 	return &P8sDiscoveryClient{
 		targetAddr:      targetAddr,
+		keepStandalone:  keepStandalone,
+		createProxyVM:   createProxyVM,
 		scope:           scope,
 		metricExporters: metricExporters,
 	}
@@ -105,7 +109,7 @@ func (d *P8sDiscoveryClient) buildEntities(metricExporter exporter.MetricExporte
 	}
 
 	for _, metric := range metrics {
-		dtos, err := dtofactory.NewEntityBuilder(d.scope, metric).Build()
+		dtos, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.createProxyVM, d.scope, metric).Build()
 		if err != nil {
 			glog.Errorf("Error building entity from metric %v: %s", metric, err)
 			continue

@@ -8,6 +8,19 @@ import (
 )
 
 var (
+	VMIPFieldPaths = []string{constant.SUPPLY_CHAIN_CONSTANT_VIRTUAL_MACHINE_DATA}
+
+	vCpuType    = proto.CommodityDTO_VCPU
+	vMemType = proto.CommodityDTO_VMEM
+
+	vCpuTemplateComm *proto.TemplateCommodity = &proto.TemplateCommodity{
+		CommodityType: &vCpuType,
+	}
+
+	vMemTemplateComm *proto.TemplateCommodity = &proto.TemplateCommodity{
+		CommodityType: &vMemType,
+	}
+
 	respTimeType    = proto.CommodityDTO_RESPONSE_TIME
 	transactionType = proto.CommodityDTO_TRANSACTION
 	key             = "key-placeholder"
@@ -26,6 +39,21 @@ var (
 type SupplyChainFactory struct{}
 
 func (f *SupplyChainFactory) CreateSupplyChain() ([]*proto.TemplateDTO, error) {
+	// VM node
+	vmNode, err := f.buildVMSupplyBuilder()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Stitching metadata for the vm node
+	vmMetadata, err := f.getVMStitchingMetaData()
+	if err != nil {
+		return nil, err
+	}
+
+	vmNode.MergedEntityMetaData = vmMetadata
+
 	// Application node
 	appNode, err := f.buildAppSupplyBuilder()
 
@@ -59,16 +87,28 @@ func (f *SupplyChainFactory) CreateSupplyChain() ([]*proto.TemplateDTO, error) {
 	return supplychain.NewSupplyChainBuilder().
 		Top(vAppNode).
 		Entity(appNode).
+		Entity(vmNode).
 		Create()
+}
+
+func (f *SupplyChainFactory) buildVMSupplyBuilder() (*proto.TemplateDTO, error) {
+	builder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_VIRTUAL_MACHINE).
+		Sells(vCpuTemplateComm).
+		Sells(vMemTemplateComm)
+	builder.SetPriority(-1)
+	builder.SetTemplateType(proto.TemplateDTO_BASE)
+
+	return builder.Create()
 }
 
 func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error) {
 	builder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_APPLICATION).
 		Sells(transactionTemplateComm).
-		Sells(respTimeTemplateComm)
+		Sells(respTimeTemplateComm).
+		Buys(vCpuTemplateComm).
+		Buys(vMemTemplateComm)
 	builder.SetPriority(-1)
 	builder.SetTemplateType(proto.TemplateDTO_BASE)
-	//builder.SetTemplateType(proto.TemplateDTO_EXTENSION)
 
 	return builder.Create()
 }
@@ -80,9 +120,26 @@ func (f *SupplyChainFactory) buildVAppSupplyBuilder() (*proto.TemplateDTO, error
 		Buys(respTimeTemplateComm)
 	builder.SetPriority(-1)
 	builder.SetTemplateType(proto.TemplateDTO_BASE)
-	//builder.SetTemplateType(proto.TemplateDTO_EXTENSION)
 
 	return builder.Create()
+}
+
+func (f *SupplyChainFactory) getVMStitchingMetaData() (*proto.MergedEntityMetadata, error) {
+
+	var vmbuilder *builder.MergedEntityMetadataBuilder
+
+	vmbuilder = builder.NewMergedEntityMetadataBuilder().
+		InternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
+		InternalMatchingPropertyWithDelimiter(constant.StitchingAttr, ",").
+		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
+		ExternalMatchingFieldWithDelimiter(constant.SUPPLY_CHAIN_CONSTANT_IP_ADDRESS, VMIPFieldPaths, ",")
+
+	metadata, err := vmbuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata, nil
 }
 
 func (f *SupplyChainFactory) getAppStitchingMetaData() (*proto.MergedEntityMetadata, error) {

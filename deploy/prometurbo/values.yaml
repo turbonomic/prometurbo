@@ -26,6 +26,8 @@ restAPIConfig:
 
 prometurboTargetConfig:
   targetAddress: http://prometheus.istio-system:9090
+  keepStandalone: false
+  createProxyVM: false
   scope: prometheus
 
 args:

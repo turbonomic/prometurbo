@@ -12,13 +12,15 @@ import (
 )
 
 var (
-	namespace  = "DEFAULT"
-	ipAttr     = "IP"
-	appPrefix  = "APPLICATION-"
-	appType    = proto.EntityDTO_APPLICATION
-	useTopoExt = true
-	scope      = "k8s-cluster-foo"
-	targetAddr = "target-foo"
+	namespace  		= "DEFAULT"
+	ipAttr     		= "IP"
+	appPrefix  		= "APPLICATION-"
+	appType    		= proto.EntityDTO_APPLICATION
+	useTopoExt 		= true
+	keepStandalone  = false
+	createProxyVM   = false
+	scope      		= "k8s-cluster-foo"
+	targetAddr  	= "target-foo"
 
 	replacementMetaData = builder.NewReplacementEntityMetaDataBuilder().
 				Matching(ipAttr).
@@ -38,7 +40,7 @@ var (
 )
 
 func TestP8sDiscoveryClient_GetAccountValues(t *testing.T) {
-	d := NewDiscoveryClient(targetAddr, scope, []exporter.MetricExporter{})
+	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{})
 
 	for _, f := range d.GetAccountValues().GetTargetInstance().InputFields {
 		if f.Name == "targetIdentifier" && f.Value == targetAddr {
@@ -54,7 +56,7 @@ func TestP8sDiscoveryClient_Discover(t *testing.T) {
 		metrics: metrics,
 	}
 
-	d := NewDiscoveryClient(targetAddr, scope, []exporter.MetricExporter{exporter1})
+	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1})
 
 	testDiscoverySuccedded(d, metrics)
 }
@@ -68,7 +70,7 @@ func TestP8sDiscoveryClient_Discover_Two_Exporters(t *testing.T) {
 		metrics: metrics[2:],
 	}
 
-	d := NewDiscoveryClient(targetAddr, scope, []exporter.MetricExporter{exporter1, exporter2})
+	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1, exporter2})
 
 	testDiscoverySuccedded(d, metrics)
 }
@@ -82,7 +84,7 @@ func TestP8sDiscoveryClient_Discover_Two_Exporters_One_Failed(t *testing.T) {
 		err: fmt.Errorf("Query failed with the mocked exporter"),
 	}
 
-	d := NewDiscoveryClient(targetAddr, scope, []exporter.MetricExporter{exporter1, exporter2})
+	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1, exporter2})
 
 	testDiscoverySuccedded(d, metrics[0:2])
 }
@@ -96,7 +98,7 @@ func TestP8sDiscoveryClient_Discover_Query_Failed(t *testing.T) {
 		err: fmt.Errorf("Query failed with the mocked exporter"),
 	}
 
-	d := NewDiscoveryClient(targetAddr, scope, []exporter.MetricExporter{exporter1, exporter2})
+	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1, exporter2})
 
 	res, err := d.Discover([]*proto.AccountValue{})
 

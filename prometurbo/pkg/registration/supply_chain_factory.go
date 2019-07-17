@@ -101,27 +101,43 @@ func (f *SupplyChainFactory) buildVMSupplyBuilder() (*proto.TemplateDTO, error) 
 	return builder.Create()
 }
 
+
 func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error) {
-	builder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_APPLICATION).
+	appToVMExternalLink, err := supplychain.NewExternalEntityLinkBuilder().
+		Link(proto.EntityDTO_APPLICATION, proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
+		Commodity(vCpuType, false).Commodity(vMemType, false).
+		Commodity(transactionType, true). Commodity(respTimeType, true).
+		ProbeEntityPropertyDef(constant.StitchingAttr, "IP Address of the VM hosting the discovered node").
+		ExternalEntityPropertyDef(supplychain.VM_IP).
+		Build()
+
+	if err != nil {
+		return nil, err
+	}
+
+	appbuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_APPLICATION).
 		Sells(transactionTemplateComm).
 		Sells(respTimeTemplateComm).
+		Provider(proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
+		ConnectsTo(appToVMExternalLink).
 		Buys(vCpuTemplateComm).
 		Buys(vMemTemplateComm)
-	builder.SetPriority(-1)
-	builder.SetTemplateType(proto.TemplateDTO_BASE)
+	appbuilder.SetPriority(-1)
+	appbuilder.SetTemplateType(proto.TemplateDTO_BASE)
 
-	return builder.Create()
+	return appbuilder.Create()
 }
 
 func (f *SupplyChainFactory) buildVAppSupplyBuilder() (*proto.TemplateDTO, error) {
-	builder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_VIRTUAL_APPLICATION).
+
+	vappbuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_VIRTUAL_APPLICATION).
 		Provider(proto.EntityDTO_APPLICATION, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
 		Buys(respTimeTemplateComm)
-	builder.SetPriority(-1)
-	builder.SetTemplateType(proto.TemplateDTO_BASE)
+	vappbuilder.SetPriority(-1)
+	vappbuilder.SetTemplateType(proto.TemplateDTO_BASE)
 
-	return builder.Create()
+	return vappbuilder.Create()
 }
 
 func (f *SupplyChainFactory) getVMStitchingMetaData() (*proto.MergedEntityMetadata, error) {

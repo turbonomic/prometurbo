@@ -72,6 +72,7 @@ func (rclient *P8sRegistrationClient) GetEntityMetadata() []*proto.EntityIdentit
 	result := []*proto.EntityIdentityMetadata{}
 
 	entities := []proto.EntityDTO_EntityType{
+		proto.EntityDTO_VIRTUAL_MACHINE,
 		proto.EntityDTO_APPLICATION,
 		proto.EntityDTO_VIRTUAL_APPLICATION,
 	}

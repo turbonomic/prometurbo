@@ -8,7 +8,6 @@ const (
 	// MetricType
 	Used = "used"
 
-
 	// Internal matching property
 	// The default namespace of entity property
 	DefaultPropertyNamespace = "DEFAULT"
@@ -21,7 +20,6 @@ const (
 	SUPPLY_CHAIN_CONSTANT_IP_ADDRESS string = "ipAddress"
 	SUPPLY_CHAIN_CONSTANT_VIRTUAL_MACHINE_DATA = "virtual_machine_data"
 
-	VMPrefix = "VM-"
 	VAppPrefix = "vApp-"
 )
 

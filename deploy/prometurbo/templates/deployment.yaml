@@ -25,6 +25,8 @@ spec:
           image: {{ .Values.image.promerepository }}:{{ .Values.image.prometag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
+            - --keepStandalone={{ .Values.prometurboTargetConfig.keepStandalone }}
+            - --createProxyVM={{ .Values.prometurboTargetConfig.createProxyVM }}
             - --v={{ .Values.args.logginglevel }}
           volumeMounts:
           - name: prometurbo-config

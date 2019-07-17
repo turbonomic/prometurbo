@@ -63,8 +63,11 @@ func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 	scope := conf.TargetConf.Scope
 	metricExporters := []exporter.MetricExporter{exporter.NewMetricExporter(conf.MetricExporterEndpoint)}
 
+	keepStandalone := args.KeepStandalone
+	createProxyVM := args.CreateProxyVM
+
 	registrationClient := &registration.P8sRegistrationClient{}
-	discoveryClient := discovery.NewDiscoveryClient(targetAddr, scope, metricExporters)
+	discoveryClient := discovery.NewDiscoveryClient(targetAddr, *keepStandalone, *createProxyVM, scope, metricExporters)
 
 	return service.NewTAPServiceBuilder().
 		WithTurboCommunicator(communicator).

@@ -12,7 +12,7 @@ import (
 
 const (
 	// query for latency (max of read and write) in milliseconds
-	webdriver_latency_query = `navigation_timing_load_event_end_seconds{job="webdriver"}-navigation_timing_start_seconds{job="webdriver"}`
+	webdriver_latency_query = `1000*(navigation_timing_load_event_end_seconds{job="webdriver"}-navigation_timing_start_seconds{job="webdriver"})`
 
 	default_Webdriver_Port = 80
 )

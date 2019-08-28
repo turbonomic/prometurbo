@@ -164,6 +164,7 @@ func (f *SupplyChainFactory) getAppStitchingMetaData() (*proto.MergedEntityMetad
 	var mbuilder *builder.MergedEntityMetadataBuilder
 
 	mbuilder = builder.NewMergedEntityMetadataBuilder().
+		KeepInTopology(false).
 		InternalMatchingProperty(constant.StitchingAttr).
 		InternalMatchingType(builder.MergedEntityMetadata_STRING).
 		ExternalMatchingProperty(constant.StitchingAttr).
@@ -184,6 +185,7 @@ func (f *SupplyChainFactory) getVAppStitchingMetaData() (*proto.MergedEntityMeta
 	var mbuilder *builder.MergedEntityMetadataBuilder
 
 	mbuilder = builder.NewMergedEntityMetadataBuilder().
+		KeepInTopology(false).
 		InternalMatchingProperty(constant.StitchingAttr).
 		InternalMatchingType(builder.MergedEntityMetadata_STRING).
 		ExternalMatchingPropertyWithDelimiter(constant.StitchingAttr, ",").

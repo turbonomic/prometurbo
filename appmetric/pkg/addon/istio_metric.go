@@ -13,13 +13,13 @@ import (
 
 const (
 	// NOTE: for istio 2.x, the prefix "istio_" should be removed
-	turbo_SVC_LATENCY_SUM   = "istio_turbo_service_latency_time_ms_sum"
-	turbo_SVC_LATENCY_COUNT = "istio_turbo_service_latency_time_ms_count"
-	turbo_SVC_REQUEST_COUNT = "istio_turbo_service_request_count"
+	turboSvcLatencySum   = "istio_turbo_service_latency_time_ms_sum"
+	turboSvcLatencyCount = "istio_turbo_service_latency_time_ms_count"
+	turboSvcRequestCount = "istio_turbo_service_request_count"
 
-	turbo_POD_LATENCY_SUM   = "istio_turbo_pod_latency_time_ms_sum"
-	turbo_POD_LATENCY_COUNT = "istio_turbo_pod_latency_time_ms_count"
-	turbo_POD_REQUEST_COUNT = "istio_turbo_pod_request_count"
+	turboPodLatencySum   = "istio_turbo_pod_latency_time_ms_sum"
+	turboPodLatencyCount = "istio_turbo_pod_latency_time_ms_count"
+	turboPodRequestCount = "istio_turbo_pod_request_count"
 
 	//turboMetricDuration = "3m"
 
@@ -76,9 +76,9 @@ func (istio *IstioEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*in
 	result := []*inter.EntityMetric{}
 
 	if istio.etype == podType {
-		istio.query.SetQueryType(podTPS)
+		istio.query.setQueryType(podTPS)
 	} else {
-		istio.query.SetQueryType(svcTPS)
+		istio.query.setQueryType(svcTPS)
 	}
 	tpsDat, err := client.GetMetrics(istio.query)
 	if err != nil {
@@ -87,9 +87,9 @@ func (istio *IstioEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*in
 	}
 
 	if istio.etype == podType {
-		istio.query.SetQueryType(podLatency)
+		istio.query.setQueryType(podLatency)
 	} else {
-		istio.query.SetQueryType(svcLatency)
+		istio.query.setQueryType(svcLatency)
 	}
 	latencyDat, err := client.GetMetrics(istio.query)
 	if err != nil {
@@ -170,7 +170,7 @@ func (istio *IstioEntityGetter) mergeTPSandLatency(tpsDat, latencyDat []xfire.Me
 //       3: service.latency
 type istioQuery struct {
 	qtype    int
-	du       string
+	duration string
 	queryMap map[int]string
 }
 
@@ -186,26 +186,21 @@ type istioMetricData struct {
 func newIstioQuery(du string) *istioQuery {
 	q := &istioQuery{
 		qtype:    0,
-		du:       du,
+		duration: du,
 		queryMap: make(map[int]string),
 	}
 
-	q.queryMap[podTPS] = q.getRPSExp(true)
-	q.queryMap[podLatency] = q.getLatencyExp(true)
+	q.queryMap[podTPS] = q.getPodRPSExp()
+	q.queryMap[podLatency] = q.getPodLatencyExp()
 
-	q.queryMap[svcTPS] = q.getRPSExp(false)
-	q.queryMap[svcLatency] = q.getLatencyExp(false)
+	q.queryMap[svcTPS] = q.getSvcRPSExp()
+	q.queryMap[svcLatency] = q.getSvcLatencyExp()
 
 	return q
 }
 
-func (q *istioQuery) SetQueryType(t int) {
+func (q *istioQuery) setQueryType(t int) {
 	q.qtype = t
-
-}
-
-func (q *istioQuery) GetQueryType() int {
-	return q.qtype
 }
 
 func (q *istioQuery) GetQuery() string {
@@ -232,34 +227,32 @@ func (q *istioQuery) String() string {
 	return buffer.String()
 }
 
-func (q *istioQuery) getLatencyExp(pod bool) string {
-	name_sum := ""
-	name_count := ""
-	if pod {
-		name_sum = turbo_POD_LATENCY_SUM
-		name_count = turbo_POD_LATENCY_COUNT
-	} else {
-		name_sum = turbo_SVC_LATENCY_SUM
-		name_count = turbo_SVC_LATENCY_COUNT
-	}
-
-	du := q.du
+func (q *istioQuery) getLatencyExp(metricSum, metricCount string) string {
 	result := fmt.Sprintf("1000.0*rate(%v{response_code=\"200\"}[%v])/rate(%v{response_code=\"200\"}[%v]) >= 0",
-		name_sum, du, name_count, du)
+		metricSum, q.duration, metricCount, q.duration)
 	return result
 }
 
-// exp = rate(turbo_request_count{response_code="200",  source_service="unknown"}[3m])
-func (q *istioQuery) getRPSExp(pod bool) string {
-	name_count := ""
-	if pod {
-		name_count = turbo_POD_REQUEST_COUNT
-	} else {
-		name_count = turbo_SVC_REQUEST_COUNT
-	}
+func (q *istioQuery) getPodLatencyExp() string {
+	return q.getLatencyExp(turboPodLatencySum, turboPodLatencyCount)
+}
 
-	result := fmt.Sprintf("rate(%v{response_code=\"200\"}[%v]) > 0", name_count, q.du)
+func (q *istioQuery) getSvcLatencyExp() string {
+	return q.getLatencyExp(turboSvcLatencySum, turboSvcLatencyCount)
+}
+
+// exp = rate(turbo_request_count{response_code="200",  source_service="unknown"}[3m])
+func (q *istioQuery) getRPSExp(metricCount string) string {
+	result := fmt.Sprintf("rate(%v{response_code=\"200\"}[%v]) > 0", metricCount, q.duration)
 	return result
+}
+
+func (q *istioQuery) getPodRPSExp() string {
+	return q.getRPSExp(turboPodRequestCount)
+}
+
+func (q *istioQuery) getSvcRPSExp() string {
+	return q.getRPSExp(turboSvcRequestCount)
 }
 
 func newIstioMetricData() *istioMetricData {

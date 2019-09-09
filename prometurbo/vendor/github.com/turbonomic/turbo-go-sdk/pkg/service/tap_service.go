@@ -156,7 +156,6 @@ func (builder *TAPServiceBuilder) WithTurboCommunicator(commConfig *TurboCommuni
 	_, err = apiClient.Login()
 	if err != nil {
 		glog.Errorf("Cannot login to the Turbo API Client: %v", err)
-		return builder
 	}
 
 	builder.tapService.Client = apiClient

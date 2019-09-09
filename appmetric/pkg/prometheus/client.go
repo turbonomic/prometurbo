@@ -108,7 +108,7 @@ func (c *RestClient) Query(query string) (*RawData, error) {
 
 	var ss promeResponse
 	if err := json.Unmarshal(result, &ss); err != nil {
-		glog.Errorf("Failed to unmarshall respone: %v", err)
+		glog.Errorf("Failed to unmarshall response: %v", err)
 		return nil, err
 	}
 
@@ -156,7 +156,7 @@ func (c *RestClient) GetMetrics(input RequestInput) ([]MetricData, error) {
 	for i := range resp {
 		d, err := input.Parse(&(resp[i]))
 		if err != nil {
-			glog.Errorf("Pase value failed: %v", err)
+			glog.Errorf("Failed to parse value: %v", err)
 			continue
 		}
 

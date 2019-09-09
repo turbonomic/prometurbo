@@ -13,13 +13,13 @@ import (
 
 const (
 	// NOTE: for istio 2.x, the prefix "istio_" should be removed
-	turbo_SVC_LATENCY_SUM   = "istio_turbo_service_latency_time_ms_sum"
-	turbo_SVC_LATENCY_COUNT = "istio_turbo_service_latency_time_ms_count"
-	turbo_SVC_REQUEST_COUNT = "istio_turbo_service_request_count"
+	turboSvcLatencySum   = "istio_turbo_service_latency_time_ms_sum"
+	turboSvcLatencyCount = "istio_turbo_service_latency_time_ms_count"
+	turboSvcRequestCount = "istio_turbo_service_request_count"
 
-	turbo_POD_LATENCY_SUM   = "istio_turbo_pod_latency_time_ms_sum"
-	turbo_POD_LATENCY_COUNT = "istio_turbo_pod_latency_time_ms_count"
-	turbo_POD_REQUEST_COUNT = "istio_turbo_pod_request_count"
+	turboPodLatencySum   = "istio_turbo_pod_latency_time_ms_sum"
+	turboPodLatencyCount = "istio_turbo_pod_latency_time_ms_count"
+	turboPodRequestCount = "istio_turbo_pod_request_count"
 
 	//turboMetricDuration = "3m"
 
@@ -76,9 +76,9 @@ func (istio *IstioEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*in
 	result := []*inter.EntityMetric{}
 
 	if istio.etype == podType {
-		istio.query.SetQueryType(podTPS)
+		istio.query.setQueryType(podTPS)
 	} else {
-		istio.query.SetQueryType(svcTPS)
+		istio.query.setQueryType(svcTPS)
 	}
 	tpsDat, err := client.GetMetrics(istio.query)
 	if err != nil {
@@ -87,9 +87,9 @@ func (istio *IstioEntityGetter) GetEntityMetric(client *xfire.RestClient) ([]*in
 	}
 
 	if istio.etype == podType {
-		istio.query.SetQueryType(podLatency)
+		istio.query.setQueryType(podLatency)
 	} else {
-		istio.query.SetQueryType(svcLatency)
+		istio.query.setQueryType(svcLatency)
 	}
 	latencyDat, err := client.GetMetrics(istio.query)
 	if err != nil {
@@ -170,7 +170,7 @@ func (istio *IstioEntityGetter) mergeTPSandLatency(tpsDat, latencyDat []xfire.Me
 //       3: service.latency
 type istioQuery struct {
 	qtype    int
-	du       string
+	duration string
 	queryMap map[int]string
 }
 
@@ -186,40 +186,21 @@ type istioMetricData struct {
 func newIstioQuery(du string) *istioQuery {
 	q := &istioQuery{
 		qtype:    0,
-		du:       du,
+		duration: du,
 		queryMap: make(map[int]string),
 	}
 
-	isPod := true
-	q.queryMap[podTPS] = q.getRPSExp(isPod)
-	q.queryMap[1] = q.getLatencyExp(isPod)
-	isPod = false
-	q.queryMap[2] = q.getRPSExp(isPod)
-	q.queryMap[3] = q.getLatencyExp(isPod)
+	q.queryMap[podTPS] = q.getPodRPSExp()
+	q.queryMap[podLatency] = q.getPodLatencyExp()
+
+	q.queryMap[svcTPS] = q.getSvcRPSExp()
+	q.queryMap[svcLatency] = q.getSvcLatencyExp()
 
 	return q
 }
 
-func (q *istioQuery) SetQueryType(t int) error {
-	if t < 0 {
-		err := fmt.Errorf("Invalid query type: %d, vs 0|1|2|3", t)
-		glog.Error(err)
-		return err
-	}
-
-	if t > len(q.queryMap) {
-		err := fmt.Errorf("Invalid query type: %d, vs 0|1|2|3", t)
-		glog.Error(err)
-		return err
-	}
-
+func (q *istioQuery) setQueryType(t int) {
 	q.qtype = t
-
-	return nil
-}
-
-func (q *istioQuery) GetQueryType() int {
-	return q.qtype
 }
 
 func (q *istioQuery) GetQuery() string {
@@ -230,10 +211,8 @@ func (q *istioQuery) Parse(m *xfire.RawMetric) (xfire.MetricData, error) {
 	d := newIstioMetricData()
 	d.SetType(q.qtype)
 	if err := d.Parse(m); err != nil {
-		glog.Errorf("Failed to parse metrics: %s", err)
 		return nil, err
 	}
-
 	return d, nil
 }
 
@@ -248,34 +227,32 @@ func (q *istioQuery) String() string {
 	return buffer.String()
 }
 
-func (q *istioQuery) getLatencyExp(pod bool) string {
-	name_sum := ""
-	name_count := ""
-	if pod {
-		name_sum = turbo_POD_LATENCY_SUM
-		name_count = turbo_POD_LATENCY_COUNT
-	} else {
-		name_sum = turbo_SVC_LATENCY_SUM
-		name_count = turbo_SVC_LATENCY_COUNT
-	}
-
-	du := q.du
-	result := fmt.Sprintf("1000.0*rate(%v{response_code=\"200\"}[%v])/rate(%v{response_code=\"200\"}[%v])",
-		name_sum, du, name_count, du)
+func (q *istioQuery) getLatencyExp(metricSum, metricCount string) string {
+	result := fmt.Sprintf("1000.0*rate(%v{response_code=\"200\"}[%v])/rate(%v{response_code=\"200\"}[%v]) >= 0",
+		metricSum, q.duration, metricCount, q.duration)
 	return result
 }
 
-// exp = rate(turbo_request_count{response_code="200",  source_service="unknown"}[3m])
-func (q *istioQuery) getRPSExp(pod bool) string {
-	name_count := ""
-	if pod {
-		name_count = turbo_POD_REQUEST_COUNT
-	} else {
-		name_count = turbo_SVC_REQUEST_COUNT
-	}
+func (q *istioQuery) getPodLatencyExp() string {
+	return q.getLatencyExp(turboPodLatencySum, turboPodLatencyCount)
+}
 
-	result := fmt.Sprintf("rate(%v{response_code=\"200\"}[%v])", name_count, q.du)
+func (q *istioQuery) getSvcLatencyExp() string {
+	return q.getLatencyExp(turboSvcLatencySum, turboSvcLatencyCount)
+}
+
+// exp = rate(turbo_request_count{response_code="200",  source_service="unknown"}[3m])
+func (q *istioQuery) getRPSExp(metricCount string) string {
+	result := fmt.Sprintf("rate(%v{response_code=\"200\"}[%v]) > 0", metricCount, q.duration)
 	return result
+}
+
+func (q *istioQuery) getPodRPSExp() string {
+	return q.getRPSExp(turboPodRequestCount)
+}
+
+func (q *istioQuery) getSvcRPSExp() string {
+	return q.getRPSExp(turboSvcRequestCount)
 }
 
 func newIstioMetricData() *istioMetricData {
@@ -287,7 +264,7 @@ func newIstioMetricData() *istioMetricData {
 func (d *istioMetricData) Parse(m *xfire.RawMetric) error {
 	d.Value = float64(m.Value.Value)
 	if math.IsNaN(d.Value) {
-		return fmt.Errorf("Failed to convert value: NaN")
+		return fmt.Errorf("failed to convert value: NaN")
 	}
 
 	labels := m.Labels
@@ -295,12 +272,12 @@ func (d *istioMetricData) Parse(m *xfire.RawMetric) error {
 	//1. pod/svc Name
 	v, ok := labels["destination_uid"]
 	if !ok {
-		err := fmt.Errorf("No content for destination uid: %v+", m.Labels)
+		err := fmt.Errorf("no content for destination uid: %v+", m.Labels)
 		return err
 	}
 	uid, err := d.parseUID(v)
 	if err != nil {
-		glog.Errorf("Failed to parse UID(%v): %v", v, err)
+		glog.Errorf("failed to parse UID(%v): %v", v, err)
 		return err
 	}
 	d.Labels[inter.Name] = uid
@@ -325,17 +302,16 @@ func (d *istioMetricData) Parse(m *xfire.RawMetric) error {
 
 	//3. pod service Name and Namespace
 	v, ok = labels["destination_svc_ns"]
-	if !ok {
-		err := fmt.Errorf("No content for destination service namespace: %v+", m.Labels)
-		return err
+	if !ok || v == "unknown" {
+		return fmt.Errorf("failed to parse destination service namespace: %+v", m.Labels)
 	}
 
 	svc_ns := strings.TrimSpace(v)
 	d.Labels[inter.ServiceNamespace] = svc_ns
 
 	v, ok = labels["destination_svc_name"]
-	if !ok {
-		err := fmt.Errorf("No content for destination service name: %v+", m.Labels)
+	if !ok || v == "unknown" {
+		err := fmt.Errorf("failed to parse destination service name: %+v", m.Labels)
 		return err
 	}
 
@@ -376,13 +352,13 @@ func (d *istioMetricData) parseService(raw string) (string, error) {
 // output: 10.2.1.84
 func (d *istioMetricData) parseV04IP(raw string) (string, error) {
 	if len(raw) < 7 {
-		return "", fmt.Errorf("Illegal string")
+		return "", fmt.Errorf("illegal string")
 	}
 
 	content := raw[1 : len(raw)-1]
 	items := strings.Split(content, " ")
 	if len(items) < 4 {
-		return "", fmt.Errorf("Illegal IP string: %v", raw)
+		return "", fmt.Errorf("illegal IP string: %v", raw)
 	}
 
 	i := len(items) - 4
@@ -417,22 +393,22 @@ func (d *istioMetricData) String() string {
 // for example, "kubernetes://video-671194421-vpxkh.default" to "default/video-671194421-vpxkh"
 func convertPodUID(uid string) (string, error) {
 	if !strings.HasPrefix(uid, k8sPrefix) {
-		return "", fmt.Errorf("Not start with %v", k8sPrefix)
+		return "", fmt.Errorf("not start with %v", k8sPrefix)
 	}
 
 	items := strings.Split(uid[k8sPrefixLen:], ".")
 	if len(items) < 2 {
-		return "", fmt.Errorf("Not enough fields: %v", uid[k8sPrefixLen:])
+		return "", fmt.Errorf("not enough fields: %v", uid[k8sPrefixLen:])
 	}
 
 	if len(items) > 2 {
-		glog.Warningf("expected 2, got %d for: %v", len(items), uid[k8sPrefixLen:])
+		glog.Warningf("expected 2 fields, got %d for: %v", len(items), uid[k8sPrefixLen:])
 	}
 
 	items[0] = strings.TrimSpace(items[0])
 	items[1] = strings.TrimSpace(items[1])
 	if len(items[0]) < 1 || len(items[1]) < 1 {
-		return "", fmt.Errorf("Invalid fields: %v/%v", items[0], items[1])
+		return "", fmt.Errorf("invalid fields: %v/%v", items[0], items[1])
 	}
 
 	nid := fmt.Sprintf("%s/%s", items[1], items[0])
@@ -450,7 +426,7 @@ func convertSVCUID(uid string) (string, error) {
 	//1. split it
 	items := strings.Split(uid, ".")
 	if len(items) < 3 {
-		err := fmt.Errorf("Not enough fields %d Vs. 3", len(items))
+		err := fmt.Errorf("not enough fields %d Vs. 3", len(items))
 		glog.V(3).Infof(err.Error())
 		return "", err
 	}
@@ -467,7 +443,7 @@ func convertSVCUID(uid string) (string, error) {
 
 	//3. construct the new uid
 	if len(items[0]) < 1 || len(items[1]) < 1 {
-		err := fmt.Errorf("Invalid fields: %v/%v", items[0], items[1])
+		err := fmt.Errorf("invalid fields: %v/%v", items[0], items[1])
 		glog.V(3).Infof(err.Error())
 		return "", err
 	}

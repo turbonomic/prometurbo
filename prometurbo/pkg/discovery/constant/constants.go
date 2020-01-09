@@ -21,6 +21,7 @@ const (
 	SUPPLY_CHAIN_CONSTANT_VIRTUAL_MACHINE_DATA = "virtual_machine_data"
 
 	VAppPrefix = "vApp-"
+	BizAppPrefix = "businessApp-"
 )
 
 var EntityTypeMap = map[proto.EntityDTO_EntityType]struct{}{

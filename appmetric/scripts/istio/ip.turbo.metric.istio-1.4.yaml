@@ -1,0 +1,142 @@
+# Configuration for turbo metric instances
+apiVersion: config.istio.io/v1alpha2
+kind: instance
+metadata:
+  name: turbopodlatency
+  namespace: default
+spec:
+  compiledTemplate: metric
+  params:
+    value: response.duration | "0ms"
+    dimensions:
+      destination_uid: destination.uid | "unknown"
+      destination_ip: destination.ip | ip("0.0.0.0")
+      destination_name: destination.name | "unknown"
+      destination_namespace: destination.namespace | "unknown"
+      response_code: response.code | 200
+    monitored_resource_type: '"UNSPECIFIED"'
+---
+apiVersion: config.istio.io/v1alpha2
+kind: instance
+metadata:
+  name: turbosvclatency
+  namespace: default
+spec:
+  compiledTemplate: metric
+  params:
+    value: response.duration | "0ms"
+    dimensions:
+      destination_uid: destination.service.uid | "unknown"
+      response_code: response.code | 200
+      destination_service_name: destination.service.name | "unknown"
+      destination_service_namespace: destination.service.namespace | "unknown"
+    monitored_resource_type: '"UNSPECIFIED"'
+---
+apiVersion: config.istio.io/v1alpha2
+kind: instance
+metadata:
+  name: turbopodrequestcount
+  namespace: default
+spec:
+  compiledTemplate: metric
+  params:
+    value: "1"
+    dimensions:
+      destination_uid: destination.uid | "unknown"
+      response_code: response.code | 200
+      destination_ip: destination.ip | ip("0.0.0.0")
+    monitored_resource_type: '"UNSPECIFIED"'
+---
+apiVersion: config.istio.io/v1alpha2
+kind: instance
+metadata:
+  name: turbosvcrequestcount
+  namespace: default
+spec:
+  compiledTemplate: metric
+  params:
+    value: "1"
+    dimensions:
+      destination_uid: destination.service.uid | "unknown"
+      response_code: response.code | 200
+    monitored_resource_type: '"UNSPECIFIED"'
+---
+# Configuration for a Prometheus handler
+apiVersion: config.istio.io/v1alpha2
+kind: handler
+metadata:
+  name: turbohandler
+  namespace: default
+spec:
+  compiledAdapter: prometheus
+  params:
+    metrics:
+    - name: turbo_service_latency_time_ms # Prometheus metric name
+      instance_name: turbosvclatency.instance.default # Mixer instance name (fully-qualified)
+      kind: DISTRIBUTION
+      label_names:
+      - destination_service_name
+      - destination_service_namespace
+      - destination_uid
+      - response_code
+      buckets:
+        explicit_buckets:
+          bounds: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+    - name: turbo_pod_latency_time_ms # Prometheus metric name
+      instance_name: turbopodlatency.instance.default # Mixer instance name (fully-qualified)
+      kind: DISTRIBUTION
+      label_names:
+      - destination_uid
+      - destination_ip
+      - destination_name
+      - destination_namespace
+      - response_code
+      buckets:
+        explicit_buckets:
+          bounds: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+    - name: turbo_service_request_count
+      instance_name: turbosvcrequestcount.instance.default
+      kind: COUNTER
+      label_names:
+      - destination_uid
+      - response_code
+    - name: turbo_pod_request_count
+      instance_name: turbopodrequestcount.instance.default
+      kind: COUNTER
+      label_names:
+      - destination_uid
+      - destination_ip
+      - response_code
+---
+# Rule to send metric instances to a Prometheus handler
+apiVersion: config.istio.io/v1alpha2
+kind: rule
+metadata:
+  name: turbo-grpc
+  namespace: istio-system
+spec:
+  match: context.protocol == "grpc"
+  actions:
+  - handler: turbohandler.handler.default
+    instances:
+    - turbosvclatency.instance.default
+    - turbosvcrequestcount.instance.default
+    - turbopodlatency.instance.default
+    - turbopodrequestcount.instance.default
+---
+# Rule to send metric instances to a Prometheus handler
+apiVersion: config.istio.io/v1alpha2
+kind: rule
+metadata:
+  name: turbo-http
+  namespace: istio-system
+spec:
+  match: context.protocol == "http"
+  actions:
+  - handler: turbohandler.handler.default
+    instances:
+    - turbosvclatency.instance.default
+    - turbosvcrequestcount.instance.default
+    - turbopodlatency.instance.default
+    - turbopodrequestcount.instance.default
+---

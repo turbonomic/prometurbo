@@ -1,0 +1,62 @@
+exporters:
+  - name: istio
+    entities:
+      - type: APPLICATION
+        metrics:
+          - type: RESPONSE_TIME
+            query: '1000.0*rate(istio_turbo_pod_latency_time_ms_sum{response_code="200"}[3m])/rate(istio_turbo_pod_latency_time_ms_count{response_code="200"}[3m]) >= 0'
+          - type: TRANSACTION
+            query: 'rate(istio_turbo_pod_request_count{response_code="200"}[3m]) > 0'
+        attributes:
+          uid:
+            label: destination_uid
+            # Convert from "kubernetes://<podName>.<namespace>" to "<namespace>/<podName>"
+            matches: "^kubernetes://(?P<podName>[a-z0-9]([-a-z0-9]*[a-z0-9])?).(?P<namespace>[a-z0-9]([-a-z0-9]*[a-z0-9])?)$"
+            as: "$namespace/$podName"
+            isIdentifier: true
+          ip:
+            label: destination_ip
+          namespace:
+            label: destination_svc_ns
+          serviceName:
+            label: destination_svc_name
+          businessApp:
+            label: businessApp
+  - name: redis
+    entities:
+      - type: APPLICATION
+        metrics:
+          - type: TRANSACTION
+            query: 'rate(redis_commands_processed_total[3m])'
+        attributes:
+          ip:
+            label: addr
+            matches: #TODO
+            as: #TODO
+            isIdentifier: true
+  - name: cassandra
+    entities:
+      - type: APPLICATION
+        metrics:
+          - type: RESPONSE_TIME
+            query: '0.001*max(cassandra_stats{name=~"org:apache:cassandra:metrics:table:(write|read)latency:99thpercentile"}) by (instance)'
+          - type: TRANSACTION
+            query: 'sum(cassandra_stats{name=~"org:apache:cassandra:metrics:table:(write|read)latency:oneminuterate"}) by (instance)'
+        attributes:
+          ip:
+            label: instance
+            matches: #TODO
+            as: #TODO
+            isIdentifier: true
+  - name: webdriver
+    entities:
+      - type: APPLICATION
+        metrics:
+          - type: RESPONSE_TIME
+            query: '1000*(navigation_timing_load_event_end_seconds{job="webdriver"}-navigation_timing_start_seconds{job="webdriver"})'
+        attributes:
+          ip:
+            label: instance
+            matches: #TODO
+            as: #TODO
+            isIdentifier: true

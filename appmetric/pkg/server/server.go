@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/turbonomic/prometurbo/appmetric/pkg/alligator"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/util"
 )
 
@@ -18,8 +17,6 @@ type MetricServer struct {
 	host string
 
 	provider *provider.Provider
-	appClient  *alligator.Alligator
-	vappClient *alligator.Alligator
 }
 
 const (

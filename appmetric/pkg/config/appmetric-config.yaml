@@ -60,3 +60,17 @@ exporters:
             matches: #TODO
             as: #TODO
             isIdentifier: true
+  - name: mysql
+    entities:
+      - type: APPLICATION
+        metrics:
+          - type: DB_MEM
+            query: 'mysql_global_status_innodb_buffer_pool_bytes_data{job="kubernetes-pods"}'
+          - type: DB_CACHE_HIT_RATE
+            query: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads{job="kubernetes-pods"}[10m])/rate(mysql_global_status_innodb_buffer_pool_read_requests[10m]))'
+          - type: CONNECTION
+            query: 'mysql_global_status_threads_connected{job="kubernetes-pods"}'
+        attributes:
+          id:
+            label: kubernetes_pod_name
+            isIdentifier: true

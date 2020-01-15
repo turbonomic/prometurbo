@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"fmt"
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/inter"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
@@ -26,12 +25,7 @@ func (p *Provider) GetMetrics() ([]*inter.EntityMetric, error) {
 	for _, promClient := range p.promClients {
 		var metricsForProms []*inter.EntityMetric
 		for _, exporterDef := range p.exporterDefs {
-			metricsForExporters, err := getMetricsForExporter(promClient, exporterDef)
-			if err != nil {
-				glog.Errorf("Failed to get entity metrics for exporter %v from host %v: %v",
-					exporterDef.name, promClient.GetHost(), err)
-				continue
-			}
+			metricsForExporters := getMetricsForExporter(promClient, exporterDef)
 			metricsForProms = append(metricsForProms, metricsForExporters...)
 		}
 		metrics = append(metrics, metricsForProms...)
@@ -40,36 +34,44 @@ func (p *Provider) GetMetrics() ([]*inter.EntityMetric, error) {
 }
 
 func getMetricsForExporter(
-	promClient *prometheus.RestClient, exporterDef *exporterDef) ([]*inter.EntityMetric, error) {
+	promClient *prometheus.RestClient, exporterDef *exporterDef) []*inter.EntityMetric {
 	var metricsForExporter []*inter.EntityMetric
 	for _, entityDef := range exporterDef.entityDefs {
-		metricsForEntity, err := getMetricsForEntity(promClient, entityDef)
-		if err != nil {
-			return nil, err
-		}
+		metricsForEntity := getMetricsForEntity(promClient, entityDef)
 		metricsForExporter = append(metricsForExporter, metricsForEntity...)
 	}
-	return metricsForExporter, nil
+	return metricsForExporter
 }
 
 func getMetricsForEntity(
-	promClient *prometheus.RestClient, entityDef *entityDef) ([]*inter.EntityMetric, error) {
+	promClient *prometheus.RestClient, entityDef *entityDef) []*inter.EntityMetric {
 	var metricsForEntity []*inter.EntityMetric
 	var metricsForEntityMap = map[string]*inter.EntityMetric{}
 	for _, metricDef := range entityDef.metricDefs {
 		metricSeries, err := promClient.GetMetrics(metricDef.query)
 		if err != nil {
-			return nil, fmt.Errorf("failed to query metric for entity type %v: %v", entityDef.eType, err)
+			glog.Errorf("Failed to get metric %v for entity type %v: %v.",
+				metricDef, entityDef.eType, err)
+			continue
 		}
 		for _, metricData := range metricSeries {
 			basicMetricData, ok := metricData.(*prometheus.BasicMetricData)
 			if !ok {
 				// TODO: Enhance error messages
-				return nil, fmt.Errorf("type assertion failed for metricData %+v", metricData)
+				glog.Errorf("Type assertion failed for metricData %+v obtained from %v for entity type %v.",
+					metricData, metricDef, entityDef.eType)
+				continue
 			}
 			id, attr, err := entityDef.reconcileAttributes(basicMetricData.Labels)
 			if err != nil {
-				return nil, fmt.Errorf("failed to reconcile attributes from labels: %v", err)
+				glog.Errorf("Failed to reconcile attributes from labels %+v obtained from %v for entity %v: %v.",
+					basicMetricData.Labels, metricDef, entityDef.eType, err)
+				continue
+			}
+			if id == "" {
+				glog.Warningf("Failed to get identifier from labels %+v obtained from %v for entity %v.",
+					basicMetricData.Labels, metricDef, entityDef.eType)
+				continue
 			}
 			metric, found := metricsForEntityMap[id]
 			if !found {
@@ -87,5 +89,5 @@ func getMetricsForEntity(
 	for _, metric := range metricsForEntityMap {
 		metricsForEntity = append(metricsForEntity, metric)
 	}
-	return metricsForEntity, nil
+	return metricsForEntity
 }

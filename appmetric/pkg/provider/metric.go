@@ -14,6 +14,10 @@ type metricDef struct {
 	query prometheus.Request
 }
 
+func (m metricDef) String() string {
+	return fmt.Sprintf("%v[%v]", m.mType, m.query)
+}
+
 type attributeValueDef struct {
 	labelKey     string
 	valueMatches *regexp.Regexp

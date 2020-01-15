@@ -52,7 +52,9 @@ func (e *entityDef) reconcileAttributes(labels map[string]string) (string, map[s
 		key := def.labelKey
 		value, exist := labels[key]
 		if !exist {
-			// we don't care about this label
+			if def.isIdentifier {
+				return "", reconciledAttributes, fmt.Errorf("required identifer label key %q does not exist", key)
+			}
 			continue
 		}
 		glog.V(4).Infof("Reconcile label with key: %q, value: %q", key, value)

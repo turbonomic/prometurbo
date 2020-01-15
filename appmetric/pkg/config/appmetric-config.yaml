@@ -11,7 +11,7 @@ exporters:
           uid:
             label: destination_uid
             # Convert from "kubernetes://<podName>.<namespace>" to "<namespace>/<podName>"
-            matches: "^kubernetes://(?P<podName>[a-z0-9]([-a-z0-9]*[a-z0-9])?).(?P<namespace>[a-z0-9]([-a-z0-9]*[a-z0-9])?)$"
+            matches: ^kubernetes://(?P<podName>[a-z0-9]([-a-z0-9]*[a-z0-9])?).(?P<namespace>[a-z0-9]([-a-z0-9]*[a-z0-9])?)$
             as: "$namespace/$podName"
             isIdentifier: true
           ip:
@@ -22,6 +22,8 @@ exporters:
             label: destination_svc_name
           businessApp:
             label: businessApp
+          target:
+            label: job
   - name: redis
     entities:
       - type: APPLICATION
@@ -31,9 +33,10 @@ exporters:
         attributes:
           ip:
             label: addr
-            matches: #TODO
-            as: #TODO
+            matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
             isIdentifier: true
+          target:
+            label: job
   - name: cassandra
     entities:
       - type: APPLICATION
@@ -45,9 +48,10 @@ exporters:
         attributes:
           ip:
             label: instance
-            matches: #TODO
-            as: #TODO
+            matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
             isIdentifier: true
+          target:
+            label: job
   - name: webdriver
     entities:
       - type: APPLICATION
@@ -57,20 +61,68 @@ exporters:
         attributes:
           ip:
             label: instance
-            matches: #TODO
-            as: #TODO
+            matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
             isIdentifier: true
+          target:
+            label: job
   - name: mysql
     entities:
       - type: APPLICATION
         metrics:
           - type: DB_MEM
-            query: 'mysql_global_status_innodb_buffer_pool_bytes_data{job="kubernetes-pods"}'
+            query: 'mysql_global_status_innodb_buffer_pool_bytes_data{job="mysql"}'
           - type: DB_CACHE_HIT_RATE
-            query: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads{job="kubernetes-pods"}[10m])/rate(mysql_global_status_innodb_buffer_pool_read_requests[10m]))'
+            query: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads{job="mysql"}[10m])/rate(mysql_global_status_innodb_buffer_pool_read_requests[10m]))'
           - type: CONNECTION
-            query: 'mysql_global_status_threads_connected{job="kubernetes-pods"}'
+            query: 'mysql_global_status_threads_connected{job="mysql"}'
+          - type: TRANSACTION
+            query: 'sum(rate(mysql_global_status_commands_total{command=~"(commit|rollback)"}[5m])) without (command)'
         attributes:
-          id:
-            label: kubernetes_pod_name
+          ip:
+            label: instance
+            matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
             isIdentifier: true
+          turboVersion:
+            label: turbo_version
+          node:
+            label: node
+          target:
+            label: job
+  - name: node
+    entities:
+      - type: VIRTUAL_MACHINE
+        metrics:
+          - type: VCPU
+            query: 'sum by (instance, job) (irate(node_cpu_seconds_total{}[3m]))'
+          - type: VMEM
+            query: 'node_memory_MemTotal_bytes{} - node_memory_MemAvailable_bytes{}'
+        attributes:
+          ip:
+            label: instance
+            matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
+            isIdentifier: true
+          target:
+            label: job
+  - name: jmx
+    entities:
+      - type: APPLICATION
+        metrics:
+          - type: VCPU
+            query: 'java_lang_OperatingSystem_ProcessCpuLoad'
+          - type: VMEM
+            query: 'java_lang_Memory_HeapMemoryUsage_used'
+          - type: COLLECTION_TIME
+            query: 'java_lang_GarbageCollector_CollectionTime'
+          - type: RESPONSE_TIME
+            query: 'rate(Catalina_GlobalRequestProcessor_processingTime{name=~".*http-.*"}[3m])'
+        attributes:
+          ip:
+            label: instance
+            matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
+            isIdentifier: true
+          turboVersion:
+            label: turbo_version
+          node:
+            label: node
+          target:
+            label: job

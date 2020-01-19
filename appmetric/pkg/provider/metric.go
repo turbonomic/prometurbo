@@ -4,18 +4,17 @@ import (
 	"fmt"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/config"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
-	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 	"regexp"
 	"strings"
 )
 
-type metricDef struct {
-	mType proto.CommodityDTO_CommodityType
-	query prometheus.Request
-}
+const (
+	Used     = "used"
+	Capacity = "capacity"
+)
 
-func (m metricDef) String() string {
-	return fmt.Sprintf("%v[%v]", m.mType, m.query)
+type metricDef struct {
+	queries map[string]prometheus.Request
 }
 
 type attributeValueDef struct {
@@ -26,20 +25,19 @@ type attributeValueDef struct {
 }
 
 func newMetricDef(metricConfig config.MetricConfig) (*metricDef, error) {
-	if metricConfig.Type == "" {
-		return nil, fmt.Errorf("empty metricDef type")
+	if len(metricConfig.Queries) == 0 {
+		return nil, fmt.Errorf("empty queries")
 	}
-	mType, ok := proto.CommodityDTO_CommodityType_value[strings.ToUpper(metricConfig.Type)]
-	if !ok {
-		return nil, fmt.Errorf("unsupported metricDef type %q", metricConfig.Type)
+	if _, exist := metricConfig.Queries[Used]; !exist {
+		return nil, fmt.Errorf("missing query for used value")
 	}
-	if metricConfig.Query == "" {
-		return nil, fmt.Errorf("empty query for metricDef type %q", metricConfig.Type)
+	metricDef := metricDef{
+		queries: make(map[string]prometheus.Request),
 	}
-	return &metricDef{
-		mType: proto.CommodityDTO_CommodityType(mType),
-		query: prometheus.NewBasicRequest().SetQuery(metricConfig.Query),
-	}, nil
+	for k, v := range metricConfig.Queries {
+		metricDef.queries[k] = prometheus.NewBasicRequest().SetQuery(v)
+	}
+	return &metricDef, nil
 }
 
 func newAttributeValue(valueMapping config.ValueMapping) (*attributeValueDef, error) {

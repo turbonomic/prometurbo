@@ -40,10 +40,10 @@ func NewMetricServer(port int, provider *provider.Provider) *MetricServer {
 	}
 
 	return &MetricServer{
-		port:       port,
-		ip:         ip,
-		host:       host,
-		provider:   provider,
+		port:     port,
+		ip:       ip,
+		host:     host,
+		provider: provider,
 	}
 }
 
@@ -68,11 +68,6 @@ func (s *MetricServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if strings.EqualFold(path, metricPath) {
 		s.handleMetric(w, r)
-		return
-	}
-
-	if strings.EqualFold(path, fakeMetricPath) {
-		s.handleFakeMetric(w, r)
 		return
 	}
 

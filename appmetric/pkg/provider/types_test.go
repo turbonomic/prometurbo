@@ -1,9 +1,16 @@
-package inter
+package provider
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 	"testing"
+)
+
+const (
+	AppEntity   = proto.EntityDTO_APPLICATION
+	LatencyType = proto.CommodityDTO_RESPONSE_TIME
+	TpsType     = proto.CommodityDTO_TRANSACTION
 )
 
 func TestEntityMetric_Marshall(t *testing.T) {
@@ -12,8 +19,8 @@ func TestEntityMetric_Marshall(t *testing.T) {
 	em.SetLabel("ip", "10.0.2.3")
 	em.SetLabel("scope", "k8s1")
 
-	em.SetMetric(LatencyType, 133.2)
-	em.SetMetric(TpsType, 12)
+	em.SetMetric(LatencyType, Used, 133.2)
+	em.SetMetric(TpsType, Used, 12)
 
 	//1. marshal
 	ebytes, err := json.Marshal(em)
@@ -39,16 +46,16 @@ func TestNewMetricResponse(t *testing.T) {
 	em.SetLabel("ip", "10.0.2.3")
 	em.SetLabel("scope", "k8s1")
 
-	em.SetMetric(LatencyType, 133.2)
-	em.SetMetric(TpsType, 12)
+	em.SetMetric(LatencyType, Used, 133.2)
+	em.SetMetric(TpsType, Used, 12)
 
 	em2 := NewEntityMetric("aid2", AppEntity)
 	em2.SetLabel("name", "istio/music-ftaf2")
 	em2.SetLabel("ip", "10.0.3.2")
 	em2.SetLabel("scope", "k8s1")
 
-	em2.SetMetric(LatencyType, 13.2)
-	em2.SetMetric(TpsType, 10)
+	em2.SetMetric(LatencyType, Used, 13.2)
+	em2.SetMetric(TpsType, Used, 10)
 
 	res := NewMetricResponse()
 	res.SetStatus(0, "good")

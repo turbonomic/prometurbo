@@ -11,8 +11,8 @@ import (
 
 type entityDef struct {
 	eType         proto.EntityDTO_EntityType
-	metricDefs    []*metricDef
 	attributeDefs map[string]*attributeValueDef
+	metricDefs    map[proto.CommodityDTO_CommodityType]*metricDef
 }
 
 func newEntityDef(entityConfig config.EntityConfig) (*entityDef, error) {
@@ -26,13 +26,18 @@ func newEntityDef(entityConfig config.EntityConfig) (*entityDef, error) {
 	if len(entityConfig.MetricConfigs) == 0 {
 		return nil, fmt.Errorf("empty metricDef configuration for entityDef type %v", entityConfig.Type)
 	}
-	var metrics []*metricDef
-	for _, metricConfig := range entityConfig.MetricConfigs {
+	var metrics = map[proto.CommodityDTO_CommodityType]*metricDef{}
+	for metricType, metricConfig := range entityConfig.MetricConfigs {
+		mType, ok := proto.CommodityDTO_CommodityType_value[strings.ToUpper(metricType)]
+		if !ok {
+			return nil, fmt.Errorf("unsupported metric type %q", metricType)
+		}
 		metric, err := newMetricDef(metricConfig)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create metricDefs for entityDef type %v: %v", entityConfig.Type, err)
+			return nil, fmt.Errorf("failed to create metricDefs for %v [%v]: %v",
+				entityConfig.Type, metricType, err)
 		}
-		metrics = append(metrics, metric)
+		metrics[proto.CommodityDTO_CommodityType(mType)] = metric
 	}
 	attributes, err := newAttributes(entityConfig.AttributeConfigs)
 	if err != nil {

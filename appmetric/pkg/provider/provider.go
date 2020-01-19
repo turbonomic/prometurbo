@@ -2,9 +2,7 @@ package provider
 
 import (
 	"github.com/golang/glog"
-	"github.com/turbonomic/prometurbo/appmetric/pkg/inter"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
-	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 )
 
 type Provider struct {
@@ -19,11 +17,11 @@ func NewProvider(promClients []*prometheus.RestClient, exporterDefs []*exporterD
 	}
 }
 
-func (p *Provider) GetMetrics() ([]*inter.EntityMetric, error) {
-	var metrics []*inter.EntityMetric
+func (p *Provider) GetMetrics() ([]*EntityMetric, error) {
+	var metrics []*EntityMetric
 	// TODO: use goroutine
 	for _, promClient := range p.promClients {
-		var metricsForProms []*inter.EntityMetric
+		var metricsForProms []*EntityMetric
 		for _, exporterDef := range p.exporterDefs {
 			metricsForExporters := getMetricsForExporter(promClient, exporterDef)
 			metricsForProms = append(metricsForProms, metricsForExporters...)
@@ -34,8 +32,8 @@ func (p *Provider) GetMetrics() ([]*inter.EntityMetric, error) {
 }
 
 func getMetricsForExporter(
-	promClient *prometheus.RestClient, exporterDef *exporterDef) []*inter.EntityMetric {
-	var metricsForExporter []*inter.EntityMetric
+	promClient *prometheus.RestClient, exporterDef *exporterDef) []*EntityMetric {
+	var metricsForExporter []*EntityMetric
 	for _, entityDef := range exporterDef.entityDefs {
 		metricsForEntity := getMetricsForEntity(promClient, entityDef)
 		metricsForExporter = append(metricsForExporter, metricsForEntity...)
@@ -44,46 +42,45 @@ func getMetricsForExporter(
 }
 
 func getMetricsForEntity(
-	promClient *prometheus.RestClient, entityDef *entityDef) []*inter.EntityMetric {
-	var metricsForEntity []*inter.EntityMetric
-	var metricsForEntityMap = map[string]*inter.EntityMetric{}
-	for _, metricDef := range entityDef.metricDefs {
-		metricSeries, err := promClient.GetMetrics(metricDef.query)
-		if err != nil {
-			glog.Errorf("Failed to get metric %v for entity type %v: %v.",
-				metricDef, entityDef.eType, err)
-			continue
-		}
-		for _, metricData := range metricSeries {
-			basicMetricData, ok := metricData.(*prometheus.BasicMetricData)
-			if !ok {
-				// TODO: Enhance error messages
-				glog.Errorf("Type assertion failed for metricData %+v obtained from %v for entity type %v.",
-					metricData, metricDef, entityDef.eType)
-				continue
-			}
-			id, attr, err := entityDef.reconcileAttributes(basicMetricData.Labels)
+	promClient *prometheus.RestClient, entityDef *entityDef) []*EntityMetric {
+	var metricsForEntity []*EntityMetric
+	var metricsForEntityMap = map[string]*EntityMetric{}
+	for metricType, metricDef := range entityDef.metricDefs {
+		for metricKind, metricQuery := range metricDef.queries {
+			metricSeries, err := promClient.GetMetrics(metricQuery)
 			if err != nil {
-				glog.Errorf("Failed to reconcile attributes from labels %+v obtained from %v for entity %v: %v.",
-					basicMetricData.Labels, metricDef, entityDef.eType, err)
+				glog.Errorf("Failed to query metric %v [%v] for entity type %v: %v.",
+					metricKind, metricQuery, entityDef.eType, err)
 				continue
 			}
-			if id == "" {
-				glog.Warningf("Failed to get identifier from labels %+v obtained from %v for entity %v.",
-					basicMetricData.Labels, metricDef, entityDef.eType)
-				continue
-			}
-			metric, found := metricsForEntityMap[id]
-			if !found {
-				metric = &inter.EntityMetric{
-					UID:     id,
-					Type:    entityDef.eType,
-					Labels:  attr,
-					Metrics: map[proto.CommodityDTO_CommodityType]float64{},
+			for _, metricData := range metricSeries {
+				basicMetricData, ok := metricData.(*prometheus.BasicMetricData)
+				if !ok {
+					// TODO: Enhance error messages
+					glog.Errorf("Type assertion failed for metricData %+v obtained from %v [%v] for entity type %v.",
+						metricData, metricKind, metricQuery, entityDef.eType)
+					continue
 				}
-				metricsForEntityMap[id] = metric
+				id, attr, err := entityDef.reconcileAttributes(basicMetricData.Labels)
+				if err != nil {
+					glog.Errorf("Failed to reconcile attributes from labels %+v obtained from %v [%v] for entity %v: %v.",
+						basicMetricData.Labels, metricKind, metricQuery, entityDef.eType, err)
+					continue
+				}
+				if id == "" {
+					glog.Warningf("Failed to get identifier from labels %+v obtained from %v [%v] for entity %v.",
+						basicMetricData.Labels, metricKind, metricQuery, entityDef.eType)
+					continue
+				}
+
+				if _, found := metricsForEntityMap[id]; !found {
+					metricsForEntityMap[id] = NewEntityMetric(id, entityDef.eType)
+				}
+				for name, value := range attr {
+					metricsForEntityMap[id].SetLabel(name, value)
+				}
+				metricsForEntityMap[id].SetMetric(metricType, metricKind, basicMetricData.GetValue())
 			}
-			metricsForEntityMap[id].SetMetric(metricDef.mType, basicMetricData.GetValue())
 		}
 	}
 	for _, metric := range metricsForEntityMap {

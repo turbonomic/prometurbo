@@ -84,8 +84,24 @@ func (f *SupplyChainFactory) CreateSupplyChain() ([]*proto.TemplateDTO, error) {
 
 	vAppNode.MergedEntityMetaData = vAppMetadata
 
+	// bizApplication node
+	bizAppNode, err := f.buildBusinessAppSupplyBuilder()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Stitching metadata for the vApp node
+	bizAppMetadata, err := f.getVAppStitchingMetaData()
+	if err != nil {
+		return nil, err
+	}
+
+	bizAppNode.MergedEntityMetaData = bizAppMetadata
+
 	return supplychain.NewSupplyChainBuilder().
-		Top(vAppNode).
+		Top(bizAppNode).
+		Entity(vAppNode).
 		Entity(appNode).
 		Entity(vmNode).
 		Create()
@@ -133,11 +149,25 @@ func (f *SupplyChainFactory) buildVAppSupplyBuilder() (*proto.TemplateDTO, error
 	vappbuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_VIRTUAL_APPLICATION).
 		Provider(proto.EntityDTO_APPLICATION, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
-		Buys(respTimeTemplateComm)
+		Buys(respTimeTemplateComm).
+		Sells(transactionTemplateComm).
+		Sells(respTimeTemplateComm)
 	vappbuilder.SetPriority(-1)
 	vappbuilder.SetTemplateType(proto.TemplateDTO_BASE)
 
 	return vappbuilder.Create()
+}
+
+func (f *SupplyChainFactory) buildBusinessAppSupplyBuilder() (*proto.TemplateDTO, error) {
+
+	businessappbuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_BUSINESS_APPLICATION).
+		Provider(proto.EntityDTO_VIRTUAL_APPLICATION, proto.Provider_LAYERED_OVER).
+		Buys(transactionTemplateComm).
+		Buys(respTimeTemplateComm)
+	businessappbuilder.SetPriority(-1)
+	businessappbuilder.SetTemplateType(proto.TemplateDTO_BASE)
+
+	return businessappbuilder.Create()
 }
 
 func (f *SupplyChainFactory) getVMStitchingMetaData() (*proto.MergedEntityMetadata, error) {
@@ -190,7 +220,29 @@ func (f *SupplyChainFactory) getVAppStitchingMetaData() (*proto.MergedEntityMeta
 		InternalMatchingType(builder.MergedEntityMetadata_STRING).
 		ExternalMatchingPropertyWithDelimiter(constant.StitchingAttr, ",").
 		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
+		PatchSoldList(commodityList).
 		PatchBoughtList(proto.EntityDTO_APPLICATION, commodityList)
+
+	metadata, err := mbuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata, nil
+}
+
+func (f *SupplyChainFactory) getBusinessAppStitchingMetaData() (*proto.MergedEntityMetadata, error) {
+	commodityList := []proto.CommodityDTO_CommodityType{respTimeType, transactionType}
+
+	var mbuilder *builder.MergedEntityMetadataBuilder
+
+	mbuilder = builder.NewMergedEntityMetadataBuilder().
+		KeepInTopology(false).
+		InternalMatchingProperty(constant.StitchingAttr).
+		InternalMatchingType(builder.MergedEntityMetadata_STRING).
+		ExternalMatchingPropertyWithDelimiter(constant.StitchingAttr, ",").
+		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
+		PatchBoughtList(proto.EntityDTO_VIRTUAL_APPLICATION, commodityList)
 
 	metadata, err := mbuilder.Build()
 	if err != nil {

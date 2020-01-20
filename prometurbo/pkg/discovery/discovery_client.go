@@ -101,7 +101,7 @@ func (d *P8sDiscoveryClient) Discover(accountValues []*proto.AccountValue) (*pro
 
 func (d *P8sDiscoveryClient) buildEntities(metricExporter exporter.MetricExporter) ([]*proto.EntityDTO, error) {
 	var entities []*proto.EntityDTO
-
+	businessAppMap := make(map[string][]*proto.EntityDTO)
 	metrics, err := metricExporter.Query()
 	if err != nil {
 		glog.Errorf("Error while querying metrics exporter: %v", err)
@@ -114,9 +114,26 @@ func (d *P8sDiscoveryClient) buildEntities(metricExporter exporter.MetricExporte
 			glog.Errorf("Error building entity from metric %v: %s", metric, err)
 			continue
 		}
+		//Create a map with key: businessAppName (based on relabeling) and value: vapp dtos
+		if v, ok := metric.Labels["business_app"]; ok {
+			for _, dto := range dtos {
+				if *dto.EntityType == proto.EntityDTO_VIRTUAL_APPLICATION {
+					businessAppMap[v] = append(businessAppMap[v], dto)
+				}
+			}
+		}
 		entities = append(entities, dtos...)
 	}
-
+	if (len(businessAppMap) > 0) {
+		for k, v := range businessAppMap {
+			dto, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.createProxyVM, d.scope,nil).BuildBusinessApp(v,k)
+			if err != nil {
+				glog.Errorf("Error building business app entity for %s", k)
+				continue
+			}
+			entities = append(entities, dto)
+		}
+	}
 	return entities, nil
 }
 

@@ -290,7 +290,7 @@ func (b *entityBuilder) createEntityDto(provider *proto.EntityDTO) (*proto.Entit
 	// TODO: This is to match the supply chain and should be removed.
 	for commType := range constant.AppCommodityTypeMap {
 		if _, ok := commMetrics[commType]; !ok {
-			commMetrics[commType] = 0
+			commMetrics[commType] = map[string]float64{exporter.Used: 0}
 		}
 	}
 
@@ -298,13 +298,13 @@ func (b *entityBuilder) createEntityDto(provider *proto.EntityDTO) (*proto.Entit
 		commType := key
 
 		if _, ok := constant.AppCommodityTypeMap[commType]; !ok {
-			err := fmt.Errorf("Unsupported commodity type %s", key)
+			err := fmt.Errorf("unsupported commodity type %s", key)
 			glog.Errorf(err.Error())
 			continue
 		}
 
 		commodity, err := builder.NewCommodityDTOBuilder(commType).
-			Used(value).Key(commKey).Create()
+			Used(value[exporter.Used]).Key(commKey).Create()
 
 		if err != nil {
 			glog.Errorf("Error building a commodity: %s", err)

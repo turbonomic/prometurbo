@@ -10,17 +10,17 @@ exporters:
             queries:
               used: 'rate(istio_turbo_pod_request_count{response_code="200"}[3m]) > 0'
         attributes:
-          uid:
+          ip:
+            label: destination_ip
+            isIdentifier: true
+          name:
             label: destination_uid
             # Convert from "kubernetes://<podName>.<namespace>" to "<namespace>/<podName>"
             matches: ^kubernetes://(?P<podName>[a-z0-9]([-a-z0-9]*[a-z0-9])?).(?P<namespace>[a-z0-9]([-a-z0-9]*[a-z0-9])?)$
             as: "$namespace/$podName"
-            isIdentifier: true
-          ip:
-            label: destination_ip
-          namespace:
+          service_ns:
             label: destination_svc_ns
-          serviceName:
+          service_name:
             label: destination_svc_name
           businessApp:
             label: businessApp

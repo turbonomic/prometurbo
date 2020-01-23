@@ -17,7 +17,7 @@ const (
 	apiPath      = "/api/v1/"
 	apiQueryPath = "/api/v1/query"
 
-	defaultTimeOut = time.Duration(60 * time.Second)
+	defaultTimeOut = 60 * time.Second
 )
 
 // for internal use only
@@ -31,34 +31,6 @@ type Response struct {
 type RawData struct {
 	ResultType string          `json:"resultType"`
 	Result     json.RawMessage `json:"result"`
-}
-
-// Request : interface for customer defined query generator, and RawMetric parser.
-type Request interface {
-	GetQuery() string
-	Parse(metric *RawMetric) (MetricData, error)
-}
-
-// this BasicRequest will copy all the labels from the RawData
-type BasicRequest struct {
-	query string
-}
-
-func NewBasicRequest() *BasicRequest {
-	return &BasicRequest{}
-}
-
-func (request *BasicRequest) GetQuery() string {
-	return request.query
-}
-
-func (request *BasicRequest) SetQuery(q string) *BasicRequest {
-	request.query = q
-	return request
-}
-
-func (request *BasicRequest) Parse(metric *RawMetric) (MetricData, error) {
-	return nil, nil
 }
 
 type RestClient struct {
@@ -115,7 +87,7 @@ func (c *RestClient) SetUser(username, password string) {
 func (c *RestClient) Query(query string) (*RawData, error) {
 	query = strings.TrimSpace(query)
 	if len(query) < 1 {
-		err := fmt.Errorf("Prometheus query is empty")
+		err := fmt.Errorf("prometheus query is empty")
 		glog.Errorf(err.Error())
 		return nil, err
 	}
@@ -171,11 +143,11 @@ func (c *RestClient) Query(query string) (*RawData, error) {
 //          not a 'matrix' (range query), 'string', or 'scalar'
 //   (1) the Request will generate a query;
 //   (2) the Request will parse the response into a list of MetricData
-func (c *RestClient) GetMetrics(request Request) ([]MetricData, error) {
+func (c *RestClient) GetMetrics(request string) ([]MetricData, error) {
 	var result []MetricData
 
 	//1. query
-	response, err := c.Query(request.GetQuery())
+	response, err := c.Query(request)
 	if err != nil {
 		glog.Errorf("Failed to get metrics from prometheus: %v", err)
 		return result, err

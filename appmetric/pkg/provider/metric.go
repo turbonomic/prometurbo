@@ -3,7 +3,6 @@ package provider
 import (
 	"fmt"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/config"
-	"github.com/turbonomic/prometurbo/appmetric/pkg/prometheus"
 	"regexp"
 	"strings"
 )
@@ -14,7 +13,7 @@ const (
 )
 
 type metricDef struct {
-	queries map[string]prometheus.Request
+	queries map[string]string
 }
 
 type attributeValueDef struct {
@@ -32,10 +31,10 @@ func newMetricDef(metricConfig config.MetricConfig) (*metricDef, error) {
 		return nil, fmt.Errorf("missing query for used value")
 	}
 	metricDef := metricDef{
-		queries: make(map[string]prometheus.Request),
+		queries: make(map[string]string),
 	}
 	for k, v := range metricConfig.Queries {
-		metricDef.queries[k] = prometheus.NewBasicRequest().SetQuery(v)
+		metricDef.queries[k] = v
 	}
 	return &metricDef, nil
 }
@@ -79,21 +78,17 @@ func newAttributeValue(valueMapping config.ValueMapping) (*attributeValueDef, er
 
 func newAttributes(attributeConfigs map[string]config.ValueMapping) (map[string]*attributeValueDef, error) {
 	var attributes = map[string]*attributeValueDef{}
-	var identifier = map[string]bool{}
+	var identifier []string
 	for name, valueMapping := range attributeConfigs {
 		value, err := newAttributeValue(valueMapping)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create attribute %q: %v", name, err)
 		}
 		if value.isIdentifier {
-			identifier[name] = true
+			identifier = append(identifier, name)
 			if len(identifier) > 1 {
-				var l []string
-				for n := range identifier {
-					l = append(l, n)
-				}
-				return nil, fmt.Errorf("failed to create attribute %q: duplicated identifiers %v",
-					name, strings.Join(l, " "))
+				return nil, fmt.Errorf("failed to create attribute %q: duplicated identifiers: [%v]",
+					name, strings.Join(identifier, ","))
 			}
 		}
 		attributes[name] = value

@@ -3,11 +3,11 @@ package server
 import (
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/turbonomic/prometurbo/appmetric/pkg/provider"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/turbonomic/prometurbo/appmetric/pkg/alligator"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/util"
 )
 
@@ -16,17 +16,17 @@ type MetricServer struct {
 	ip   string
 	host string
 
-	appClient  *alligator.Alligator
-	vappClient *alligator.Alligator
+	provider *provider.Provider
 }
 
 const (
+	metricPath        = "/metrics"
 	appMetricPath     = "/pod/metrics"
 	serviceMetricPath = "/service/metrics"
 	fakeMetricPath    = "/fake/metrics"
 )
 
-func NewMetricServer(port int, appClient, vappclient *alligator.Alligator) *MetricServer {
+func NewMetricServer(port int, provider *provider.Provider) *MetricServer {
 	ip, err := util.ExternalIP()
 	if err != nil {
 		glog.Errorf("Failed to get server IP: %v", err)
@@ -38,14 +38,12 @@ func NewMetricServer(port int, appClient, vappclient *alligator.Alligator) *Metr
 		glog.Errorf("Failed to get hostname: %v", err)
 		host = "localhost"
 	}
-	glog.V(2).Infof("Will server on %s:%d", ip, port)
 
 	return &MetricServer{
-		port:       port,
-		ip:         ip,
-		host:       host,
-		appClient:  appClient,
-		vappClient: vappclient,
+		port:     port,
+		ip:       ip,
+		host:     host,
+		provider: provider,
 	}
 }
 
@@ -55,7 +53,7 @@ func (s *MetricServer) Run() {
 		Handler: s,
 	}
 
-	glog.V(1).Infof("HTTP server listens on: %s", server.Addr)
+	glog.V(2).Infof("HTTP server listens on: %v:%v", s.ip, s.port)
 	panic(server.ListenAndServe())
 }
 
@@ -68,18 +66,8 @@ func (s *MetricServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.EqualFold(path, appMetricPath) {
-		s.handleAppMetric(w, r)
-		return
-	}
-
-	if strings.EqualFold(path, serviceMetricPath) {
-		s.handleServiceMetric(w, r)
-		return
-	}
-
-	if strings.EqualFold(path, fakeMetricPath) {
-		s.handleFakeMetric(w, r)
+	if strings.EqualFold(path, metricPath) {
+		s.handleMetric(w, r)
 		return
 	}
 

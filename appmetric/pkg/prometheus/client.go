@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/glog"
 	"io/ioutil"
 	"net/http"
@@ -16,8 +17,21 @@ const (
 	apiPath      = "/api/v1/"
 	apiQueryPath = "/api/v1/query"
 
-	defaultTimeOut = time.Duration(60 * time.Second)
+	defaultTimeOut = 60 * time.Second
 )
+
+// for internal use only
+type Response struct {
+	Status    string   `json:"status"`
+	Data      *RawData `json:"data,omitempty"`
+	ErrorType string   `json:"errorType,omitempty"`
+	Error     string   `json:"error,omitempty"`
+}
+
+type RawData struct {
+	ResultType string          `json:"resultType"`
+	Result     json.RawMessage `json:"result"`
+}
 
 type RestClient struct {
 	client   *http.Client
@@ -50,12 +64,17 @@ func NewRestClient(host string) (*RestClient, error) {
 		client.Transport = tr
 	}
 
-	glog.V(2).Infof("Prometheus server address is: %v", host)
+	glog.V(2).Infof("Adding Prometheus server: %v", host)
 
 	return &RestClient{
 		client: client,
 		host:   host,
 	}, nil
+}
+
+// GetHost get the host associated with the prometheus client
+func (c *RestClient) GetHost() string {
+	return c.host
 }
 
 // SetUser set the login user/password for the prometheus client
@@ -68,7 +87,7 @@ func (c *RestClient) SetUser(username, password string) {
 func (c *RestClient) Query(query string) (*RawData, error) {
 	query = strings.TrimSpace(query)
 	if len(query) < 1 {
-		err := fmt.Errorf("Prometheus query is empty")
+		err := fmt.Errorf("prometheus query is empty")
 		glog.Errorf(err.Error())
 		return nil, err
 	}
@@ -105,8 +124,9 @@ func (c *RestClient) Query(query string) (*RawData, error) {
 		glog.Errorf("Failed to read response: %v", err)
 		return nil, err
 	}
+	glog.V(4).Infof("resp: %+v", string(result))
 
-	var ss promeResponse
+	var ss Response
 	if err := json.Unmarshal(result, &ss); err != nil {
 		glog.Errorf("Failed to unmarshall response: %v", err)
 		return nil, err
@@ -115,62 +135,62 @@ func (c *RestClient) Query(query string) (*RawData, error) {
 	if ss.Status == "error" {
 		return nil, fmt.Errorf(ss.Error)
 	}
-
-	glog.V(4).Infof("resp: %++v", string(result))
-	glog.V(4).Infof("metric: %+++v", ss)
 	return ss.Data, nil
 }
 
 // GetMetrics send a query to prometheus server, and return a list of MetricData
 //   Note: it only support 'vector query: the data in the response is a 'vector'
 //          not a 'matrix' (range query), 'string', or 'scalar'
-//   (1) the RequestInput will generate a query;
-//   (2) the RequestInput will parse the response into a list of MetricData
-func (c *RestClient) GetMetrics(input RequestInput) ([]MetricData, error) {
-	result := []MetricData{}
+//   (1) the Request will generate a query;
+//   (2) the Request will parse the response into a list of MetricData
+func (c *RestClient) GetMetrics(request string) ([]MetricData, error) {
+	var result []MetricData
 
 	//1. query
-	qresult, err := c.Query(input.GetQuery())
+	response, err := c.Query(request)
 	if err != nil {
 		glog.Errorf("Failed to get metrics from prometheus: %v", err)
 		return result, err
 	}
 
-	glog.V(4).Infof("result.type=%v, \n result: %+v",
-		qresult.ResultType, string(qresult.Result))
-
-	if qresult.ResultType != "vector" {
-		err := fmt.Errorf("Unsupported result type: %v", qresult.ResultType)
+	if response.ResultType != "vector" {
+		err := fmt.Errorf("unsupported result type: %v", response.ResultType)
 		glog.Errorf(err.Error())
 		return result, err
 	}
 
 	//2. parse/decode the value
-	var resp []RawMetric
-	if err := json.Unmarshal(qresult.Result, &resp); err != nil {
+	var rawMetrics []RawMetric
+	if err := json.Unmarshal(response.Result, &rawMetrics); err != nil {
 		glog.Errorf("Failed to unmarshal: %v", err)
 		return result, err
 	}
 
 	//3. assign the values
-	for i := range resp {
-		d, err := input.Parse(&(resp[i]))
+	for i := range rawMetrics {
+		d, err := rawMetrics[i].Parse()
 		if err != nil {
 			glog.Errorf("Failed to parse value: %v", err)
 			continue
 		}
-
+		glog.V(4).Infof("Successfully parsed metric data: %v", spew.Sdump(d))
 		result = append(result, d)
 	}
 
 	return result, nil
 }
 
-// GetJobs  get the all the jobs in the current prometheus server
-//     it is only used for testing.
-func (c *RestClient) GetJobs() (string, error) {
+func (c *RestClient) Validate() (string, error) {
+	jobs, err := c.getJobs()
+	if err != nil {
+		return "", err
+	}
+	return jobs, nil
+}
+
+func (c *RestClient) getJobs() (string, error) {
 	p := fmt.Sprintf("%v%v%v", c.host, apiPath, "label/job/values")
-	glog.V(2).Infof("path=%v", p)
+	glog.V(4).Infof("path=%v", p)
 
 	//1. prepare result
 	req, err := http.NewRequest("GET", p, nil)
@@ -193,9 +213,5 @@ func (c *RestClient) GetJobs() (string, error) {
 		glog.Errorf("Failed to read response: %v", err)
 		return "", err
 	}
-
-	glog.V(3).Infof("resp: %++v", resp)
-	glog.V(3).Infof("result: %++v", string(result))
-
 	return string(result), nil
 }

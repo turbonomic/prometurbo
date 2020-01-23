@@ -11,7 +11,7 @@ import (
 const (
 	LocalDebugConfPath = "configs/prometurbo-config.json"
 	DefaultConfPath    = "/etc/prometurbo/turbo.config"
-	defaultEndpoint    = "http://localhost:8081/pod/metrics"
+	defaultEndpoint    = "http://localhost:8081/metrics"
 )
 
 type PrometurboConf struct {
@@ -39,11 +39,11 @@ func NewPrometurboConf(configFilePath string) (*PrometurboConf, error) {
 	}
 
 	if config.Communicator == nil {
-		return nil, fmt.Errorf("Unable to read the turbo communication config from %s", configFilePath)
+		return nil, fmt.Errorf("unable to read the turbo communication config from %s", configFilePath)
 	}
 
 	if config.TargetConf == nil {
-		return nil, fmt.Errorf("Unable to read the target config from %s", configFilePath)
+		return nil, fmt.Errorf("unable to read the target config from %s", configFilePath)
 	}
 
 	return config, nil

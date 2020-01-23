@@ -24,8 +24,8 @@ test: clean
 	@go test -v -race ./pkg/...
 
 .PHONY: fmtcheck
-#fmtcheck:
-#	@gofmt -s -l $(SOURCE_DIRS) | grep ".*\.go"; if [ "$$?" = "0" ]; then exit 1; fi
+fmtcheck:
+	@gofmt -s -l $(SOURCE_DIRS) | grep ".*\.go"; if [ "$$?" = "0" ]; then exit 1; fi
 
 .PHONY: vet
 vet:

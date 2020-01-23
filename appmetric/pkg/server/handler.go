@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/glog"
+	"github.com/turbonomic/prometurbo/appmetric/pkg/provider"
 	"html/template"
 	"io"
 	"net/http"
 
-	"github.com/turbonomic/prometurbo/appmetric/pkg/inter"
 	"github.com/turbonomic/prometurbo/appmetric/pkg/util"
 )
 
@@ -102,7 +103,9 @@ func (s *MetricServer) handleWelcome(path string, w http.ResponseWriter, r *http
 	//3. foot
 	foot := s.genPageFoot(r)
 
-	io.WriteString(w, head+body+foot)
+	if _, err := io.WriteString(w, head+body+foot); err != nil {
+		glog.Errorf("Failed to send response: %v.", err)
+	}
 	return
 }
 
@@ -144,66 +147,44 @@ func (s *MetricServer) faviconHandler(w http.ResponseWriter, r *http.Request) {
 func (s *MetricServer) sendFailure(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadGateway)
-	w.Write([]byte(`{"status":"error"}`))
+	if _, err := w.Write([]byte(`{"status":"error"}`)); err != nil {
+		glog.Errorf("Failed to send response: %v.", err)
+	}
 	return
 }
 
-func (s *MetricServer) sendMetrics(metrics []*inter.EntityMetric, w http.ResponseWriter, r *http.Request) {
+func (s *MetricServer) sendMetrics(metrics []*provider.EntityMetric, w http.ResponseWriter, r *http.Request) {
 	//2. put metrics to response
-	resp := inter.NewMetricResponse()
+	resp := provider.NewMetricResponse()
 	resp.SetStatus(0, "Success")
 	resp.SetMetrics(metrics)
+
+	glog.V(4).Infof("content: %s", spew.Sdump(resp))
 
 	//3. marshal to json
 	result, err := json.Marshal(resp)
 	if err != nil {
-		glog.Errorf("Failed to marshal json: %v", err)
+		glog.Errorf("Failed to marshal json: %v.", err)
 		s.sendFailure(w, r)
 		return
 	}
-
-	glog.V(3).Infof("content: %v", string(result))
 
 	//4. send response
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(result)
+	if _, err := w.Write(result); err != nil {
+		glog.Errorf("Failed to send response: %v.", err)
+	}
 	return
 }
 
-func (s *MetricServer) handleAppMetric(w http.ResponseWriter, r *http.Request) {
-	//1. get metrics
-	metrics, err := s.appClient.GetEntityMetrics()
+func (s *MetricServer) handleMetric(w http.ResponseWriter, r *http.Request) {
+	metrics, err := s.provider.GetMetrics()
 	if err != nil {
-		glog.Errorf("Failed to get Application Metrics: %v", err)
+		glog.Errorf("Failed to get metrics: %v", err)
 		s.sendFailure(w, r)
 		return
 	}
-
-	glog.V(3).Infof("App metrics num: %v", len(metrics))
-
-	//2. put metrics to response
 	s.sendMetrics(metrics, w, r)
 	return
-}
-
-func (s *MetricServer) handleServiceMetric(w http.ResponseWriter, r *http.Request) {
-	//1. get metrics
-	metrics, err := s.vappClient.GetEntityMetrics()
-	if err != nil {
-		glog.Errorf("Failed to get Application Metrics: %v", err)
-		s.sendFailure(w, r)
-		return
-	}
-
-	//2. put metrics to response
-	s.sendMetrics(metrics, w, r)
-}
-
-func (s *MetricServer) handleFakeMetric(w http.ResponseWriter, r *http.Request) {
-	//1. generate fake app metrics
-	metrics := inter.GenerateFakeMetrics()
-	//2. put metrics to response
-	s.sendMetrics(metrics, w, r)
-	glog.V(3).Infof("fake metric service finish: %d", len(metrics))
 }

@@ -127,11 +127,10 @@ func (m *mockExporter) Validate() bool {
 }
 
 func newMetric(ip string, tpsUsed, latUsed float64, entityType proto.EntityDTO_EntityType) *exporter.EntityMetric {
-	m := map[proto.CommodityDTO_CommodityType]float64{
-		proto.CommodityDTO_TRANSACTION:   tpsUsed,
-		proto.CommodityDTO_RESPONSE_TIME: latUsed,
+	m := map[proto.CommodityDTO_CommodityType]map[string]float64 {
+		proto.CommodityDTO_TRANSACTION:   {exporter.Used: tpsUsed},
+		proto.CommodityDTO_RESPONSE_TIME: {exporter.Used: latUsed},
 	}
-
 	return &exporter.EntityMetric{
 		UID:     ip,
 		Type:    entityType,
@@ -141,8 +140,8 @@ func newMetric(ip string, tpsUsed, latUsed float64, entityType proto.EntityDTO_E
 
 func checkAppResult(metric *exporter.EntityMetric, entity *proto.EntityDTO) error {
 	ip := metric.UID
-	tpsUsed := metric.Metrics[proto.CommodityDTO_TRANSACTION]
-	latUsed := metric.Metrics[proto.CommodityDTO_RESPONSE_TIME]
+	tpsUsed := metric.Metrics[proto.CommodityDTO_TRANSACTION][exporter.Used]
+	latUsed := metric.Metrics[proto.CommodityDTO_RESPONSE_TIME][exporter.Used]
 
 	commodities := []*proto.CommodityDTO{
 		newTrasactionCommodity(tpsUsed, ip),

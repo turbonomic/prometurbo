@@ -2,9 +2,10 @@ package dtofactory
 
 import (
 	"fmt"
+
 	"github.com/golang/glog"
+	"github.com/turbonomic/prometurbo/prometurbo/appmetric/metrics"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/constant"
-	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
 	"github.com/turbonomic/turbo-go-sdk/pkg/builder"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 	"github.com/turbonomic/turbo-go-sdk/pkg/supplychain"
@@ -16,10 +17,10 @@ type entityBuilder struct {
 	createProxyVM  bool
 	scope          string
 
-	metric *exporter.EntityMetric
+	metric *metrics.EntityMetric
 }
 
-func NewEntityBuilder(keepStandalone bool, createProxyVM bool, scope string, metric *exporter.EntityMetric) *entityBuilder {
+func NewEntityBuilder(keepStandalone bool, createProxyVM bool, scope string, metric *metrics.EntityMetric) *entityBuilder {
 	return &entityBuilder{
 		keepStandalone: keepStandalone,
 		createProxyVM:  createProxyVM,
@@ -89,7 +90,7 @@ func (b *entityBuilder) BuildBusinessApp(vapps []*proto.EntityDTO, name string) 
 		WithProperty(getEntityProperty(constant.BizAppPrefix + name)).
 		Monitored(false).
 		Create()
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -117,9 +118,9 @@ func getReplacementMetaData(entityType proto.EntityDTO_EntityType, commTypes []p
 
 	for _, commType := range commTypes {
 		if bought {
-			b.PatchBuyingWithProperty(commType, []string{constant.Used})
+			b.PatchBuyingWithProperty(commType, []string{metrics.Used})
 		} else {
-			b.PatchSellingWithProperty(commType, []string{constant.Used})
+			b.PatchSellingWithProperty(commType, []string{metrics.Used})
 		}
 	}
 
@@ -145,7 +146,7 @@ func (b *entityBuilder) createProviderEntity(ip string) (*proto.EntityDTO, error
 
 	commodities := []*proto.CommodityDTO{}
 
-	// If metric exporter doesn't provide the necessary commodity usage, create one with value 0.
+	// If metric provider doesn't provide the necessary commodity usage, create one with value 0.
 	// TODO: This is to match the supply chain and should be removed.
 	for commType := range constant.VMCommodityTypeMap {
 		commodity, err := builder.NewCommodityDTOBuilder(commType).Used(0).Create()
@@ -286,11 +287,11 @@ func (b *entityBuilder) createEntityDto(provider *proto.EntityDTO) (*proto.Entit
 	commTypes := []proto.CommodityDTO_CommodityType{}
 	commMetrics := metric.Metrics
 
-	// If metric exporter doesn't provide the necessary commodity usage, create one with value 0.
+	// If metric provider doesn't provide the necessary commodity usage, create one with value 0.
 	// TODO: This is to match the supply chain and should be removed.
 	for commType := range constant.AppCommodityTypeMap {
 		if _, ok := commMetrics[commType]; !ok {
-			commMetrics[commType] = map[string]float64{exporter.Used: 0}
+			commMetrics[commType] = map[string]float64{metrics.Used: 0}
 		}
 	}
 
@@ -304,7 +305,7 @@ func (b *entityBuilder) createEntityDto(provider *proto.EntityDTO) (*proto.Entit
 		}
 
 		commodity, err := builder.NewCommodityDTOBuilder(commType).
-			Used(value[exporter.Used]).Key(commKey).Create()
+			Used(value[metrics.Used]).Key(commKey).Create()
 
 		if err != nil {
 			glog.Errorf("Error building a commodity: %s", err)

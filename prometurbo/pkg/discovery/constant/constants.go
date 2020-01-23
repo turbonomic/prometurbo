@@ -5,9 +5,6 @@ import (
 )
 
 const (
-	// MetricType
-	Used = "used"
-
 	// Internal matching property
 	// The default namespace of entity property
 	DefaultPropertyNamespace = "DEFAULT"

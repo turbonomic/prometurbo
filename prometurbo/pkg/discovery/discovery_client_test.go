@@ -5,22 +5,22 @@ import (
 	"testing"
 
 	"fmt"
-	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/constant"
-	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
+
+	"github.com/turbonomic/prometurbo/prometurbo/appmetric/metrics"
 	"github.com/turbonomic/turbo-go-sdk/pkg/builder"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 )
 
 var (
-	namespace  		= "DEFAULT"
-	ipAttr     		= "IP"
-	appPrefix  		= "APPLICATION-"
-	appType    		= proto.EntityDTO_APPLICATION
-	useTopoExt 		= true
-	keepStandalone  = false
-	createProxyVM   = false
-	scope      		= "k8s-cluster-foo"
-	targetAddr  	= "target-foo"
+	namespace      = "DEFAULT"
+	ipAttr         = "IP"
+	appPrefix      = "APPLICATION-"
+	appType        = proto.EntityDTO_APPLICATION
+	useTopoExt     = true
+	keepStandalone = false
+	createProxyVM  = false
+	scope          = "k8s-cluster-foo"
+	targetAddr     = "target-foo"
 
 	replacementMetaData = builder.NewReplacementEntityMetaDataBuilder().
 				Matching(ipAttr).
@@ -29,18 +29,18 @@ var (
 			Attribute:  &ipAttr,
 			UseTopoExt: &useTopoExt,
 		}).
-		PatchSellingWithProperty(proto.CommodityDTO_TRANSACTION, []string{constant.Used}).
-		PatchSellingWithProperty(proto.CommodityDTO_RESPONSE_TIME, []string{constant.Used}).
+		PatchSellingWithProperty(proto.CommodityDTO_TRANSACTION, []string{metrics.Used}).
+		PatchSellingWithProperty(proto.CommodityDTO_RESPONSE_TIME, []string{metrics.Used}).
 		Build()
 
-	metrics = []*exporter.EntityMetric{
+	testMetrics = []*metrics.EntityMetric{
 		newMetric("1.2.3.4", 13.4, 66.7, appType),
 		newMetric("5.6.7.8", 0, 0, appType),
 	}
 )
 
 func TestP8sDiscoveryClient_GetAccountValues(t *testing.T) {
-	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{})
+	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []MetricsProvider{})
 
 	for _, f := range d.GetAccountValues().GetTargetInstance().InputFields {
 		if f.Name == "targetIdentifier" && f.Value == targetAddr {
@@ -52,53 +52,53 @@ func TestP8sDiscoveryClient_GetAccountValues(t *testing.T) {
 }
 
 func TestP8sDiscoveryClient_Discover(t *testing.T) {
-	exporter1 := &mockExporter{
-		metrics: metrics,
+	provider := &mockProvider{
+		metrics: testMetrics,
 	}
 
-	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1})
+	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []MetricsProvider{provider})
 
-	testDiscoverySuccedded(d, metrics)
+	testDiscoverySuccedded(d, testMetrics)
 }
 
-func TestP8sDiscoveryClient_Discover_Two_Exporters(t *testing.T) {
-	exporter1 := &mockExporter{
-		metrics: metrics[0:2],
+func TestP8sDiscoveryClient_Discover_Two_Providers(t *testing.T) {
+	provider1 := &mockProvider{
+		metrics: testMetrics[0:2],
 	}
 
-	exporter2 := &mockExporter{
-		metrics: metrics[2:],
+	provider2 := &mockProvider{
+		metrics: testMetrics[2:],
 	}
 
-	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1, exporter2})
+	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []MetricsProvider{provider1, provider2})
 
-	testDiscoverySuccedded(d, metrics)
+	testDiscoverySuccedded(d, testMetrics)
 }
 
-func TestP8sDiscoveryClient_Discover_Two_Exporters_One_Failed(t *testing.T) {
-	exporter1 := &mockExporter{
-		metrics: metrics[0:2],
+func TestP8sDiscoveryClient_Discover_Two_Providers_One_Failed(t *testing.T) {
+	provider1 := &mockProvider{
+		metrics: testMetrics[0:2],
 	}
 
-	exporter2 := &mockExporter{
-		err: fmt.Errorf("Query failed with the mocked exporter"),
+	provider2 := &mockProvider{
+		err: fmt.Errorf("Query failed with the mocked provider"),
 	}
 
-	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1, exporter2})
+	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []MetricsProvider{provider1, provider2})
 
-	testDiscoverySuccedded(d, metrics[0:2])
+	testDiscoverySuccedded(d, testMetrics[0:2])
 }
 
 func TestP8sDiscoveryClient_Discover_Query_Failed(t *testing.T) {
-	exporter1 := &mockExporter{
-		err: fmt.Errorf("Query failed with the mocked exporter"),
+	provider1 := &mockProvider{
+		err: fmt.Errorf("Query failed with the mocked provider"),
 	}
 
-	exporter2 := &mockExporter{
-		err: fmt.Errorf("Query failed with the mocked exporter"),
+	provider2 := &mockProvider{
+		err: fmt.Errorf("Query failed with the mocked provider"),
 	}
 
-	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1, exporter2})
+	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []MetricsProvider{provider1, provider2})
 
 	res, err := d.Discover([]*proto.AccountValue{})
 
@@ -113,35 +113,35 @@ func TestP8sDiscoveryClient_Discover_Query_Failed(t *testing.T) {
 	}
 }
 
-type mockExporter struct {
-	metrics []*exporter.EntityMetric
+type mockProvider struct {
+	metrics []*metrics.EntityMetric
 	err     error
 }
 
-func (m *mockExporter) Query() ([]*exporter.EntityMetric, error) {
+func (m *mockProvider) GetMetrics() ([]*metrics.EntityMetric, error) {
 	return m.metrics, m.err
 }
 
-func (m *mockExporter) Validate() bool {
-	return true
+func (m *mockProvider) Validate() error {
+	return nil
 }
 
-func newMetric(ip string, tpsUsed, latUsed float64, entityType proto.EntityDTO_EntityType) *exporter.EntityMetric {
-	m := map[proto.CommodityDTO_CommodityType]map[string]float64 {
-		proto.CommodityDTO_TRANSACTION:   {exporter.Used: tpsUsed},
-		proto.CommodityDTO_RESPONSE_TIME: {exporter.Used: latUsed},
+func newMetric(ip string, tpsUsed, latUsed float64, entityType proto.EntityDTO_EntityType) *metrics.EntityMetric {
+	m := map[proto.CommodityDTO_CommodityType]map[string]float64{
+		proto.CommodityDTO_TRANSACTION:   {metrics.Used: tpsUsed},
+		proto.CommodityDTO_RESPONSE_TIME: {metrics.Used: latUsed},
 	}
-	return &exporter.EntityMetric{
+	return &metrics.EntityMetric{
 		UID:     ip,
 		Type:    entityType,
 		Metrics: m,
 	}
 }
 
-func checkAppResult(metric *exporter.EntityMetric, entity *proto.EntityDTO) error {
+func checkAppResult(metric *metrics.EntityMetric, entity *proto.EntityDTO) error {
 	ip := metric.UID
-	tpsUsed := metric.Metrics[proto.CommodityDTO_TRANSACTION][exporter.Used]
-	latUsed := metric.Metrics[proto.CommodityDTO_RESPONSE_TIME][exporter.Used]
+	tpsUsed := metric.Metrics[proto.CommodityDTO_TRANSACTION][metrics.Used]
+	latUsed := metric.Metrics[proto.CommodityDTO_RESPONSE_TIME][metrics.Used]
 
 	commodities := []*proto.CommodityDTO{
 		newTrasactionCommodity(tpsUsed, ip),
@@ -184,7 +184,7 @@ func newResponseTimeCommodity(used float64, key string) *proto.CommodityDTO {
 	return comm
 }
 
-func testDiscoverySuccedded(d *P8sDiscoveryClient, metrics []*exporter.EntityMetric) error {
+func testDiscoverySuccedded(d *P8sDiscoveryClient, metrics []*metrics.EntityMetric) error {
 	res, err := d.Discover([]*proto.AccountValue{})
 
 	if err != nil {

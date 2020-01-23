@@ -1,17 +1,16 @@
 {
     "communicationConfig": {
         "serverMeta": {
-            "version": "6.2.0-SNAPSHOT",
+            "version": "6.4.11-SNAPSHOT",
             "turboServer": "https://localhost:9400"
         },
         "restAPIConfig": {
             "opsManagerUserName": "administrator",
-            "opsManagerPassword": "administrator"
+            "opsManagerPassword": "a"
         }
     },
     "prometurboTargetConfig": {
-        "targetAddress":"http://prometheus.istio-system:9090",
+        "targetAddress":"test-prometheus-target",
         "scope":"k8s-cluster-1"
-    },
-    "metricExporterEndpoint": "http://192.168.99.100:8081/pod/metrics"
+    }
 }

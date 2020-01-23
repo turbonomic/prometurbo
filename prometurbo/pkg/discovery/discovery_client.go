@@ -2,34 +2,47 @@ package discovery
 
 import (
 	"fmt"
+
 	"github.com/golang/glog"
+	"github.com/turbonomic/prometurbo/prometurbo/appmetric/metrics"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/dtofactory"
-	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/registration"
 	"github.com/turbonomic/turbo-go-sdk/pkg/probe"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 )
 
-// Implements the TurboDiscoveryClient interface
-type P8sDiscoveryClient struct {
-	targetAddr      string
-	keepStandalone  bool
-	createProxyVM   bool
-	scope           string
-	metricExporters []exporter.MetricExporter
+// MetricsProvider is a wrapper interface for getting metrics from and validating
+// a metrics provider
+type MetricsProvider interface {
+	// Get the latest metrics from the provider
+	GetMetrics() ([]*metrics.EntityMetric, error)
+
+	// Validate access to the provider
+	Validate() error
 }
 
-func NewDiscoveryClient(targetAddr string, keepStandalone bool, createProxyVM bool, scope string, metricExporters []exporter.MetricExporter) *P8sDiscoveryClient {
+// P8sDiscoveryClient implements the TurboDiscoveryClient interface
+type P8sDiscoveryClient struct {
+	targetAddr     string
+	keepStandalone bool
+	createProxyVM  bool
+	scope          string
+	providers      []MetricsProvider
+}
+
+func NewDiscoveryClient(targetAddr string, keepStandalone bool, createProxyVM bool,
+	scope string, providers []MetricsProvider) *P8sDiscoveryClient {
 	return &P8sDiscoveryClient{
-		targetAddr:      targetAddr,
-		keepStandalone:  keepStandalone,
-		createProxyVM:   createProxyVM,
-		scope:           scope,
-		metricExporters: metricExporters,
+		targetAddr:     targetAddr,
+		keepStandalone: keepStandalone,
+		createProxyVM:  createProxyVM,
+		scope:          scope,
+		providers:      providers,
 	}
 }
 
-// Get the Account Values to create VMTTarget in the turbo server corresponding to this client
+// GetAccountValues gets the Account Values to create VMTTarget in the turbo
+// server corresponding to this client
 func (d *P8sDiscoveryClient) GetAccountValues() *probe.TurboTargetInfo {
 	targetId := registration.TargetIdField
 	targetIdVal := &proto.AccountValue{
@@ -58,37 +71,38 @@ func (d *P8sDiscoveryClient) GetAccountValues() *probe.TurboTargetInfo {
 func (d *P8sDiscoveryClient) Validate(accountValues []*proto.AccountValue) (*proto.ValidationResponse, error) {
 	validationResponse := &proto.ValidationResponse{}
 
-	// Validation fails if no exporter responses
-	for _, metricExporter := range d.metricExporters {
-		if metricExporter.Validate() {
-			return validationResponse, nil
+	// Validation fails if any provider fails validation
+	for _, provider := range d.providers {
+		if err := provider.Validate(); err != nil {
+			return d.failValidation(), err
 		}
-
-		glog.Errorf("Unable to connect to metric exporter %v", metricExporter)
+		glog.Infof("Successfully validated [%v]", provider)
 	}
-	return d.failValidation(), nil
+	return validationResponse, nil
 }
 
 // Discover the Target Topology
 func (d *P8sDiscoveryClient) Discover(accountValues []*proto.AccountValue) (*proto.DiscoveryResponse, error) {
 	glog.V(2).Infof("Discovering the target %s", accountValues)
 	var entities []*proto.EntityDTO
-	allExportersFailed := true
+	allProvidersFailed := true
 
-	for _, metricExporter := range d.metricExporters {
-		dtos, err := d.buildEntities(metricExporter)
+	for _, provider := range d.providers {
+		dtos, err := d.buildEntities(provider)
 		if err != nil {
-			glog.Errorf("Error while querying metrics exporter %v: %v", metricExporter, err)
+			glog.Errorf("Error while querying metrics provider %v: %v", provider, err)
 			continue
 		}
-		allExportersFailed = false
+		allProvidersFailed = false
 		entities = append(entities, dtos...)
 
-		glog.V(4).Infof("Entities built from exporter %v: %v", metricExporter, dtos)
+		glog.Infof("Discovered %d entities (%v) from provider %v", len(dtos),
+			entityTypes(dtos), provider)
+		glog.V(4).Infof("Entities built from provider %v: %v", provider, dtos)
 	}
 
-	// The discovery fails if all queries to exporters fail
-	if allExportersFailed {
+	// The discovery fails if all queries to providers fail
+	if allProvidersFailed {
 		return d.failDiscovery(), nil
 	}
 
@@ -99,12 +113,20 @@ func (d *P8sDiscoveryClient) Discover(accountValues []*proto.AccountValue) (*pro
 	return discoveryResponse, nil
 }
 
-func (d *P8sDiscoveryClient) buildEntities(metricExporter exporter.MetricExporter) ([]*proto.EntityDTO, error) {
+func entityTypes(entities []*proto.EntityDTO) map[string]int {
+	var types = make(map[string]int)
+	for _, entity := range entities {
+		types[proto.EntityDTO_EntityType_name[int32(*entity.EntityType)]]++
+	}
+	return types
+}
+
+func (d *P8sDiscoveryClient) buildEntities(provider MetricsProvider) ([]*proto.EntityDTO, error) {
 	var entities []*proto.EntityDTO
 	businessAppMap := make(map[string][]*proto.EntityDTO)
-	metrics, err := metricExporter.Query()
+	metrics, err := provider.GetMetrics()
 	if err != nil {
-		glog.Errorf("Error while querying metrics exporter: %v", err)
+		glog.Errorf("Error while querying metrics provider: %v", err)
 		return nil, err
 	}
 
@@ -124,9 +146,9 @@ func (d *P8sDiscoveryClient) buildEntities(metricExporter exporter.MetricExporte
 		}
 		entities = append(entities, dtos...)
 	}
-	if (len(businessAppMap) > 0) {
+	if len(businessAppMap) > 0 {
 		for k, v := range businessAppMap {
-			dto, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.createProxyVM, d.scope,nil).BuildBusinessApp(v,k)
+			dto, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.createProxyVM, d.scope, nil).BuildBusinessApp(v, k)
 			if err != nil {
 				glog.Errorf("Error building business app entity for %s", k)
 				continue
@@ -138,7 +160,7 @@ func (d *P8sDiscoveryClient) buildEntities(metricExporter exporter.MetricExporte
 }
 
 func (d *P8sDiscoveryClient) failDiscovery() *proto.DiscoveryResponse {
-	description := fmt.Sprintf("All exporter queries failed: %v", d.metricExporters)
+	description := fmt.Sprintf("All provider queries failed: %v", d.providers)
 	glog.Errorf(description)
 	severity := proto.ErrorDTO_CRITICAL
 	errorDTO := &proto.ErrorDTO{
@@ -152,7 +174,7 @@ func (d *P8sDiscoveryClient) failDiscovery() *proto.DiscoveryResponse {
 }
 
 func (d *P8sDiscoveryClient) failValidation() *proto.ValidationResponse {
-	description := fmt.Sprintf("All exporter queries failed: %v", d.metricExporters)
+	description := fmt.Sprintf("All provider queries failed: %v", d.providers)
 	glog.Errorf(description)
 	severity := proto.ErrorDTO_CRITICAL
 	errorDto := &proto.ErrorDTO{

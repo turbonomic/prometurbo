@@ -21,7 +21,7 @@ docker: clean
 	docker build -t turbonomic/prometurbo:6.4dev --build-arg GIT_COMMIT=$(shell git rev-parse --short HEAD) .
 
 test: clean
-	@go test -v -race ./pkg/...
+	@go test -v -race ./...
 
 .PHONY: fmtcheck
 #fmtcheck:

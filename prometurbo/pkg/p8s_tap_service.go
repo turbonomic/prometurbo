@@ -1,20 +1,22 @@
 package pkg
 
 import (
-	"github.com/golang/glog"
-	"github.com/turbonomic/prometurbo/prometurbo/pkg/conf"
-	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery"
-	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
-	"github.com/turbonomic/prometurbo/prometurbo/pkg/registration"
-	"github.com/turbonomic/turbo-go-sdk/pkg/probe"
-	"github.com/turbonomic/turbo-go-sdk/pkg/service"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/golang/glog"
+	"github.com/turbonomic/prometurbo/prometurbo/appmetric"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/conf"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/registration"
+	"github.com/turbonomic/turbo-go-sdk/pkg/probe"
+	"github.com/turbonomic/turbo-go-sdk/pkg/service"
 )
 
 type disconnectFromTurboFunc func()
 
+// P8sTAPService is the Prometheus ("P8s") Turbonomic Automation Platform (TAP) Service
 type P8sTAPService struct {
 	tapService *service.TAPService
 }
@@ -38,8 +40,6 @@ func (p *P8sTAPService) Start() {
 
 	// Connect to the Turbo server
 	p.tapService.ConnectToTurbo()
-
-	select {}
 }
 
 func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
@@ -61,13 +61,13 @@ func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 	communicator := conf.Communicator
 	targetAddr := conf.TargetConf.Address
 	scope := conf.TargetConf.Scope
-	metricExporters := []exporter.MetricExporter{exporter.NewMetricExporter(conf.MetricExporterEndpoint)}
+	providers := []discovery.MetricsProvider{appmetric.Provider(args.AppmetricArgs)}
 
 	keepStandalone := args.KeepStandalone
 	createProxyVM := args.CreateProxyVM
 
 	registrationClient := &registration.P8sRegistrationClient{}
-	discoveryClient := discovery.NewDiscoveryClient(targetAddr, *keepStandalone, *createProxyVM, scope, metricExporters)
+	discoveryClient := discovery.NewDiscoveryClient(targetAddr, *keepStandalone, *createProxyVM, scope, providers)
 
 	return service.NewTAPServiceBuilder().
 		WithTurboCommunicator(communicator).

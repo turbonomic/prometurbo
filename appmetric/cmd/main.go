@@ -96,7 +96,7 @@ func main() {
 	if err != nil {
 		glog.Fatalf("Failed to load metric discovery configuration %s: %v.", configFileName, err)
 	}
-	glog.V(4).Infof("%s", spew.Sdump(metricConf))
+	glog.V(2).Infof("%s", spew.Sdump(metricConf))
 
 	// Construct exporter provider from configuration
 	promExporters, err := provider.ExportersFromConfig(metricConf)

@@ -17,7 +17,6 @@ const (
 type PrometurboConf struct {
 	Communicator           *service.TurboCommunicationConfig `json:"communicationConfig,omitempty"`
 	TargetConf             *PrometurboTargetConf             `json:"prometurboTargetConfig,omitempty"`
-	MetricExporterEndpoint string                            `json:"metricExporterEndpoint,omitempty"`
 }
 
 type PrometurboTargetConf struct {
@@ -32,10 +31,6 @@ func NewPrometurboConf(configFilePath string) (*PrometurboConf, error) {
 
 	if err != nil {
 		return nil, err
-	}
-
-	if config.MetricExporterEndpoint == "" {
-		config.MetricExporterEndpoint = defaultEndpoint
 	}
 
 	if config.Communicator == nil {

@@ -1,12 +1,12 @@
 {
     "communicationConfig": {
         "serverMeta": {
-            "version": "6.4.11-SNAPSHOT",
+            "version": "6.2.0-SNAPSHOT",
             "turboServer": "https://localhost:9400"
         },
         "restAPIConfig": {
             "opsManagerUserName": "administrator",
-            "opsManagerPassword": "a"
+            "opsManagerPassword": "administrator"
         }
     },
     "prometurboTargetConfig": {

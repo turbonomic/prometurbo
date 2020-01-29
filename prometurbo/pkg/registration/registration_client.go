@@ -76,6 +76,7 @@ func (rclient *P8sRegistrationClient) GetEntityMetadata() []*proto.EntityIdentit
 		proto.EntityDTO_VIRTUAL_MACHINE,
 		proto.EntityDTO_APPLICATION,
 		proto.EntityDTO_VIRTUAL_APPLICATION,
+		proto.EntityDTO_BUSINESS_APPLICATION,
 	}
 
 	for _, etype := range entities {

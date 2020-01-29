@@ -10,29 +10,47 @@ import (
 var (
 	VMIPFieldPaths = []string{constant.SUPPLY_CHAIN_CONSTANT_VIRTUAL_MACHINE_DATA}
 
-	vCpuType    = proto.CommodityDTO_VCPU
+	vCpuType = proto.CommodityDTO_VCPU
 	vMemType = proto.CommodityDTO_VMEM
 
-	vCpuTemplateComm *proto.TemplateCommodity = &proto.TemplateCommodity{
+	vCpuTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &vCpuType,
 	}
 
-	vMemTemplateComm *proto.TemplateCommodity = &proto.TemplateCommodity{
+	vMemTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &vMemType,
 	}
 
 	respTimeType    = proto.CommodityDTO_RESPONSE_TIME
 	transactionType = proto.CommodityDTO_TRANSACTION
+	heapType        = proto.CommodityDTO_HEAP
+	collectionType  = proto.CommodityDTO_COLLECTION_TIME
+	threadsType     = proto.CommodityDTO_THREADS
 	key             = "key-placeholder"
 
-	respTimeTemplateComm *proto.TemplateCommodity = &proto.TemplateCommodity{
+	respTimeTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &respTimeType,
 		Key:           &key,
 	}
 
-	transactionTemplateComm *proto.TemplateCommodity = &proto.TemplateCommodity{
+	transactionTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &transactionType,
 		Key:           &key,
+	}
+
+	heapTemplateComm = &proto.TemplateCommodity{
+		CommodityType:        &heapType,
+		Key:                  &key,
+	}
+
+	collectionTemplateComm = &proto.TemplateCommodity{
+		CommodityType:        &collectionType,
+		Key:                  &key,
+	}
+
+	threadsTemplateComm = &proto.TemplateCommodity{
+		CommodityType:        &threadsType,
+		Key:                  &key,
 	}
 )
 
@@ -117,12 +135,11 @@ func (f *SupplyChainFactory) buildVMSupplyBuilder() (*proto.TemplateDTO, error) 
 	return builder.Create()
 }
 
-
 func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error) {
 	appToVMExternalLink, err := supplychain.NewExternalEntityLinkBuilder().
 		Link(proto.EntityDTO_APPLICATION, proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
 		Commodity(vCpuType, false).Commodity(vMemType, false).
-		Commodity(transactionType, true). Commodity(respTimeType, true).
+		Commodity(transactionType, true).Commodity(respTimeType, true).
 		ProbeEntityPropertyDef(constant.StitchingAttr, "IP Address of the VM hosting the discovered node").
 		ExternalEntityPropertyDef(supplychain.VM_IP).
 		Build()
@@ -134,6 +151,9 @@ func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error)
 	appbuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_APPLICATION).
 		Sells(transactionTemplateComm).
 		Sells(respTimeTemplateComm).
+		Sells(heapTemplateComm).
+		Sells(collectionTemplateComm).
+		Sells(threadsTemplateComm).
 		Provider(proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
 		ConnectsTo(appToVMExternalLink).
 		Buys(vCpuTemplateComm).
@@ -189,7 +209,8 @@ func (f *SupplyChainFactory) getVMStitchingMetaData() (*proto.MergedEntityMetada
 }
 
 func (f *SupplyChainFactory) getAppStitchingMetaData() (*proto.MergedEntityMetadata, error) {
-	commodityList := []proto.CommodityDTO_CommodityType{respTimeType, transactionType}
+	commodityList := []proto.CommodityDTO_CommodityType{
+		respTimeType, transactionType, heapType, collectionType, threadsType}
 
 	var mbuilder *builder.MergedEntityMetadataBuilder
 

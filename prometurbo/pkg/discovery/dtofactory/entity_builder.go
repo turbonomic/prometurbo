@@ -94,6 +94,7 @@ func (b *entityBuilder) BuildBusinessApp(vapps []*proto.EntityDTO, name string) 
 		return nil, err
 	}
 	bizAppDto.KeepStandalone = &b.keepStandalone
+	glog.V(4).Infof("Entity DTO: %+v", bizAppDto)
 	return bizAppDto, nil
 }
 
@@ -143,7 +144,7 @@ func (b *entityBuilder) createProviderEntity(ip string) (*proto.EntityDTO, error
 	VMType := proto.EntityDTO_VIRTUAL_MACHINE
 	id := b.getEntityId(VMType, ip)
 
-	commodities := []*proto.CommodityDTO{}
+	var commodities []*proto.CommodityDTO
 
 	// If metric exporter doesn't provide the necessary commodity usage, create one with value 0.
 	// TODO: This is to match the supply chain and should be removed.
@@ -182,11 +183,11 @@ func (b *entityBuilder) createConsumerEntity(provider *proto.EntityDTO, ip strin
 	entityType := *provider.EntityType
 	providerId := b.getEntityId(entityType, ip)
 	commodities := provider.CommoditiesSold
-	commTypes := []proto.CommodityDTO_CommodityType{}
+	var commTypes []proto.CommodityDTO_CommodityType
 	for _, comm := range commodities {
 		commTypes = append(commTypes, *comm.CommodityType)
 	}
-	commoditiesSold := []*proto.CommodityDTO{}
+	var commoditiesSold []*proto.CommodityDTO
 
 	// TODO: This is to match the supply chain and should be removed.
 	for commType := range constant.AppCommodityTypeMap {
@@ -249,7 +250,7 @@ func (b *entityBuilder) createConsumerEntity(provider *proto.EntityDTO, ip strin
 		}
 	}
 
-	return nil, fmt.Errorf("Unsupported provider type %v to create consumer", entityType)
+	return nil, fmt.Errorf("unsupported provider type %v to create consumer", entityType)
 }
 
 // Creates entity DTO from the EntityMetric
@@ -282,8 +283,8 @@ func (b *entityBuilder) createEntityDto(provider *proto.EntityDTO) (*proto.Entit
 		commKey = ip
 	}
 
-	commodities := []*proto.CommodityDTO{}
-	commTypes := []proto.CommodityDTO_CommodityType{}
+	var commodities []*proto.CommodityDTO
+	var commTypes []proto.CommodityDTO_CommodityType
 	commMetrics := metric.Metrics
 
 	// If metric exporter doesn't provide the necessary commodity usage, create one with value 0.
@@ -294,18 +295,23 @@ func (b *entityBuilder) createEntityDto(provider *proto.EntityDTO) (*proto.Entit
 		}
 	}
 
-	for key, value := range commMetrics {
-		commType := key
-
-		if _, ok := constant.AppCommodityTypeMap[commType]; !ok {
-			err := fmt.Errorf("unsupported commodity type %s", key)
-			glog.Errorf(err.Error())
+	for commType, value := range metric.Metrics {
+		defaultValue, ok := constant.AppCommodityTypeMap[commType]
+		if !ok {
+			glog.Errorf("Unsupported commodity type %s", commType)
 			continue
 		}
 
-		commodity, err := builder.NewCommodityDTOBuilder(commType).
-			Used(value[exporter.Used]).Key(commKey).Create()
+		commodityBuilder := builder.NewCommodityDTOBuilder(commType).
+			Used(value[exporter.Used]).Key(commKey)
+		capacity, found := value[exporter.Capacity]
+		if found && capacity > 0 {
+			commodityBuilder.Capacity(capacity)
+		} else if defaultValue.Capacity > 0 {
+			commodityBuilder.Capacity(defaultValue.Capacity)
+		}
 
+		commodity, err := commodityBuilder.Create()
 		if err != nil {
 			glog.Errorf("Error building a commodity: %s", err)
 			continue
@@ -355,7 +361,7 @@ func (b *entityBuilder) createEntityDto(provider *proto.EntityDTO) (*proto.Entit
 
 		entityDto.KeepStandalone = &b.keepStandalone
 
-		glog.V(4).Infof("Entity DTO: %++v", entityDto)
+		glog.V(4).Infof("Entity DTO: %+v", entityDto)
 		return entityDto, nil
 	}
 }

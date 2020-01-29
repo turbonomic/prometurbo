@@ -285,15 +285,6 @@ func (b *entityBuilder) createEntityDto(provider *proto.EntityDTO) (*proto.Entit
 
 	var commodities []*proto.CommodityDTO
 	var commTypes []proto.CommodityDTO_CommodityType
-	commMetrics := metric.Metrics
-
-	// If metric exporter doesn't provide the necessary commodity usage, create one with value 0.
-	// TODO: This is to match the supply chain and should be removed.
-	for commType := range constant.AppCommodityTypeMap {
-		if _, ok := commMetrics[commType]; !ok {
-			commMetrics[commType] = map[string]float64{exporter.Used: 0}
-		}
-	}
 
 	for commType, value := range metric.Metrics {
 		defaultValue, ok := constant.AppCommodityTypeMap[commType]

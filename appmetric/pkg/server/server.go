@@ -2,11 +2,12 @@ package server
 
 import (
 	"fmt"
-	"github.com/golang/glog"
-	"github.com/turbonomic/prometurbo/appmetric/pkg/provider"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/golang/glog"
+	"github.com/turbonomic/prometurbo/appmetric/pkg/provider"
 
 	"github.com/turbonomic/prometurbo/appmetric/pkg/util"
 )
@@ -16,17 +17,18 @@ type MetricServer struct {
 	ip   string
 	host string
 
-	provider *provider.Provider
+	providerFactory ProviderCreator
+}
+
+type ProviderCreator interface {
+	NewProvider(promHost string) (*provider.Provider, error)
 }
 
 const (
-	metricPath        = "/metrics"
-	appMetricPath     = "/pod/metrics"
-	serviceMetricPath = "/service/metrics"
-	fakeMetricPath    = "/fake/metrics"
+	metricPath = "/metrics"
 )
 
-func NewMetricServer(port int, provider *provider.Provider) *MetricServer {
+func NewMetricServer(port int, providerFactory ProviderCreator) *MetricServer {
 	ip, err := util.ExternalIP()
 	if err != nil {
 		glog.Errorf("Failed to get server IP: %v", err)
@@ -40,10 +42,10 @@ func NewMetricServer(port int, provider *provider.Provider) *MetricServer {
 	}
 
 	return &MetricServer{
-		port:     port,
-		ip:       ip,
-		host:     host,
-		provider: provider,
+		port:            port,
+		ip:              ip,
+		host:            host,
+		providerFactory: providerFactory,
 	}
 }
 
@@ -70,10 +72,6 @@ func (s *MetricServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleMetric(w, r)
 		return
 	}
-
-	//if strings.EqualFold(path, "/health") {
-	//	s.handleHealth(w, r)
-	//}
 
 	s.handleWelcome(path, w, r)
 	return

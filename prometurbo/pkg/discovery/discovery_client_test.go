@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"fmt"
+
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/constant"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
 	"github.com/turbonomic/turbo-go-sdk/pkg/builder"
@@ -12,15 +13,16 @@ import (
 )
 
 var (
-	namespace  		= "DEFAULT"
-	ipAttr     		= "IP"
-	appPrefix  		= "APPLICATION-"
-	appType    		= proto.EntityDTO_APPLICATION
-	useTopoExt 		= true
-	keepStandalone  = false
-	createProxyVM   = false
-	scope      		= "k8s-cluster-foo"
-	targetAddr  	= "target-foo"
+	namespace      = "DEFAULT"
+	ipAttr         = "IP"
+	appPrefix      = "APPLICATION-"
+	appType        = proto.EntityDTO_APPLICATION
+	useTopoExt     = true
+	keepStandalone = false
+	createProxyVM  = false
+	scope          = "k8s-cluster-foo"
+	targetAddr     = "foo"
+	targetType     = "test"
 
 	replacementMetaData = builder.NewReplacementEntityMetaDataBuilder().
 				Matching(ipAttr).
@@ -40,7 +42,8 @@ var (
 )
 
 func TestP8sDiscoveryClient_GetAccountValues(t *testing.T) {
-	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{})
+	ex := mockExporter{metrics: metrics}
+	d := NewDiscoveryClient(keepStandalone, createProxyVM, scope, &targetAddr, targetType, ex)
 
 	for _, f := range d.GetAccountValues().GetTargetInstance().InputFields {
 		if f.Name == "targetIdentifier" && f.Value == targetAddr {
@@ -52,53 +55,15 @@ func TestP8sDiscoveryClient_GetAccountValues(t *testing.T) {
 }
 
 func TestP8sDiscoveryClient_Discover(t *testing.T) {
-	exporter1 := &mockExporter{
-		metrics: metrics,
-	}
-
-	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1})
+	ex := &mockExporter{metrics: metrics}
+	d := NewDiscoveryClient(keepStandalone, createProxyVM, scope, &targetAddr, targetType, ex)
 
 	testDiscoverySuccedded(d, metrics)
-}
-
-func TestP8sDiscoveryClient_Discover_Two_Exporters(t *testing.T) {
-	exporter1 := &mockExporter{
-		metrics: metrics[0:2],
-	}
-
-	exporter2 := &mockExporter{
-		metrics: metrics[2:],
-	}
-
-	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1, exporter2})
-
-	testDiscoverySuccedded(d, metrics)
-}
-
-func TestP8sDiscoveryClient_Discover_Two_Exporters_One_Failed(t *testing.T) {
-	exporter1 := &mockExporter{
-		metrics: metrics[0:2],
-	}
-
-	exporter2 := &mockExporter{
-		err: fmt.Errorf("Query failed with the mocked exporter"),
-	}
-
-	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1, exporter2})
-
-	testDiscoverySuccedded(d, metrics[0:2])
 }
 
 func TestP8sDiscoveryClient_Discover_Query_Failed(t *testing.T) {
-	exporter1 := &mockExporter{
-		err: fmt.Errorf("Query failed with the mocked exporter"),
-	}
-
-	exporter2 := &mockExporter{
-		err: fmt.Errorf("Query failed with the mocked exporter"),
-	}
-
-	d := NewDiscoveryClient(targetAddr, keepStandalone, createProxyVM, scope, []exporter.MetricExporter{exporter1, exporter2})
+	ex := mockExporter{err: fmt.Errorf("Query failed with the mocked exporter")}
+	d := NewDiscoveryClient(keepStandalone, createProxyVM, scope, &targetAddr, targetType, ex)
 
 	res, err := d.Discover([]*proto.AccountValue{})
 
@@ -118,16 +83,16 @@ type mockExporter struct {
 	err     error
 }
 
-func (m *mockExporter) Query() ([]*exporter.EntityMetric, error) {
+func (m mockExporter) Query(targetAddr string, scope string) ([]*exporter.EntityMetric, error) {
 	return m.metrics, m.err
 }
 
-func (m *mockExporter) Validate() bool {
-	return true
+func (m mockExporter) Validate(targetAddr string) error {
+	return nil
 }
 
 func newMetric(ip string, tpsUsed, latUsed float64, entityType proto.EntityDTO_EntityType) *exporter.EntityMetric {
-	m := map[proto.CommodityDTO_CommodityType]map[string]float64 {
+	m := map[proto.CommodityDTO_CommodityType]map[string]float64{
 		proto.CommodityDTO_TRANSACTION:   {exporter.Used: tpsUsed},
 		proto.CommodityDTO_RESPONSE_TIME: {exporter.Used: latUsed},
 	}

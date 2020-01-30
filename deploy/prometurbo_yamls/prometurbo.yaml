@@ -29,7 +29,6 @@ spec:
           imagePullPolicy: IfNotPresent
           name: appmetric
           args:
-          - --promUrl=http://prometheus.istio-system:9090
           - --v=2
           ports:
           - containerPort: 8081

@@ -2,14 +2,18 @@ package provider
 
 import (
 	"fmt"
-	"github.com/turbonomic/prometurbo/appmetric/pkg/config"
 	"regexp"
 	"strings"
+
+	"github.com/turbonomic/prometurbo/appmetric/pkg/config"
 )
 
 const (
 	Used     = "used"
 	Capacity = "capacity"
+
+	TargetAddress = "target_address"
+	Scope         = "scope"
 )
 
 type metricDef struct {

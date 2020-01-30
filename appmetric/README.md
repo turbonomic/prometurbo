@@ -5,8 +5,7 @@ Get metrics from [Prometheus](https://prometheus.io) for applications, and expos
 
 
 Applications are distinguished by mainly their IP address. For example, each [Kubernetes](https://kubernetes.io/docs/concepts/workloads/pods/pod/) Pod corresponds to one Application.
-Currently, it can get applications from [Istio exporter](https://istio.io/docs/reference/config/adapters/prometheus.html), [Redis exporter](https://github.com/oliver006/redis_exporter) and [Cassandra exporter](https://github.com/criteo/cassandra_exporter). More exporters can be supported by implementing
-their [`addon`](https://github.com/songbinliu/appMetric/tree/v2.0/pkg/addon).
+Currently, it can get applications from [Istio exporter](https://istio.io/docs/reference/config/adapters/prometheus.html), [Redis exporter](https://github.com/oliver006/redis_exporter) and [Cassandra exporter](https://github.com/criteo/cassandra_exporter). More exporters can be supported by specifying their definition in the appmetric-config.yml configuration file.
 
 # Output of appMetric: Applications with their metrics
 The application metrics are served via REST API. Access endpoint `/pod/metrics`, and will get json data:
@@ -75,10 +74,6 @@ type MetricResponse struct {
 **appMetric** can be deployed in the same Pod with *Prometurbo*, as suggested [here](../deploy/). It can also be deployed
 a standalone service in Kubernetes as specified in following steps.
 
-## Prerequisites
-* [Kubernetes](https://kubernetes.io) 1.7.3 +
-* [Istio](https://istio.io) 0.3 + (with Prometheus addon)
-
 ## Deploy metrics and rules in Istio
 Istio metrics, handlers and rules are defined in [script](https://github.com/turbonomic/prometurbo/blob/master/appmetric/scripts/istio/ip.turbo.metric.yaml), deploy it with:
 ```console
@@ -96,12 +91,12 @@ istioctl create -f scripts/istio/ip.turbo.metric.yaml
 build and run this go application:
 ```console
 make build
-./_output/appMetric --v=3 --promUrl=http://localhost:9090 --port=8081
+./_output/appMetric --v=3 --port=8081
 ```
 
 Then the server will serve on port `8081`; access the REST API by:
 ```console
-curl http://localhost:8081/pod/metrics
+curl http://localhost:8081/metrics
 ```
 ```json
 {"status":0,"message:omitemtpy":"Success","data:omitempty":[{"uid":"10.0.2.3","type":1,"labels":{"ip":"10.0.2.3","name":"default/curl-1xfj"},"metrics":{"latency":133.2,"tps":12}},{"uid":"10.0.3.2","type":1,"labels":{"ip":"10.0.3.2","name":"istio/music-ftaf2"},"metrics":{"latency":13.2,"tps":10}}]}

@@ -4,13 +4,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
-	"github.com/golang/glog"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/golang/glog"
 )
 
 const (
@@ -64,7 +65,7 @@ func NewRestClient(host string) (*RestClient, error) {
 		client.Transport = tr
 	}
 
-	glog.V(2).Infof("Adding Prometheus server: %v", host)
+	glog.V(2).Infof("Creating client for Prometheus server: %v", host)
 
 	return &RestClient{
 		client: client,

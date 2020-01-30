@@ -3,9 +3,10 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/golang/glog"
 	"github.com/turbonomic/turbo-go-sdk/pkg/service"
-	"io/ioutil"
 )
 
 const (
@@ -18,6 +19,9 @@ type PrometurboConf struct {
 	Communicator           *service.TurboCommunicationConfig `json:"communicationConfig,omitempty"`
 	TargetConf             *PrometurboTargetConf             `json:"prometurboTargetConfig,omitempty"`
 	MetricExporterEndpoint string                            `json:"metricExporterEndpoint,omitempty"`
+	// Appended to the end of a probe name when registering with the platform. Useful when you need
+	// multiple prometheus probe instances with affinity for discovering specific targets.
+	TargetTypeSuffix *string `json:"ProbeNameSuffix,omitempty"`
 }
 
 type PrometurboTargetConf struct {
@@ -40,10 +44,6 @@ func NewPrometurboConf(configFilePath string) (*PrometurboConf, error) {
 
 	if config.Communicator == nil {
 		return nil, fmt.Errorf("unable to read the turbo communication config from %s", configFilePath)
-	}
-
-	if config.TargetConf == nil {
-		return nil, fmt.Errorf("unable to read the target config from %s", configFilePath)
 	}
 
 	return config, nil

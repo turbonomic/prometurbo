@@ -6,28 +6,40 @@ import (
 )
 
 type Provider struct {
-	promClients  []*prometheus.RestClient
+	promClient   *prometheus.RestClient
 	exporterDefs []*exporterDef
 }
 
-func NewProvider(promClients []*prometheus.RestClient, exporterDefs []*exporterDef) *Provider {
-	return &Provider{
-		promClients:  promClients,
-		exporterDefs: exporterDefs,
+type ProviderFactory struct {
+	exporterDefs []*exporterDef
+}
+
+func NewProviderFactory(exporterDefs []*exporterDef) *ProviderFactory {
+	return &ProviderFactory{exporterDefs: exporterDefs}
+}
+
+func (pf *ProviderFactory) NewProvider(promHost string) (*Provider, error) {
+	promClient, err := prometheus.NewRestClient(promHost)
+	if err != nil {
+		glog.Errorf("Unable to create new provider due to error: %v", err)
+		return nil, err
 	}
+
+	return &Provider{
+		promClient:   promClient,
+		exporterDefs: pf.exporterDefs,
+	}, nil
 }
 
 func (p *Provider) GetMetrics() ([]*EntityMetric, error) {
 	var metrics []*EntityMetric
+
 	// TODO: use goroutine
-	for _, promClient := range p.promClients {
-		var metricsForProms []*EntityMetric
-		for _, exporterDef := range p.exporterDefs {
-			metricsForExporters := getMetricsForExporter(promClient, exporterDef)
-			metricsForProms = append(metricsForProms, metricsForExporters...)
-		}
-		metrics = append(metrics, metricsForProms...)
+	for _, exporterDef := range p.exporterDefs {
+		metricsForExporters := getMetricsForExporter(p.promClient, exporterDef)
+		metrics = append(metrics, metricsForExporters...)
 	}
+
 	return metrics, nil
 }
 

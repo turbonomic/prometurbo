@@ -56,7 +56,8 @@ data:
         "prometurboTargetConfig": {
             "targetAddress":"<PROMETHEUS-SERVER-ADDRESS>",
             "scope":"<THE-K8S-TARGET-NAME>"
-        }
+        },
+        "targetTypeSuffix": "" <-- Adjust this value as necessary. No suffix is appended to target name if empty.
     }
 ```
 
@@ -94,7 +95,6 @@ spec:
           imagePullPolicy: IfNotPresent
           name: appmetric
           args:
-            - --promUrl=http://prometheus.istio-system:9090
             - --v=2
           ports:
           - containerPort: 8081

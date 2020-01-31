@@ -27,10 +27,14 @@ github.com/prometheus/common v0.4.0 h1:7etb9YClo3a6HjLzfl6rIQaU+FDfi0VSX39io3aQ+
 github.com/prometheus/common v0.4.0/go.mod h1:TNfzLD0ON7rHzMJeJkieUDPYmFC7Snx/y86RQel1bk4=
 github.com/prometheus/procfs v0.0.0-20181005140218-185b4288413d/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
+github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
-github.com/turbonomic/turbo-go-sdk v6.4.1-0.20190628213717-579ca3a8764e+incompatible h1:dcCVM4F2bqNYvC9zjxanlNoPzCYutQCgY6IKzKsmVkc=
-github.com/turbonomic/turbo-go-sdk v6.4.1-0.20190628213717-579ca3a8764e+incompatible/go.mod h1:sKRnBmuIMyFQoQnd0TubqLSN4Kob/KZCe7LIdwoVsVE=
+github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
+github.com/turbonomic/turbo-api v0.0.0-20180816193551-ed948ba97e70/go.mod h1:L3eNZzTD3Iw8GV+cfeJD/lfDaEGPbZZGQrtml71yG10=
+github.com/turbonomic/turbo-go-sdk v0.0.0-20200131172212-d5cb69c68e30 h1:xThKFb/6UepzchK84Bt75VR097GHonWuNB96bz5kY9Y=
+github.com/turbonomic/turbo-go-sdk v0.0.0-20200131172212-d5cb69c68e30/go.mod h1:l7wONfeAEhgbFSW35nJUKgB6WtpPdWrpyMMjfrgVQHE=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/net v0.0.0-20181114220301-adae6a3d119a/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/sync v0.0.0-20181108010431-42b317875d0f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=

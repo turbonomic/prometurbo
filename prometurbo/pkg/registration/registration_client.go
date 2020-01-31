@@ -18,7 +18,7 @@ const (
 
 // Implements the TurboRegistrationClient interface
 type P8sRegistrationClient struct {
-	TargetTypeSuffix *string
+	TargetTypeSuffix string
 }
 
 func (p *P8sRegistrationClient) GetSupplyChainDefinition() []*proto.TemplateDTO {
@@ -55,10 +55,10 @@ func (p *P8sRegistrationClient) GetAccountDefinition() []*proto.AccountDefEntry 
 // TargetType returns the target type as the default target type appended
 // an optional (from configuration) suffix
 func (p *P8sRegistrationClient) TargetType() string {
-	if p.TargetTypeSuffix == nil || len(*p.TargetTypeSuffix) == 0 {
+	if len(p.TargetTypeSuffix) == 0 {
 		return targetType
 	}
-	return targetType + "-" + *p.TargetTypeSuffix
+	return targetType + "-" + p.TargetTypeSuffix
 }
 
 func hash(s string) uint32 {

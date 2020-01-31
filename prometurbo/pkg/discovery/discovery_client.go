@@ -104,9 +104,12 @@ func (d *P8sDiscoveryClient) Discover(accountValues []*proto.AccountValue) (*pro
 		return d.failDiscoveryWithError(targetAddr, err), err
 	}
 	dtos, err := d.buildEntities(metrics)
+	if err != nil {
+		return d.failDiscoveryWithError(targetAddr, err), err
+	}
 
 	glog.Infof("Discovered %d entities (%v) from provider %v (targetAddress=%s)", len(dtos),
-		entityTypes(dtos), d.metricExporter, targetAddr)
+		entityCountByType(dtos), d.metricExporter, targetAddr)
 	glog.V(4).Infof("Entities built from exporter %v: %v", d.metricExporter, dtos)
 
 	return &proto.DiscoveryResponse{EntityDTO: dtos}, nil
@@ -120,10 +123,16 @@ func accountValueKeyNames(accountValues []*proto.AccountValue) []*string {
 	return names
 }
 
+// targetAddress reads the target address from the array of account values.
+// The first value returned is the address, if found.
+// The second value returned is a bool indicating whether or not the address was successfully found.
 func targetAddress(accountValues []*proto.AccountValue) (string, bool) {
 	return matchingAccountValue(accountValues, registration.TargetIdField)
 }
 
+// targetScope reads the target scope from the array of account values.
+// The first value returned is the scope, if found.
+// The second value returned is a bool indicating whether or not the scope was successfully found.
 func targetScope(accountValues []*proto.AccountValue) (string, bool) {
 	return matchingAccountValue(accountValues, registration.Scope)
 }
@@ -138,7 +147,7 @@ func matchingAccountValue(accountValues []*proto.AccountValue, matchKey string) 
 	return "", false
 }
 
-func entityTypes(entities []*proto.EntityDTO) map[string]int {
+func entityCountByType(entities []*proto.EntityDTO) map[string]int {
 	var types = make(map[string]int)
 	for _, entity := range entities {
 		types[proto.EntityDTO_EntityType_name[int32(*entity.EntityType)]]++

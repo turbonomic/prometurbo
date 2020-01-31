@@ -185,7 +185,7 @@ func (s *MetricServer) handleMetric(w http.ResponseWriter, r *http.Request) {
 
 	provider, err := s.providerFactory.NewProvider(targetAddr)
 	if err != nil {
-		glog.Errorf("Failed to get metrics: %v", err)
+		glog.Errorf("Failed to create a provider: %v", err)
 		s.sendFailure(w, r)
 		return
 	}

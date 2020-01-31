@@ -21,7 +21,7 @@ type PrometurboConf struct {
 	MetricExporterEndpoint string                            `json:"metricExporterEndpoint,omitempty"`
 	// Appended to the end of a probe name when registering with the platform. Useful when you need
 	// multiple prometheus probe instances with affinity for discovering specific targets.
-	TargetTypeSuffix *string `json:"ProbeNameSuffix,omitempty"`
+	TargetTypeSuffix string `json:"targetTypeSuffix,omitempty"`
 }
 
 type PrometurboTargetConf struct {

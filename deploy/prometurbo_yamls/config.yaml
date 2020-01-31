@@ -19,5 +19,5 @@ data:
             "targetAddress":"<PROMETHEUS-SERVER-ADDRESS>",
             "scope":"<THE-K8S-TARGET-NAME>"
         },
-        "probeNameSuffix":""
+        "targetTypeSuffix":""
     }

@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"fmt"
+
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/dtofactory"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
@@ -12,29 +13,37 @@ import (
 
 // Implements the TurboDiscoveryClient interface
 type P8sDiscoveryClient struct {
-	targetAddr      string
-	keepStandalone  bool
-	createProxyVM   bool
-	scope           string
-	metricExporters []exporter.MetricExporter
+	keepStandalone        bool
+	createProxyVM         bool
+	scope                 string
+	optionalTargetAddress *string
+	targetType            string
+	metricExporter        exporter.MetricExporter
 }
 
-func NewDiscoveryClient(targetAddr string, keepStandalone bool, createProxyVM bool, scope string, metricExporters []exporter.MetricExporter) *P8sDiscoveryClient {
+func NewDiscoveryClient(keepStandalone bool, createProxyVM bool, scope string, optionalTargetAddress *string,
+	targetType string, metricExporter exporter.MetricExporter) *P8sDiscoveryClient {
 	return &P8sDiscoveryClient{
-		targetAddr:      targetAddr,
-		keepStandalone:  keepStandalone,
-		createProxyVM:   createProxyVM,
-		scope:           scope,
-		metricExporters: metricExporters,
+		keepStandalone:        keepStandalone,
+		createProxyVM:         createProxyVM,
+		scope:                 scope,
+		optionalTargetAddress: optionalTargetAddress,
+		targetType:            targetType,
+		metricExporter:        metricExporter,
 	}
 }
 
 // Get the Account Values to create VMTTarget in the turbo server corresponding to this client
 func (d *P8sDiscoveryClient) GetAccountValues() *probe.TurboTargetInfo {
+	targetAddr := ""
+	if d.optionalTargetAddress != nil {
+		targetAddr = *d.optionalTargetAddress
+	}
+
 	targetId := registration.TargetIdField
 	targetIdVal := &proto.AccountValue{
 		Key:         &targetId,
-		StringValue: &d.targetAddr,
+		StringValue: &targetAddr,
 	}
 
 	scope := registration.Scope
@@ -48,7 +57,7 @@ func (d *P8sDiscoveryClient) GetAccountValues() *probe.TurboTargetInfo {
 		scopeVal,
 	}
 
-	targetInfo := probe.NewTurboTargetInfoBuilder(registration.ProbeCategory, registration.TargetType(d.targetAddr),
+	targetInfo := probe.NewTurboTargetInfoBuilder(registration.ProbeCategory, d.targetType,
 		registration.TargetIdField, accountValues).Create()
 
 	return targetInfo
@@ -56,57 +65,99 @@ func (d *P8sDiscoveryClient) GetAccountValues() *probe.TurboTargetInfo {
 
 // Validate the Target
 func (d *P8sDiscoveryClient) Validate(accountValues []*proto.AccountValue) (*proto.ValidationResponse, error) {
+	targetAddr, found := targetAddress(accountValues)
+	if !found {
+		description := fmt.Sprintf("No target address (%s) in account values %v",
+			registration.TargetIdField, accountValueKeyNames(accountValues))
+		return d.failValidation(description), nil
+	}
+
 	validationResponse := &proto.ValidationResponse{}
 
-	// Validation fails if no exporter responses
-	for _, metricExporter := range d.metricExporters {
-		if metricExporter.Validate() {
-			return validationResponse, nil
-		}
-
-		glog.Errorf("Unable to connect to metric exporter %v", metricExporter)
+	// Attempt validation
+	glog.V(2).Infof("Validating to validate target %s", targetAddr)
+	err := d.metricExporter.Validate(targetAddr)
+	if err != nil {
+		return d.failValidationWithError(targetAddr, err), err
 	}
-	return d.failValidation(), nil
+
+	return validationResponse, nil
 }
 
 // Discover the Target Topology
 func (d *P8sDiscoveryClient) Discover(accountValues []*proto.AccountValue) (*proto.DiscoveryResponse, error) {
 	glog.V(2).Infof("Discovering the target %s", accountValues)
-	var entities []*proto.EntityDTO
-	allExportersFailed := true
-
-	for _, metricExporter := range d.metricExporters {
-		dtos, err := d.buildEntities(metricExporter)
-		if err != nil {
-			glog.Errorf("Error while querying metrics exporter %v: %v", metricExporter, err)
-			continue
-		}
-		allExportersFailed = false
-		entities = append(entities, dtos...)
-
-		glog.V(4).Infof("Entities built from exporter %v: %v", metricExporter, dtos)
+	targetAddr, found := targetAddress(accountValues)
+	if !found {
+		description := fmt.Sprintf("No target address (%s) in account values %v",
+			registration.TargetIdField, accountValueKeyNames(accountValues))
+		return d.failDiscovery(description), nil
+	}
+	scope, found := targetScope(accountValues)
+	if !found {
+		glog.V(3).Infof(fmt.Sprintf("No target scope (%s) in account values %v",
+			registration.Scope, accountValueKeyNames(accountValues)))
 	}
 
-	// The discovery fails if all queries to exporters fail
-	if allExportersFailed {
-		return d.failDiscovery(), nil
+	metrics, err := d.metricExporter.Query(targetAddr, scope)
+	if err != nil {
+		return d.failDiscoveryWithError(targetAddr, err), err
+	}
+	dtos, err := d.buildEntities(metrics)
+	if err != nil {
+		return d.failDiscoveryWithError(targetAddr, err), err
 	}
 
-	discoveryResponse := &proto.DiscoveryResponse{
-		EntityDTO: entities,
-	}
+	glog.Infof("Discovered %d entities (%v) from provider %v (targetAddress=%s)", len(dtos),
+		entityCountByType(dtos), d.metricExporter, targetAddr)
+	glog.V(4).Infof("Entities built from exporter %v: %v", d.metricExporter, dtos)
 
-	return discoveryResponse, nil
+	return &proto.DiscoveryResponse{EntityDTO: dtos}, nil
 }
 
-func (d *P8sDiscoveryClient) buildEntities(metricExporter exporter.MetricExporter) ([]*proto.EntityDTO, error) {
+func accountValueKeyNames(accountValues []*proto.AccountValue) []*string {
+	names := make([]*string, len(accountValues))
+	for i := range accountValues {
+		names[i] = accountValues[i].Key
+	}
+	return names
+}
+
+// targetAddress reads the target address from the array of account values.
+// The first value returned is the address, if found.
+// The second value returned is a bool indicating whether or not the address was successfully found.
+func targetAddress(accountValues []*proto.AccountValue) (string, bool) {
+	return matchingAccountValue(accountValues, registration.TargetIdField)
+}
+
+// targetScope reads the target scope from the array of account values.
+// The first value returned is the scope, if found.
+// The second value returned is a bool indicating whether or not the scope was successfully found.
+func targetScope(accountValues []*proto.AccountValue) (string, bool) {
+	return matchingAccountValue(accountValues, registration.Scope)
+}
+
+func matchingAccountValue(accountValues []*proto.AccountValue, matchKey string) (string, bool) {
+	for _, value := range accountValues {
+		if *value.Key == matchKey {
+			return *value.StringValue, true
+		}
+	}
+
+	return "", false
+}
+
+func entityCountByType(entities []*proto.EntityDTO) map[string]int {
+	var types = make(map[string]int)
+	for _, entity := range entities {
+		types[proto.EntityDTO_EntityType_name[int32(*entity.EntityType)]]++
+	}
+	return types
+}
+
+func (d *P8sDiscoveryClient) buildEntities(metrics []*exporter.EntityMetric) ([]*proto.EntityDTO, error) {
 	var entities []*proto.EntityDTO
 	businessAppMap := make(map[string][]*proto.EntityDTO)
-	metrics, err := metricExporter.Query()
-	if err != nil {
-		glog.Errorf("Error while querying metrics exporter: %v", err)
-		return nil, err
-	}
 
 	for _, metric := range metrics {
 		dtos, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.createProxyVM, d.scope, metric).Build()
@@ -124,9 +175,9 @@ func (d *P8sDiscoveryClient) buildEntities(metricExporter exporter.MetricExporte
 		}
 		entities = append(entities, dtos...)
 	}
-	if (len(businessAppMap) > 0) {
+	if len(businessAppMap) > 0 {
 		for k, v := range businessAppMap {
-			dto, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.createProxyVM, d.scope,nil).BuildBusinessApp(v,k)
+			dto, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.createProxyVM, d.scope, nil).BuildBusinessApp(v, k)
 			if err != nil {
 				glog.Errorf("Error building business app entity for %s", k)
 				continue
@@ -137,8 +188,11 @@ func (d *P8sDiscoveryClient) buildEntities(metricExporter exporter.MetricExporte
 	return entities, nil
 }
 
-func (d *P8sDiscoveryClient) failDiscovery() *proto.DiscoveryResponse {
-	description := fmt.Sprintf("All exporter queries failed: %v", d.metricExporters)
+func (d *P8sDiscoveryClient) failDiscoveryWithError(targetAddr string, err error) *proto.DiscoveryResponse {
+	return d.failDiscovery(fmt.Sprintf("Discovery of %s failed due to error: %v", targetAddr, err))
+}
+
+func (d *P8sDiscoveryClient) failDiscovery(description string) *proto.DiscoveryResponse {
 	glog.Errorf(description)
 	severity := proto.ErrorDTO_CRITICAL
 	errorDTO := &proto.ErrorDTO{
@@ -151,8 +205,11 @@ func (d *P8sDiscoveryClient) failDiscovery() *proto.DiscoveryResponse {
 	return discoveryResponse
 }
 
-func (d *P8sDiscoveryClient) failValidation() *proto.ValidationResponse {
-	description := fmt.Sprintf("All exporter queries failed: %v", d.metricExporters)
+func (d *P8sDiscoveryClient) failValidationWithError(targetAddr string, err error) *proto.ValidationResponse {
+	return d.failValidation(fmt.Sprintf("Validation of %s failed due to error: %v", err, targetAddr))
+}
+
+func (d *P8sDiscoveryClient) failValidation(description string) *proto.ValidationResponse {
 	glog.Errorf(description)
 	severity := proto.ErrorDTO_CRITICAL
 	errorDto := &proto.ErrorDTO{

@@ -1,6 +1,10 @@
 package pkg
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/conf"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery"
@@ -8,9 +12,6 @@ import (
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/registration"
 	"github.com/turbonomic/turbo-go-sdk/pkg/probe"
 	"github.com/turbonomic/turbo-go-sdk/pkg/service"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 type disconnectFromTurboFunc func()
@@ -38,8 +39,6 @@ func (p *P8sTAPService) Start() {
 
 	// Connect to the Turbo server
 	p.tapService.ConnectToTurbo()
-
-	select {}
 }
 
 func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
@@ -59,23 +58,41 @@ func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 	glog.V(3).Infof("Read service configuration from %s: %++v", confPath, conf)
 
 	communicator := conf.Communicator
-	targetAddr := conf.TargetConf.Address
-	scope := conf.TargetConf.Scope
-	metricExporters := []exporter.MetricExporter{exporter.NewMetricExporter(conf.MetricExporterEndpoint)}
-
+	metricExporter := exporter.NewMetricExporter(conf.MetricExporterEndpoint)
+	var targetAddr, scope string
+	if conf.TargetConf != nil {
+		targetAddr = conf.TargetConf.Address
+		scope = conf.TargetConf.Scope
+	}
 	keepStandalone := args.KeepStandalone
 	createProxyVM := args.CreateProxyVM
 
-	registrationClient := &registration.P8sRegistrationClient{}
-	discoveryClient := discovery.NewDiscoveryClient(targetAddr, *keepStandalone, *createProxyVM, scope, metricExporters)
+	registrationClient := &registration.P8sRegistrationClient{conf.TargetTypeSuffix}
+	targetType := registrationClient.TargetType()
+
+	var optionalTargetAddr *string
+	if len(targetAddr) > 0 {
+		optionalTargetAddr = &targetAddr
+	}
+	discoveryClient := discovery.NewDiscoveryClient(*keepStandalone, *createProxyVM,
+		scope, optionalTargetAddr, targetType, metricExporter)
+
+	builder := probe.NewProbeBuilder(targetType, registration.ProbeCategory).
+		WithDiscoveryOptions(probe.FullRediscoveryIntervalSecondsOption(int32(*args.DiscoveryIntervalSec))).
+		WithEntityMetadata(registrationClient).
+		RegisteredBy(registrationClient)
+
+	if len(targetAddr) > 0 {
+		glog.Infof("Should discover target %s", targetAddr)
+		builder = builder.DiscoversTarget(targetAddr, discoveryClient)
+	} else {
+		glog.Infof("Not discovering target")
+		builder = builder.WithDiscoveryClient(discoveryClient)
+	}
 
 	return service.NewTAPServiceBuilder().
 		WithTurboCommunicator(communicator).
-		WithTurboProbe(probe.NewProbeBuilder(registration.TargetType(targetAddr), registration.ProbeCategory).
-			WithDiscoveryOptions(probe.FullRediscoveryIntervalSecondsOption(int32(*args.DiscoveryIntervalSec))).
-			WithEntityMetadata(registrationClient).
-			RegisteredBy(registrationClient).
-			DiscoversTarget(targetAddr, discoveryClient)).
+		WithTurboProbe(builder).
 		Create()
 }
 

@@ -18,5 +18,6 @@ data:
         "prometurboTargetConfig": {
             "targetAddress": "{{ .Values.prometurboTargetConfig.targetAddress }}",
             "scope": "{{ .Values.prometurboTargetConfig.scope }}"
-        }
+        },
+        "targetTypeSuffix": {{ .Values.targetTypeSuffix }}
     }

@@ -8,14 +8,12 @@
 ## Overview
 
 This is a SDK probe which lies between [`appMetric`](../appmetric) and Turbonomic Operations Manager server. 
-From the one hand, it communicates with Turbonomic server to do registration/validation/discovery. From the other hand,
-it will talk with [`appMetric`](../appmetric) to get entity metrics on receiving `discovery` command from Turbonomic server.
+It communicates with Turbonomic server to do registration/validation/discovery via a websocket connection. It communicates with [`appMetric`](../appmetric) via a REST interface to get entity metrics on receiving `discovery` command from Turbonomic server.
 
-In current implementation, it will not discovery the topology among the entities. Instead, it only generates (proxy) entities with `ResponseTime` and `Transaction` sold commodities.
+It does not yet support the discovery of the topological relationships among entities. Instead, it only discovers individual entities and their metrics with support for some hardcoded relationships.
 
 
 ## Prerequisites
 * Turbonomic 6.2+ installation
-* Kubernetes 1.7.3+
 * Install [`appMetric`](../appmetric)
 

@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
-	"github.com/golang/glog"
-	"github.com/turbonomic/prometurbo/appmetric/pkg/provider"
 	"html/template"
 	"io"
 	"net/http"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/golang/glog"
+	"github.com/turbonomic/prometurbo/appmetric/pkg/provider"
 
 	"github.com/turbonomic/prometurbo/appmetric/pkg/util"
 )
@@ -75,7 +76,7 @@ func genWelcomePage(path string) (string, error) {
 	}
 
 	var body bytes.Buffer
-	data := map[string]string{"IncomePath": path, "PodPath": appMetricPath, "ServicePath": serviceMetricPath}
+	data := map[string]string{"IncomePath": path}
 	if err = tmp.Execute(&body, data); err != nil {
 		glog.Errorf("Failed to execute template: %v", err)
 		return "", err
@@ -179,7 +180,17 @@ func (s *MetricServer) sendMetrics(metrics []*provider.EntityMetric, w http.Resp
 }
 
 func (s *MetricServer) handleMetric(w http.ResponseWriter, r *http.Request) {
-	metrics, err := s.provider.GetMetrics()
+	params := r.URL.Query()
+	targetAddr := params.Get(provider.TargetAddress)
+
+	provider, err := s.providerFactory.NewProvider(targetAddr)
+	if err != nil {
+		glog.Errorf("Failed to create a provider: %v", err)
+		s.sendFailure(w, r)
+		return
+	}
+
+	metrics, err := provider.GetMetrics()
 	if err != nil {
 		glog.Errorf("Failed to get metrics: %v", err)
 		s.sendFailure(w, r)

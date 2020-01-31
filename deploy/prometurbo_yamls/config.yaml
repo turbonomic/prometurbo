@@ -18,5 +18,6 @@ data:
         "prometurboTargetConfig": {
             "targetAddress":"<PROMETHEUS-SERVER-ADDRESS>",
             "scope":"<THE-K8S-TARGET-NAME>"
-        }
+        },
+        "targetTypeSuffix":""
     }

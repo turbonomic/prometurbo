@@ -30,6 +30,8 @@ prometurboTargetConfig:
   createProxyVM: false
   scope: prometheus
 
+targetTypeSuffix: ""
+
 args:
   # logging level
   logginglevel: 2

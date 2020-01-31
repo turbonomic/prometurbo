@@ -1,11 +1,11 @@
 package registration
 
 import (
-	"fmt"
+	"hash/fnv"
+
 	"github.com/golang/glog"
 	"github.com/turbonomic/turbo-go-sdk/pkg/builder"
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
-	"hash/fnv"
 )
 
 const (
@@ -18,6 +18,7 @@ const (
 
 // Implements the TurboRegistrationClient interface
 type P8sRegistrationClient struct {
+	TargetTypeSuffix string
 }
 
 func (p *P8sRegistrationClient) GetSupplyChainDefinition() []*proto.TemplateDTO {
@@ -51,13 +52,13 @@ func (p *P8sRegistrationClient) GetAccountDefinition() []*proto.AccountDefEntry 
 	}
 }
 
-// Return the target type as the default target type appended with hash number from target Id
-func TargetType(targetId string) string {
-	return appendRandomName(targetType, targetId)
-}
-
-func appendRandomName(name, append string) string {
-	return name + "-" + fmt.Sprint(hash(append))
+// TargetType returns the target type as the default target type appended
+// an optional (from configuration) suffix
+func (p *P8sRegistrationClient) TargetType() string {
+	if len(p.TargetTypeSuffix) == 0 {
+		return targetType
+	}
+	return targetType + "-" + p.TargetTypeSuffix
 }
 
 func hash(s string) uint32 {

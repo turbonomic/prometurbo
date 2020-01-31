@@ -5,6 +5,9 @@ import "github.com/turbonomic/turbo-go-sdk/pkg/proto"
 const (
 	Used     = "used"
 	Capacity = "capacity"
+
+	TargetAddress = "target_address"
+	Scope         = "scope"
 )
 
 type EntityMetric struct {

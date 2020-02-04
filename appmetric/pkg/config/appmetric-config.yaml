@@ -59,6 +59,7 @@ exporters:
   - name: webdriver
     entities:
       - type: APPLICATION
+        hostedOnVM: true
         metrics:
           RESPONSE_TIME:
             queries:
@@ -73,6 +74,7 @@ exporters:
   - name: mysql
     entities:
       - type: DATABASE_SERVER
+        hostedOnVM: true
         metrics:
           DB_MEM:
             queries:

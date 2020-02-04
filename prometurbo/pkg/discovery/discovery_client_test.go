@@ -19,7 +19,6 @@ var (
 	appType        = proto.EntityDTO_APPLICATION
 	useTopoExt     = true
 	keepStandalone = false
-	createProxyVM  = false
 	scope          = "k8s-cluster-foo"
 	targetAddr     = "foo"
 	targetType     = "test"
@@ -43,7 +42,7 @@ var (
 
 func TestP8sDiscoveryClient_GetAccountValues(t *testing.T) {
 	ex := mockExporter{metrics: metrics}
-	d := NewDiscoveryClient(keepStandalone, createProxyVM, scope, &targetAddr, targetType, ex)
+	d := NewDiscoveryClient(keepStandalone, scope, &targetAddr, targetType, ex)
 
 	for _, f := range d.GetAccountValues().GetTargetInstance().InputFields {
 		if f.Name == "targetIdentifier" && f.Value == targetAddr {
@@ -56,14 +55,14 @@ func TestP8sDiscoveryClient_GetAccountValues(t *testing.T) {
 
 func TestP8sDiscoveryClient_Discover(t *testing.T) {
 	ex := &mockExporter{metrics: metrics}
-	d := NewDiscoveryClient(keepStandalone, createProxyVM, scope, &targetAddr, targetType, ex)
+	d := NewDiscoveryClient(keepStandalone, scope, &targetAddr, targetType, ex)
 
 	testDiscoverySuccedded(d, metrics)
 }
 
 func TestP8sDiscoveryClient_Discover_Query_Failed(t *testing.T) {
 	ex := mockExporter{err: fmt.Errorf("Query failed with the mocked exporter")}
-	d := NewDiscoveryClient(keepStandalone, createProxyVM, scope, &targetAddr, targetType, ex)
+	d := NewDiscoveryClient(keepStandalone, scope, &targetAddr, targetType, ex)
 
 	res, err := d.Discover([]*proto.AccountValue{})
 

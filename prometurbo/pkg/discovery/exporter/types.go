@@ -11,10 +11,11 @@ const (
 )
 
 type EntityMetric struct {
-	UID     string                                                  `json:"uid,omitempty"`
-	Type    proto.EntityDTO_EntityType                              `json:"type,omitempty"`
-	Labels  map[string]string                                       `json:"labels,omitempty"`
-	Metrics map[proto.CommodityDTO_CommodityType]map[string]float64 `json:"metrics,omitempty"`
+	UID        string                                                  `json:"uid,omitempty"`
+	Type       proto.EntityDTO_EntityType                              `json:"type,omitempty"`
+	Labels     map[string]string                                       `json:"labels,omitempty"`
+	Metrics    map[proto.CommodityDTO_CommodityType]map[string]float64 `json:"metrics,omitempty"`
+	HostedOnVM bool                                                    `json:"hostedOnVM"`
 }
 
 type MetricResponse struct {

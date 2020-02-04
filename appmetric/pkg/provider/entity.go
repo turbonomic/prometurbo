@@ -11,6 +11,7 @@ import (
 
 type entityDef struct {
 	eType         proto.EntityDTO_EntityType
+	hostedOnVM    bool
 	attributeDefs map[string]*attributeValueDef
 	metricDefs    map[proto.CommodityDTO_CommodityType]*metricDef
 }
@@ -45,6 +46,7 @@ func newEntityDef(entityConfig config.EntityConfig) (*entityDef, error) {
 	}
 	return &entityDef{
 		eType:         proto.EntityDTO_EntityType(eType),
+		hostedOnVM:    entityConfig.HostedOnVM,
 		metricDefs:    metrics,
 		attributeDefs: attributes,
 	}, nil

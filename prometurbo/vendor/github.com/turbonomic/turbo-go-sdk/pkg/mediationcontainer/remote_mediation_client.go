@@ -182,7 +182,7 @@ func (remoteMediationClient *remoteMediationClient) stopMessageHandler() {
 
 // Checks for incoming server messages received by the ProtoBuf endpoint created to handle server requests
 func (remoteMediationClient *remoteMediationClient) RunServerMessageHandler(transport ITransport) {
-	glog.V(2).Infof("[handleServerMessages] %s : ENTER  ", time.Now())
+	glog.V(4).Info("[handleServerMessages]: ENTER")
 
 	// Create Protobuf Endpoint to handle server messages
 	protoMsg := &MediationRequest{} // parser for the server requests
@@ -194,7 +194,7 @@ func (remoteMediationClient *remoteMediationClient) RunServerMessageHandler(tran
 
 	// main loop for listening to server message.
 	for {
-		glog.V(2).Infof(logPrefix + "waiting for parsed server message .....") // make debug
+		glog.V(4).Infof(logPrefix + "waiting for parsed server message .....")
 		// Wait for the server request to be received and parsed by the protobuf endpoint
 		select {
 		case <-remoteMediationClient.stopMsgHandlerCh:
@@ -206,20 +206,18 @@ func (remoteMediationClient *remoteMediationClient) RunServerMessageHandler(tran
 				glog.Errorf(logPrefix + "endpoint message channel is closed")
 				break // return or continue ?
 			}
-			glog.V(3).Infof(logPrefix+"received: %++v\n", parsedMsg)
-
 			// Handler response - find the handler to handle the message
 			serverRequest := parsedMsg.ServerMsg
 			requestType := getRequestType(serverRequest)
-
+			glog.V(2).Infof(logPrefix+"received message with request type %s.", string(requestType))
 			requestHandler := remoteMediationClient.MessageHandlers[requestType]
 			if requestHandler == nil {
-				glog.Errorf(logPrefix + "cannot find message handler for request type " + string(requestType))
+				glog.Errorf(logPrefix+"cannot find message handler for request type %s.", string(requestType))
 			} else {
 				// Dispatch on a new thread
 				// TODO: create MessageOperationRunner to handle this request for a specific message id
 				go requestHandler.HandleMessage(serverRequest, remoteMediationClient.probeResponseChan)
-				glog.Infof(logPrefix + "message dispatched, waiting for next one")
+				glog.V(4).Infof(logPrefix + "message dispatched, waiting for next one")
 			}
 		} //end select
 	} //end for
@@ -249,11 +247,12 @@ func (remoteMediationClient *remoteMediationClient) runProbeCallback(endpoint Pr
 type RequestType string
 
 const (
-	DISCOVERY_REQUEST  RequestType = "Discovery"
-	VALIDATION_REQUEST RequestType = "Validation"
-	INTERRUPT_REQUEST  RequestType = "Interrupt"
-	ACTION_REQUEST     RequestType = "Action"
-	UNKNOWN_REQUEST    RequestType = "Unknown"
+	DISCOVERY_REQUEST    RequestType = "Discovery"
+	VALIDATION_REQUEST   RequestType = "Validation"
+	INTERRUPT_REQUEST    RequestType = "Interrupt"
+	ACTION_REQUEST       RequestType = "Action"
+	SET_PROPERTY_REQUEST RequestType = "SetProperty"
+	UNKNOWN_REQUEST      RequestType = "Unknown"
 )
 
 func getRequestType(serverRequest proto.MediationServerMessage) RequestType {
@@ -265,6 +264,8 @@ func getRequestType(serverRequest proto.MediationServerMessage) RequestType {
 		return ACTION_REQUEST
 	} else if serverRequest.GetInterruptOperation() > 0 {
 		return INTERRUPT_REQUEST
+	} else if serverRequest.GetProperties() != nil {
+		return SET_PROPERTY_REQUEST
 	} else {
 		return UNKNOWN_REQUEST
 	}
@@ -289,6 +290,7 @@ func (remoteMediationClient *remoteMediationClient) createMessageHandlers(probeM
 	remoteMediationClient.MessageHandlers[ACTION_REQUEST] = &ActionMessageHandler{
 		probes: allProbes,
 	}
+	remoteMediationClient.MessageHandlers[SET_PROPERTY_REQUEST] = &SetPropertyMessageHandler{}
 
 	var keys []RequestType
 	for k := range remoteMediationClient.MessageHandlers {
@@ -494,5 +496,11 @@ func (intMsgHandler *InterruptMessageHandler) HandleMessage(serverRequest proto.
 	probeMsgChan chan *proto.MediationClientMessage) {
 
 	msgID := serverRequest.GetMessageID()
-	glog.V(3).Infof("Received: Interrupt Message for message ID: %d, %s", msgID, &serverRequest)
+	glog.V(3).Infof("Received: Interrupt Message for message ID: %d, %v", msgID, serverRequest)
+}
+
+type SetPropertyMessageHandler struct{}
+
+func (setPropertyMsgHandler *SetPropertyMessageHandler) HandleMessage(serverRequest proto.MediationServerMessage,
+	probeMsgChan chan *proto.MediationClientMessage) {
 }

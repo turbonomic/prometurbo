@@ -47,6 +47,10 @@ func CreateWebSocketConnectionConfig(connConfig *MediationContainerConfig) (*Web
 	}
 	wsConfig := WebSocketConnectionConfig(*connConfig)
 	wsConfig.TurboServer = serverURL.String()
+	// If the path specified for the platform use it instead of assuming the default /vmturbo/remoteMediation
+	if serverURL.Path != "" && serverURL.Path != "/" {
+		wsConfig.WebSocketPath = ""
+	}
 	return &wsConfig, nil
 }
 
@@ -192,7 +196,7 @@ func (clientTransport *ClientWebSocketTransport) ListenForMessages() {
 				glog.Errorf("WebSocket is not ready.")
 				continue
 			}
-			glog.V(2).Infof("[ListenForMessages]: connected, waiting for server response ...")
+			glog.V(3).Infof("[ListenForMessages]: connected, waiting for server response ...")
 
 			msgType, data, err := clientTransport.ws.ReadMessage()
 			glog.V(3).Infof("Received websocket message of type %d and size %d", msgType, len(data))

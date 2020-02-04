@@ -29,7 +29,7 @@ func CreateSdkClientProtocolHandler(allProbes map[string]*ProbeProperties, versi
 }
 
 func (clientProtocol *SdkClientProtocol) handleClientProtocol(transport ITransport, transportReady chan bool) {
-	glog.V(2).Infof("Starting Protocol Negotiation ....")
+	glog.V(2).Infof("Starting protocol negotiation ....")
 	status := clientProtocol.NegotiateVersion(transport)
 
 	if !status {
@@ -38,7 +38,7 @@ func (clientProtocol *SdkClientProtocol) handleClientProtocol(transport ITranspo
 		// clientProtocol.TransportReady <- false
 		return
 	}
-	glog.V(2).Infof("[SdkClientProtocol] Starting Probe Registration ....")
+	glog.V(2).Infof("Starting probe registration ....")
 	status = clientProtocol.HandleRegistration(transport)
 	if !status {
 		glog.Errorf("Failure during Registration, cannot receive server messages")
@@ -57,18 +57,18 @@ func timeOutRead(name string, du time.Duration, ch chan *ParsedMessage) (*Parsed
 	select {
 	case msg, ok := <-ch:
 		if !ok {
-			err := fmt.Errorf("[%s]: Endpoint Receiver channel is closed.", name)
+			err := fmt.Errorf("[%s]: Endpoint Receiver channel is closed", name)
 			glog.Error(err.Error())
 			return nil, err
 		}
 		if msg == nil {
-			err := fmt.Errorf("[%s]: Endpoint receive null message.", name)
+			err := fmt.Errorf("[%s]: Endpoint receive null message", name)
 			glog.Error(err.Error())
 			return nil, err
 		}
 		return msg, nil
 	case <-timer.C:
-		err := fmt.Errorf("[%s]: wait for message from channel timeout(%v seconds).", name, du.Seconds())
+		err := fmt.Errorf("[%s]: wait for message from channel timeout(%v seconds)", name, du.Seconds())
 		glog.Error(err.Error())
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (clientProtocol *SdkClientProtocol) NegotiateVersion(transport ITransport) 
 	request := &version.NegotiationRequest{
 		ProtocolVersion: &versionStr,
 	}
-	glog.V(3).Infof("Send negotiation message: %+v", request)
+	glog.V(4).Infof("Send negotiation message: %+v", request)
 
 	// Create Protobuf Endpoint to send and handle negotiation messages
 	protoMsg := &NegotiationResponse{} // handler for the response
@@ -97,7 +97,7 @@ func (clientProtocol *SdkClientProtocol) NegotiateVersion(transport ITransport) 
 		glog.Errorf("[%s] : read VersionNegotiation response from channel failed: %v", endpoint.GetName(), err)
 		return false
 	}
-	glog.V(3).Infof("[%s] : Received: %++v\n", endpoint.GetName(), serverMsg)
+	glog.V(4).Infof("[%s] : Received: %+v", endpoint.GetName(), serverMsg)
 
 	// Handler response
 	negotiationResponse := protoMsg.NegotiationMsg
@@ -105,14 +105,15 @@ func (clientProtocol *SdkClientProtocol) NegotiateVersion(transport ITransport) 
 		glog.Error("Probe Protocol failed, null negotiation response")
 		return false
 	}
-	negotiationResponse.GetNegotiationResult()
 
 	if negotiationResponse.GetNegotiationResult().String() != version.NegotiationAnswer_ACCEPTED.String() {
 		glog.Errorf("Protocol version negotiation failed %s",
 			negotiationResponse.GetNegotiationResult().String()+") :"+negotiationResponse.GetDescription())
 		return false
 	}
-	glog.V(4).Infof("[SdkClientProtocol] Protocol version is accepted by server: %s", negotiationResponse.GetDescription())
+
+	glog.V(2).Infof("Protocol negotiation result: %+v. %s.",
+		serverMsg.NegotiationMsg.GetNegotiationResult(), serverMsg.NegotiationMsg.GetDescription())
 	return true
 }
 
@@ -125,7 +126,7 @@ func (clientProtocol *SdkClientProtocol) HandleRegistration(transport ITransport
 		return false
 	}
 
-	glog.V(3).Infof("Send registration message: %+v", containerInfo)
+	glog.V(4).Infof("Send registration message: %+v", containerInfo)
 
 	// Create Protobuf Endpoint to send and handle registration messages
 	protoMsg := &RegistrationResponse{}
@@ -143,15 +144,15 @@ func (clientProtocol *SdkClientProtocol) HandleRegistration(transport ITransport
 		glog.Errorf("[%s] : read Registration response from channel failed: %v", endpoint.GetName(), err)
 		return false
 	}
-	glog.V(3).Infof("[%s] : Received: %++v\n", endpoint.GetName(), serverMsg)
+	glog.V(4).Infof("[%s] : Received: %+v", endpoint.GetName(), serverMsg.RegistrationMsg)
 
 	// Handler response
 	registrationResponse := protoMsg.RegistrationMsg
 	if registrationResponse == nil {
-		glog.Errorf("Probe registration failed, null ack")
+		glog.Errorf("Probe registration failed, null ack.")
 		return false
 	}
-
+	glog.V(2).Infof("Probe registration succeeded.")
 	return true
 }
 

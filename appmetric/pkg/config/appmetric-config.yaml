@@ -41,7 +41,7 @@ exporters:
             label: job
   - name: cassandra
     entities:
-      - type: APPLICATION
+      - type: APPLICATION_COMPONENT
         metrics:
           RESPONSE_TIME:
             queries:
@@ -58,7 +58,7 @@ exporters:
             label: job
   - name: webdriver
     entities:
-      - type: APPLICATION
+      - type: APPLICATION_COMPONENT
         hostedOnVM: true
         metrics:
           RESPONSE_TIME:
@@ -116,7 +116,7 @@ exporters:
             label: job
   - name: jmx-xl
     entities:
-      - type: APPLICATION
+      - type: APPLICATION_COMPONENT
         metrics:
           # TODO: Some of the XL services may be more relevant on kafka messages vs grpc
           TRANSACTION:
@@ -145,7 +145,7 @@ exporters:
             label: job
   - name: jmx
     entities:
-      - type: APPLICATION
+      - type: APPLICATION_COMPONENT
         metrics:
           VCPU:
             queries:

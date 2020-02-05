@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	AppEntity   = proto.EntityDTO_APPLICATION
+	AppEntity   = proto.EntityDTO_APPLICATION_COMPONENT
 	LatencyType = proto.CommodityDTO_RESPONSE_TIME
 	TpsType     = proto.CommodityDTO_TRANSACTION
 )

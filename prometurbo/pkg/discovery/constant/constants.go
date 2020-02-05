@@ -17,23 +17,45 @@ const (
 
 	// External matching property
 	// The attribute used for stitching with other probes (e.g., prometurbo) with vm
-	SUPPLY_CHAIN_CONSTANT_IP_ADDRESS string = "ipAddress"
-	SUPPLY_CHAIN_CONSTANT_VIRTUAL_MACHINE_DATA = "virtual_machine_data"
+	SupplyChainConstantIpAddress          = "ipAddress"
+	SupplyChainConstantVirtualMachineData = "virtual_machine_data"
 
-	VAppPrefix = "vApp-"
+	VAppPrefix   = "vApp-"
 	BizAppPrefix = "businessApp-"
 )
 
-var EntityTypeMap = map[proto.EntityDTO_EntityType]struct{}{
-	proto.EntityDTO_APPLICATION: {},
+// In most cases, the capacity for a commodity should be provided from the input JSON.
+// For some commodities, the capacity may have a fixed default value, for example, the
+// capacity for garbage collection time and db cache hit rate are all 100% by default.
+type DefaultValue struct {
+	Capacity float64
 }
 
-var VMCommodityTypeMap = map[proto.CommodityDTO_CommodityType]struct{}{
-	proto.CommodityDTO_VCPU:   {},
+type CommodityTypeMap map[proto.CommodityDTO_CommodityType]DefaultValue
+
+var EntityTypeMap = map[proto.EntityDTO_EntityType]CommodityTypeMap{
+	proto.EntityDTO_APPLICATION:     SupportedAppCommodities,
+	proto.EntityDTO_DATABASE_SERVER: SupportedDBCommodities,
+}
+
+var SupportedVMCommodities = CommodityTypeMap{
+	proto.CommodityDTO_VCPU: {},
 	proto.CommodityDTO_VMEM: {},
 }
 
-var AppCommodityTypeMap = map[proto.CommodityDTO_CommodityType]struct{}{
-	proto.CommodityDTO_TRANSACTION:   {},
-	proto.CommodityDTO_RESPONSE_TIME: {},
+var SupportedAppCommodities = CommodityTypeMap{
+	proto.CommodityDTO_TRANSACTION:     {},
+	proto.CommodityDTO_RESPONSE_TIME:   {},
+	proto.CommodityDTO_VCPU:            {},
+	proto.CommodityDTO_VMEM:            {},
+	proto.CommodityDTO_COLLECTION_TIME: {Capacity: 100.0},
+	proto.CommodityDTO_HEAP:            {},
+	proto.CommodityDTO_THREADS:         {},
+}
+
+var SupportedDBCommodities = CommodityTypeMap{
+	proto.CommodityDTO_DB_CACHE_HIT_RATE: {Capacity: 100.0},
+	proto.CommodityDTO_DB_MEM:            {},
+	proto.CommodityDTO_CONNECTION:        {},
+	proto.CommodityDTO_TRANSACTION:       {},
 }

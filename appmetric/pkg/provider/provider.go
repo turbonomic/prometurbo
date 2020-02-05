@@ -86,7 +86,7 @@ func getMetricsForEntity(
 				}
 
 				if _, found := metricsForEntityMap[id]; !found {
-					metricsForEntityMap[id] = NewEntityMetric(id, entityDef.eType)
+					metricsForEntityMap[id] = NewEntityMetric(id, entityDef.eType).OnVM(entityDef.hostedOnVM)
 				}
 				for name, value := range attr {
 					metricsForEntityMap[id].SetLabel(name, value)

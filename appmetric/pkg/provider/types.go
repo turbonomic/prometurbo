@@ -5,10 +5,11 @@ import (
 )
 
 type EntityMetric struct {
-	UID     string                                                  `json:"uid"`
-	Type    proto.EntityDTO_EntityType                              `json:"type,omitempty"`
-	Labels  map[string]string                                       `json:"labels,omitempty"`
-	Metrics map[proto.CommodityDTO_CommodityType]map[string]float64 `json:"metrics,omitempty"`
+	UID        string                                                  `json:"uid"`
+	Type       proto.EntityDTO_EntityType                              `json:"type,omitempty"`
+	HostedOnVM bool                                                    `json:"hostedOnVM"`
+	Labels     map[string]string                                       `json:"labels,omitempty"`
+	Metrics    map[proto.CommodityDTO_CommodityType]map[string]float64 `json:"metrics,omitempty"`
 }
 
 type MetricResponse struct {
@@ -26,6 +27,11 @@ func NewEntityMetric(id string, t proto.EntityDTO_EntityType) *EntityMetric {
 	}
 
 	return m
+}
+
+func (e *EntityMetric) OnVM(hostedOnVM bool) *EntityMetric {
+	e.HostedOnVM = hostedOnVM
+	return e
 }
 
 func (e *EntityMetric) SetLabel(name, value string) {

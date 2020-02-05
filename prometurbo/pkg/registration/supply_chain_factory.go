@@ -8,31 +8,67 @@ import (
 )
 
 var (
-	VMIPFieldPaths = []string{constant.SUPPLY_CHAIN_CONSTANT_VIRTUAL_MACHINE_DATA}
+	VMIPFieldPaths = []string{constant.SupplyChainConstantVirtualMachineData}
 
-	vCpuType    = proto.CommodityDTO_VCPU
+	vCpuType = proto.CommodityDTO_VCPU
 	vMemType = proto.CommodityDTO_VMEM
 
-	vCpuTemplateComm *proto.TemplateCommodity = &proto.TemplateCommodity{
+	vCpuTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &vCpuType,
 	}
 
-	vMemTemplateComm *proto.TemplateCommodity = &proto.TemplateCommodity{
+	vMemTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &vMemType,
 	}
 
-	respTimeType    = proto.CommodityDTO_RESPONSE_TIME
-	transactionType = proto.CommodityDTO_TRANSACTION
-	key             = "key-placeholder"
+	respTimeType     = proto.CommodityDTO_RESPONSE_TIME
+	transactionType  = proto.CommodityDTO_TRANSACTION
+	heapType         = proto.CommodityDTO_HEAP
+	collectionType   = proto.CommodityDTO_COLLECTION_TIME
+	threadsType      = proto.CommodityDTO_THREADS
+	cacheHitRateType = proto.CommodityDTO_DB_CACHE_HIT_RATE
+	dbMemType        = proto.CommodityDTO_DB_MEM
+	connectionType   = proto.CommodityDTO_CONNECTION
+	key              = "key-placeholder"
 
-	respTimeTemplateComm *proto.TemplateCommodity = &proto.TemplateCommodity{
+	respTimeTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &respTimeType,
 		Key:           &key,
 	}
 
-	transactionTemplateComm *proto.TemplateCommodity = &proto.TemplateCommodity{
+	transactionTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &transactionType,
 		Key:           &key,
+	}
+
+	heapTemplateComm = &proto.TemplateCommodity{
+		CommodityType: &heapType,
+		Key:           &key,
+	}
+
+	collectionTemplateComm = &proto.TemplateCommodity{
+		CommodityType: &collectionType,
+		Key:           &key,
+	}
+
+	threadsTemplateComm = &proto.TemplateCommodity{
+		CommodityType: &threadsType,
+		Key:           &key,
+	}
+
+	cachHitRateTemplateComm = &proto.TemplateCommodity{
+		CommodityType:        &cacheHitRateType,
+		Key:                  &key,
+	}
+
+	dbMemTemplateComm = &proto.TemplateCommodity{
+		CommodityType:        &dbMemType,
+		Key:                  &key,
+	}
+
+	connectionComm = &proto.TemplateCommodity{
+		CommodityType:        &connectionType,
+		Key:                  &key,
 	}
 )
 
@@ -69,6 +105,13 @@ func (f *SupplyChainFactory) CreateSupplyChain() ([]*proto.TemplateDTO, error) {
 
 	appNode.MergedEntityMetaData = appMetadata
 
+	// DBServer node
+	dbServerNode, err := f.buildDBServerSupplyBuilder()
+
+	if err != nil {
+		return nil, err
+	}
+
 	// vApplication node
 	vAppNode, err := f.buildVAppSupplyBuilder()
 
@@ -103,26 +146,53 @@ func (f *SupplyChainFactory) CreateSupplyChain() ([]*proto.TemplateDTO, error) {
 		Top(bizAppNode).
 		Entity(vAppNode).
 		Entity(appNode).
+		Entity(dbServerNode).
 		Entity(vmNode).
 		Create()
 }
 
 func (f *SupplyChainFactory) buildVMSupplyBuilder() (*proto.TemplateDTO, error) {
-	builder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_VIRTUAL_MACHINE).
+	vmBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_VIRTUAL_MACHINE).
 		Sells(vCpuTemplateComm).
 		Sells(vMemTemplateComm)
-	builder.SetPriority(-1)
-	builder.SetTemplateType(proto.TemplateDTO_BASE)
+	vmBuilder.SetPriority(-1)
+	vmBuilder.SetTemplateType(proto.TemplateDTO_BASE)
 
-	return builder.Create()
+	return vmBuilder.Create()
 }
 
+// TODO: Currently we only support DATABASE_SERVER links to VIRTUAL_MACHINE
+func (f *SupplyChainFactory) buildDBServerSupplyBuilder() (*proto.TemplateDTO, error) {
+	dbServerToVMExternalLink, err := supplychain.NewExternalEntityLinkBuilder().
+		Link(proto.EntityDTO_DATABASE_SERVER, proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
+		Commodity(vCpuType, false).Commodity(vMemType, false).
+		ProbeEntityPropertyDef(constant.StitchingAttr, "IP Address of the VM hosting the discovered db server").
+		ExternalEntityPropertyDef(supplychain.VM_IP).
+		Build()
+	if err != nil {
+		return nil, err
+	}
+	dbServerBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_DATABASE_SERVER).
+		Sells(cachHitRateTemplateComm).
+		Sells(dbMemTemplateComm).
+		Sells(connectionComm).
+		Sells(respTimeTemplateComm).
+		Sells(transactionTemplateComm).
+		ConnectsTo(dbServerToVMExternalLink).
+		Provider(proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
+		Buys(vCpuTemplateComm).
+		Buys(vMemTemplateComm)
+	dbServerBuilder.SetPriority(-1)
+	dbServerBuilder.SetTemplateType(proto.TemplateDTO_BASE)
+
+	return dbServerBuilder.Create()
+}
 
 func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error) {
 	appToVMExternalLink, err := supplychain.NewExternalEntityLinkBuilder().
 		Link(proto.EntityDTO_APPLICATION, proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
 		Commodity(vCpuType, false).Commodity(vMemType, false).
-		Commodity(transactionType, true). Commodity(respTimeType, true).
+		Commodity(transactionType, true).Commodity(respTimeType, true).
 		ProbeEntityPropertyDef(constant.StitchingAttr, "IP Address of the VM hosting the discovered node").
 		ExternalEntityPropertyDef(supplychain.VM_IP).
 		Build()
@@ -131,56 +201,60 @@ func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error)
 		return nil, err
 	}
 
-	appbuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_APPLICATION).
+	appBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_APPLICATION).
 		Sells(transactionTemplateComm).
 		Sells(respTimeTemplateComm).
+		Sells(heapTemplateComm).
+		Sells(collectionTemplateComm).
+		Sells(threadsTemplateComm).
 		Provider(proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
 		ConnectsTo(appToVMExternalLink).
 		Buys(vCpuTemplateComm).
 		Buys(vMemTemplateComm)
-	appbuilder.SetPriority(-1)
-	appbuilder.SetTemplateType(proto.TemplateDTO_BASE)
+	appBuilder.SetPriority(-1)
+	appBuilder.SetTemplateType(proto.TemplateDTO_BASE)
 
-	return appbuilder.Create()
+	return appBuilder.Create()
 }
 
 func (f *SupplyChainFactory) buildVAppSupplyBuilder() (*proto.TemplateDTO, error) {
 
-	vappbuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_VIRTUAL_APPLICATION).
+	vAppBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_VIRTUAL_APPLICATION).
 		Provider(proto.EntityDTO_APPLICATION, proto.Provider_LAYERED_OVER).
+		Provider(proto.EntityDTO_DATABASE_SERVER, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
 		Buys(respTimeTemplateComm).
 		Sells(transactionTemplateComm).
 		Sells(respTimeTemplateComm)
-	vappbuilder.SetPriority(-1)
-	vappbuilder.SetTemplateType(proto.TemplateDTO_BASE)
+	vAppBuilder.SetPriority(-1)
+	vAppBuilder.SetTemplateType(proto.TemplateDTO_BASE)
 
-	return vappbuilder.Create()
+	return vAppBuilder.Create()
 }
 
 func (f *SupplyChainFactory) buildBusinessAppSupplyBuilder() (*proto.TemplateDTO, error) {
 
-	businessappbuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_BUSINESS_APPLICATION).
+	businessAppBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_BUSINESS_APPLICATION).
 		Provider(proto.EntityDTO_VIRTUAL_APPLICATION, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
 		Buys(respTimeTemplateComm)
-	businessappbuilder.SetPriority(-1)
-	businessappbuilder.SetTemplateType(proto.TemplateDTO_BASE)
+	businessAppBuilder.SetPriority(-1)
+	businessAppBuilder.SetTemplateType(proto.TemplateDTO_BASE)
 
-	return businessappbuilder.Create()
+	return businessAppBuilder.Create()
 }
 
 func (f *SupplyChainFactory) getVMStitchingMetaData() (*proto.MergedEntityMetadata, error) {
 
-	var vmbuilder *builder.MergedEntityMetadataBuilder
+	var metadataBuilder *builder.MergedEntityMetadataBuilder
 
-	vmbuilder = builder.NewMergedEntityMetadataBuilder().
+	metadataBuilder = builder.NewMergedEntityMetadataBuilder().
 		InternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
 		InternalMatchingPropertyWithDelimiter(constant.StitchingAttr, ",").
 		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
-		ExternalMatchingFieldWithDelimiter(constant.SUPPLY_CHAIN_CONSTANT_IP_ADDRESS, VMIPFieldPaths, ",")
+		ExternalMatchingFieldWithDelimiter(constant.SupplyChainConstantIpAddress, VMIPFieldPaths, ",")
 
-	metadata, err := vmbuilder.Build()
+	metadata, err := metadataBuilder.Build()
 	if err != nil {
 		return nil, err
 	}
@@ -189,11 +263,12 @@ func (f *SupplyChainFactory) getVMStitchingMetaData() (*proto.MergedEntityMetada
 }
 
 func (f *SupplyChainFactory) getAppStitchingMetaData() (*proto.MergedEntityMetadata, error) {
-	commodityList := []proto.CommodityDTO_CommodityType{respTimeType, transactionType}
+	commodityList := []proto.CommodityDTO_CommodityType{
+		respTimeType, transactionType, heapType, collectionType, threadsType}
 
-	var mbuilder *builder.MergedEntityMetadataBuilder
+	var metadataBuilder *builder.MergedEntityMetadataBuilder
 
-	mbuilder = builder.NewMergedEntityMetadataBuilder().
+	metadataBuilder = builder.NewMergedEntityMetadataBuilder().
 		KeepInTopology(false).
 		InternalMatchingProperty(constant.StitchingAttr).
 		InternalMatchingType(builder.MergedEntityMetadata_STRING).
@@ -201,7 +276,7 @@ func (f *SupplyChainFactory) getAppStitchingMetaData() (*proto.MergedEntityMetad
 		ExternalMatchingType(builder.MergedEntityMetadata_STRING).
 		PatchSoldList(commodityList)
 
-	metadata, err := mbuilder.Build()
+	metadata, err := metadataBuilder.Build()
 	if err != nil {
 		return nil, err
 	}
@@ -212,9 +287,9 @@ func (f *SupplyChainFactory) getAppStitchingMetaData() (*proto.MergedEntityMetad
 func (f *SupplyChainFactory) getVAppStitchingMetaData() (*proto.MergedEntityMetadata, error) {
 	commodityList := []proto.CommodityDTO_CommodityType{respTimeType, transactionType}
 
-	var mbuilder *builder.MergedEntityMetadataBuilder
+	var metadataBuilder *builder.MergedEntityMetadataBuilder
 
-	mbuilder = builder.NewMergedEntityMetadataBuilder().
+	metadataBuilder = builder.NewMergedEntityMetadataBuilder().
 		KeepInTopology(false).
 		InternalMatchingProperty(constant.StitchingAttr).
 		InternalMatchingType(builder.MergedEntityMetadata_STRING).
@@ -223,7 +298,7 @@ func (f *SupplyChainFactory) getVAppStitchingMetaData() (*proto.MergedEntityMeta
 		PatchSoldList(commodityList).
 		PatchBoughtList(proto.EntityDTO_APPLICATION, commodityList)
 
-	metadata, err := mbuilder.Build()
+	metadata, err := metadataBuilder.Build()
 	if err != nil {
 		return nil, err
 	}
@@ -234,9 +309,9 @@ func (f *SupplyChainFactory) getVAppStitchingMetaData() (*proto.MergedEntityMeta
 func (f *SupplyChainFactory) getBusinessAppStitchingMetaData() (*proto.MergedEntityMetadata, error) {
 	commodityList := []proto.CommodityDTO_CommodityType{respTimeType, transactionType}
 
-	var mbuilder *builder.MergedEntityMetadataBuilder
+	var metadataBuilder *builder.MergedEntityMetadataBuilder
 
-	mbuilder = builder.NewMergedEntityMetadataBuilder().
+	metadataBuilder = builder.NewMergedEntityMetadataBuilder().
 		KeepInTopology(false).
 		InternalMatchingProperty(constant.StitchingAttr).
 		InternalMatchingType(builder.MergedEntityMetadata_STRING).
@@ -244,7 +319,7 @@ func (f *SupplyChainFactory) getBusinessAppStitchingMetaData() (*proto.MergedEnt
 		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
 		PatchBoughtList(proto.EntityDTO_VIRTUAL_APPLICATION, commodityList)
 
-	metadata, err := mbuilder.Build()
+	metadata, err := metadataBuilder.Build()
 	if err != nil {
 		return nil, err
 	}

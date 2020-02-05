@@ -14,18 +14,16 @@ import (
 // Implements the TurboDiscoveryClient interface
 type P8sDiscoveryClient struct {
 	keepStandalone        bool
-	createProxyVM         bool
 	scope                 string
 	optionalTargetAddress *string
 	targetType            string
 	metricExporter        exporter.MetricExporter
 }
 
-func NewDiscoveryClient(keepStandalone bool, createProxyVM bool, scope string, optionalTargetAddress *string,
+func NewDiscoveryClient(keepStandalone bool, scope string, optionalTargetAddress *string,
 	targetType string, metricExporter exporter.MetricExporter) *P8sDiscoveryClient {
 	return &P8sDiscoveryClient{
 		keepStandalone:        keepStandalone,
-		createProxyVM:         createProxyVM,
 		scope:                 scope,
 		optionalTargetAddress: optionalTargetAddress,
 		targetType:            targetType,
@@ -101,11 +99,11 @@ func (d *P8sDiscoveryClient) Discover(accountValues []*proto.AccountValue) (*pro
 
 	metrics, err := d.metricExporter.Query(targetAddr, scope)
 	if err != nil {
-		return d.failDiscoveryWithError(targetAddr, err), err
+		return d.failDiscoveryWithError(targetAddr, err), nil
 	}
 	dtos, err := d.buildEntities(metrics)
 	if err != nil {
-		return d.failDiscoveryWithError(targetAddr, err), err
+		return d.failDiscoveryWithError(targetAddr, err), nil
 	}
 
 	glog.Infof("Discovered %d entities (%v) from provider %v (targetAddress=%s)", len(dtos),
@@ -160,7 +158,7 @@ func (d *P8sDiscoveryClient) buildEntities(metrics []*exporter.EntityMetric) ([]
 	businessAppMap := make(map[string][]*proto.EntityDTO)
 
 	for _, metric := range metrics {
-		dtos, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.createProxyVM, d.scope, metric).Build()
+		dtos, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.scope, metric).Build()
 		if err != nil {
 			glog.Errorf("Error building entity from metric %v: %s", metric, err)
 			continue
@@ -177,7 +175,7 @@ func (d *P8sDiscoveryClient) buildEntities(metrics []*exporter.EntityMetric) ([]
 	}
 	if len(businessAppMap) > 0 {
 		for k, v := range businessAppMap {
-			dto, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.createProxyVM, d.scope, nil).BuildBusinessApp(v, k)
+			dto, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.scope, nil).BuildBusinessApp(v, k)
 			if err != nil {
 				glog.Errorf("Error building business app entity for %s", k)
 				continue

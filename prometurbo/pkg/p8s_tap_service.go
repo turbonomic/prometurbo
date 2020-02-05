@@ -65,7 +65,6 @@ func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 		scope = conf.TargetConf.Scope
 	}
 	keepStandalone := args.KeepStandalone
-	createProxyVM := args.CreateProxyVM
 
 	registrationClient := &registration.P8sRegistrationClient{conf.TargetTypeSuffix}
 	targetType := registrationClient.TargetType()
@@ -74,7 +73,7 @@ func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 	if len(targetAddr) > 0 {
 		optionalTargetAddr = &targetAddr
 	}
-	discoveryClient := discovery.NewDiscoveryClient(*keepStandalone, *createProxyVM,
+	discoveryClient := discovery.NewDiscoveryClient(*keepStandalone,
 		scope, optionalTargetAddr, targetType, metricExporter)
 
 	builder := probe.NewProbeBuilder(targetType, registration.ProbeCategory).

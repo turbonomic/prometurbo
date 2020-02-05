@@ -2,13 +2,15 @@ package probe
 
 import (
 	"errors"
+
 	"github.com/golang/glog"
 )
 
 type ProbeBuilder struct {
 	probeConf              *ProbeConfig
 	registrationClient     TurboRegistrationClient
-	discoveryClientMap     map[string]TurboDiscoveryClient
+	targetsToAdd           map[string]bool
+	discoveryClient        TurboDiscoveryClient
 	actionClient           TurboActionExecutorClient
 	builderError           error
 	supplyChainProvider    ISupplyChainProvider
@@ -56,13 +58,14 @@ func NewProbeBuilder(probeType string, probeCategory string) *ProbeBuilder {
 	// Validate probe type and category
 	probeConf, err := NewProbeConfig(probeType, probeCategory)
 	if err != nil {
+		glog.Errorf("Encountered error constructing NewProbeBuilder: %v", err)
 		probeBuilder.builderError = err
 		return probeBuilder
 	}
 
 	return &ProbeBuilder{
-		probeConf:          probeConf,
-		discoveryClientMap: make(map[string]TurboDiscoveryClient),
+		probeConf:    probeConf,
+		targetsToAdd: make(map[string]bool),
 	}
 }
 
@@ -72,11 +75,8 @@ func (pb *ProbeBuilder) Create() (*TurboProbe, error) {
 		glog.Errorf(pb.builderError.Error())
 		return nil, pb.builderError
 	}
-
-	if len(pb.discoveryClientMap) == 0 {
-		pb.builderError = ErrorUndefinedDiscoveryClient()
-		glog.Errorf(pb.builderError.Error())
-		return nil, pb.builderError
+	if pb.registrationClient == nil {
+		return nil, ErrorInvalidRegistrationClient()
 	}
 
 	turboProbe, err := newTurboProbe(pb.probeConf)
@@ -107,11 +107,8 @@ func (pb *ProbeBuilder) Create() (*TurboProbe, error) {
 	}
 
 	turboProbe.ActionClient = pb.actionClient
-	for targetId, discoveryClient := range pb.discoveryClientMap {
-		targetDiscoveryAgent := NewTargetDiscoveryAgent(targetId)
-		targetDiscoveryAgent.TurboDiscoveryClient = discoveryClient
-		turboProbe.DiscoveryClientMap[targetId] = targetDiscoveryAgent //discoveryClient
-	}
+	turboProbe.DiscoveryClient.TurboDiscoveryClient = pb.discoveryClient
+	turboProbe.TargetsToAdd = pb.targetsToAdd
 
 	return turboProbe, nil
 }
@@ -192,8 +189,26 @@ func (pb *ProbeBuilder) DiscoversTarget(targetId string, discoveryClient TurboDi
 		return pb
 	}
 
-	pb.discoveryClientMap[targetId] = discoveryClient
+	pb.targetsToAdd[targetId] = true
+	if pb.discoveryClient != nil {
+		glog.Warningf("Overwriting discovery client %v with %v", pb.discoveryClient, discoveryClient)
+	}
+	pb.discoveryClient = discoveryClient
 
+	return pb
+}
+
+// Set a target and discovery client for the probe
+func (pb *ProbeBuilder) WithDiscoveryClient(discoveryClient TurboDiscoveryClient) *ProbeBuilder {
+	if discoveryClient == nil {
+		pb.builderError = ErrorInvalidDiscoveryClient("")
+		return pb
+	}
+
+	if pb.discoveryClient != nil {
+		glog.Warningf("Overwriting discovery client %v with %v", pb.discoveryClient, discoveryClient)
+	}
+	pb.discoveryClient = discoveryClient
 	return pb
 }
 

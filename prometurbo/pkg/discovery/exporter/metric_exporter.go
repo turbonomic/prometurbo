@@ -85,7 +85,7 @@ func sendRequest(endpoint string, params map[string]string) ([]byte, error) {
 		glog.Errorf("Error reading the response %v: %v", resp, err)
 		return nil, err
 	}
-	glog.V(4).Infof("Received resposne: %s", string(body))
+	glog.V(4).Infof("Received response: %s", string(body))
 	return body, nil
 }
 

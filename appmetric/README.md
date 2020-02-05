@@ -4,61 +4,89 @@ Get metrics from [Prometheus](https://prometheus.io) for applications, and expos
 <img width="800" alt="appmetric" src="https://user-images.githubusercontent.com/27221807/41060294-2d58206e-699d-11e8-93f8-dae4cc775e49.png">
 
 
-Applications are distinguished by mainly their IP address. For example, each [Kubernetes](https://kubernetes.io/docs/concepts/workloads/pods/pod/) Pod corresponds to one Application.
-Currently, it can get applications from [Istio exporter](https://istio.io/docs/reference/config/adapters/prometheus.html), [Redis exporter](https://github.com/oliver006/redis_exporter), [Cassandra exporter](https://github.com/criteo/cassandra_exporter), [MySQL exporter](https://github.com/prometheus/mysqld_exporter), and [JMX exporter](https://github.com/prometheus/jmx_exporter) . More exporters can be supported by specifying their definition in the appmetric-config.yml configuration file.
+Applications are distinguished by their IP address. For example, each [Kubernetes](https://kubernetes.io/docs/concepts/workloads/pods/pod/) Pod corresponds to one Application.
+
+Currently, `appMetric` can get application metrics and attributes from [Istio exporter](https://istio.io/docs/reference/config/adapters/prometheus.html), [Redis exporter](https://github.com/oliver006/redis_exporter), [Cassandra exporter](https://github.com/criteo/cassandra_exporter), [WebDriver exporter](https://github.com/mattbostock/webdriver_exporter), [MySQL exporter](https://github.com/prometheus/mysqld_exporter), and [JMX exporter](https://github.com/prometheus/jmx_exporter) based on the definition in the `appmetric-config.yaml` configuration file. More exporters can be supported by specifying their definition in the `appmetric-config.yml` configuration file.
 
 # Output of appMetric: Applications with their metrics
 The application metrics are served via REST API. Access endpoint `/pod/metrics`, and will get json data:
 ```json
 {
-	"status": 0,
-	"message:omitemtpy": "Success",
-	"data:omitempty": [{
-		"uid": "10.2.6.38",
-		"type": 33,
-		"labels": {
-			"category": "Istio",
-			"ip": "10.2.6.38",
-			"name": "default/image-nkqq6"
-		},
-		"metrics": {
-			"49": 0.2857142857142857,
-			"52": 3758.488515119534
-		}
-	}, {
-		"uid": "10.2.7.55",
-		"type": 33,
-		"labels": {
-			"category": "Istio",
-			"ip": "10.2.7.55",
-			"name": "default/music-jfrpw"
-		},
-		"metrics": {
-			"49": 3.1314285714285712,
-			"52": 2388.7400252478587
-		}
-	}, {
-		"uid": "10.2.3.31",
-		"type": 33,
-		"labels": {
-			"category": "Redis",
-			"ip": "10.2.3.31",
-			"port": "6379"
-		},
-		"metrics": {
-			"49": 1.5028571428571427
-		}
-	}]
-}
+  "status": 0,
+  "message:omitemtpy": "Success",
+  "data:omitempty": [
+    {
+      "uid": "10.10.169.38",
+      "type": 4,
+      "hostedOnVM": true,
+      "labels": {
+        "business_app": "xl",
+        "ip": "10.10.169.38"
+      },
+      "metrics": {
+        "49": {
+          "used": 0.008333333333333333
+        },
+        "67": {
+          "capacity": 131072,
+          "used": 109616
+        },
+        "69": {
+          "used": 95.80342211850882
+        }
+      }
+    },
+    {
+      "uid": "10.10.169.38",
+      "type": 10,
+      "hostedOnVM": false,
+      "labels": {
+        "ip": "10.10.169.38",
+        "target": "kubernetes-service-endpoints"
+      },
+      "metrics": {
+        "26": {
+          "used": 3.813936434391914
+        },
+        "53": {
+          "used": 19748298752
+        }
+      }
+    },
+    {
+      "uid": "10.233.90.42",
+      "type": 33,
+      "hostedOnVM": false,
+      "labels": {
+        "business_app": "xl",
+        "ip": "10.233.90.42"
+      },
+      "metrics": {
+        "1": {
+          "capacity": 66,
+          "used": 46
+        },
+        "71": {
+          "used": 0.023234433925960134
+        },
+        "77": {
+          "capacity": 262144,
+          "used": 68836.046875
+        }
+      }
+    },
+  ]
+}  
 ```
 
 The output json format is defined as:
 ```golang
 type EntityMetric struct {
-	UID     string                                       `json:"uid"`
-	Type    proto.EntityDTO_EntityType                   `json:"type,omitempty"`
-	Labels  map[string]string                            `json:"labels,omitempty"`
-	Metrics map[proto.CommodityDTO_CommodityType]float64 `json:"metrics,omitempty"`
+	UID        string                                                  `json:"uid"`
+	Type       proto.EntityDTO_EntityType                              `json:"type,omitempty"`
+	HostedOnVM bool                                                    `json:"hostedOnVM"`
+	Labels     map[string]string                                       `json:"labels,omitempty"`
+	Metrics    map[proto.CommodityDTO_CommodityType]map[string]float64 `json:"metrics,omitempty"`
 }
 
 type MetricResponse struct {
@@ -66,7 +94,6 @@ type MetricResponse struct {
 	Message string          `json:"message:omitemtpy"`
 	Data    []*EntityMetric `json:"data:omitempty"`
 }
-
 ```
 
 

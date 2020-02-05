@@ -12,10 +12,14 @@ import (
 // Turbo Probe Abstraction
 // Consists of clients that handle probe registration metadata,
 // and the discovery and action execution for different probe targets
+// A single handler implementation is associated with a TurboProbe.
 type TurboProbe struct {
 	ProbeConfiguration *ProbeConfig
 	RegistrationClient *ProbeRegistrationAgent
-	DiscoveryClientMap map[string]*TargetDiscoveryAgent
+	// TargetsToAdd are targets we create for the probe at startup. Targets may also
+	// be created in the platform through the UI. Permitted to be empty.
+	TargetsToAdd    map[string]bool
+	DiscoveryClient *DiscoveryAgent
 
 	ActionClient TurboActionExecutorClient
 }
@@ -37,16 +41,15 @@ func NewProbeRegistrator() *ProbeRegistrationAgent {
 	return registrator
 }
 
-type TargetDiscoveryAgent struct {
-	TargetId string
+type DiscoveryAgent struct {
 	TurboDiscoveryClient
 	IIncrementalDiscovery
 	IPerformanceDiscovery
 }
 
-func NewTargetDiscoveryAgent(targetId string) *TargetDiscoveryAgent {
-	targetAgent := &TargetDiscoveryAgent{TargetId: targetId}
-	return targetAgent
+func NewDiscoveryAgent() *DiscoveryAgent {
+	agent := &DiscoveryAgent{}
+	return agent
 }
 
 type TurboDiscoveryClient interface {
@@ -70,38 +73,18 @@ func newTurboProbe(probeConf *ProbeConfig) (*TurboProbe, error) {
 
 	myProbe := &TurboProbe{
 		ProbeConfiguration: probeConf,
-		DiscoveryClientMap: make(map[string]*TargetDiscoveryAgent),
+		DiscoveryClient:    NewDiscoveryAgent(), // Populate fields later.
 		RegistrationClient: NewProbeRegistrator(),
+		TargetsToAdd:       map[string]bool{},
 	}
 
 	glog.V(2).Infof("[NewTurboProbe] Created TurboProbe: %v", myProbe)
 	return myProbe, nil
 }
 
-func (theProbe *TurboProbe) getDiscoveryClient(targetIdentifier string) TurboDiscoveryClient {
-	target, exists := theProbe.DiscoveryClientMap[targetIdentifier]
-
-	if !exists {
-		glog.Errorf("[GetTurboDiscoveryClient] Cannot find Target for address: %s", targetIdentifier)
-		return nil
-	}
-	return target.TurboDiscoveryClient
-}
-
 // TODO: this method should be synchronized
-func (theProbe *TurboProbe) GetTurboDiscoveryClient(accountValues []*proto.AccountValue) TurboDiscoveryClient {
-	var address string
-	identifyingField := theProbe.RegistrationClient.GetIdentifyingFields()
-
-	address = findTargetId(accountValues, identifyingField)
-	target, exists := theProbe.DiscoveryClientMap[address]
-	if !exists {
-		glog.Errorf("[GetTurboDiscoveryClient] Cannot find Target for address: %s", address)
-		//TODO: CreateDiscoveryClient(address, accountValues, )
-		return nil
-	}
-	glog.V(2).Infof("[GetTurboDiscoveryClient] Found Target for address: %s", address)
-	return target.TurboDiscoveryClient
+func (theProbe *TurboProbe) GetTurboDiscoveryClient() TurboDiscoveryClient {
+	return theProbe.DiscoveryClient.TurboDiscoveryClient
 }
 
 func findTargetId(accountValues []*proto.AccountValue, identifyingField string) string {
@@ -113,21 +96,13 @@ func findTargetId(accountValues []*proto.AccountValue, identifyingField string) 
 			return address
 		}
 	}
-	return address
+	return ""
 }
 
 func (theProbe *TurboProbe) DiscoverTarget(accountValues []*proto.AccountValue) *proto.DiscoveryResponse {
 	glog.V(2).Infof("Discover Target: %s", accountValues)
 	targetId := findTargetId(accountValues, theProbe.RegistrationClient.GetIdentifyingFields())
-	target, exists := theProbe.DiscoveryClientMap[targetId]
-
-	if !exists {
-		glog.Errorf("Failed to discover target (id=%v): cannot find target in %++v", targetId, theProbe.DiscoveryClientMap)
-		return theProbe.createNonExistentTargetDiscoveryErrorDTO(targetId)
-	}
-
-	var handler TurboDiscoveryClient
-	handler = target.TurboDiscoveryClient
+	handler := theProbe.DiscoveryClient.TurboDiscoveryClient
 	if handler == nil {
 		glog.Errorf("Failed to discover target (id=%v): cannot find discovery handler.", targetId)
 		return theProbe.createNonSupportedDiscoveryErrorDTO("Full", targetId)
@@ -147,17 +122,10 @@ func (theProbe *TurboProbe) DiscoverTarget(accountValues []*proto.AccountValue) 
 
 func (theProbe *TurboProbe) ValidateTarget(accountValues []*proto.AccountValue) *proto.ValidationResponse {
 	glog.V(2).Infof("Validate Target: %++v", accountValues)
-	targetId := findTargetId(accountValues, theProbe.RegistrationClient.GetIdentifyingFields())
-	target, exists := theProbe.DiscoveryClientMap[targetId]
-	if !exists {
-		glog.Errorf("Failed to validate target (id=%v): cannot find target in %++v", targetId, theProbe.DiscoveryClientMap)
-		return theProbe.createNonExistentTargetValidationErrorDTO(targetId)
-	}
-
-	var handler TurboDiscoveryClient
-	handler = target.TurboDiscoveryClient //theProbe.GetTurboDiscoveryClient(accountValues)
+	var targetId = findTargetId(accountValues, theProbe.RegistrationClient.GetIdentifyingFields())
+	handler := theProbe.DiscoveryClient.TurboDiscoveryClient
 	if handler == nil {
-		glog.Errorf("Failed to discover target (id=%v): cannot find discovery handler.", targetId)
+		glog.Errorf("Failed to validate target (id=%v): cannot find discovery handler.", targetId)
 		return theProbe.createNonSupportedValidationErrorDTO(targetId)
 	}
 
@@ -182,14 +150,7 @@ func (theProbe *TurboProbe) ValidateTarget(accountValues []*proto.AccountValue) 
 func (theProbe *TurboProbe) DiscoverTargetIncremental(accountValues []*proto.AccountValue) *proto.DiscoveryResponse {
 	glog.V(2).Infof("Incremental discovery for Target: %s", accountValues)
 	targetId := findTargetId(accountValues, theProbe.RegistrationClient.GetIdentifyingFields())
-	target, exists := theProbe.DiscoveryClientMap[targetId]
-
-	if !exists {
-		glog.Errorf("Failed to incrementally discover target (id=%v): cannot find target in %++v", targetId, theProbe.DiscoveryClientMap)
-		return theProbe.createNonExistentTargetDiscoveryErrorDTO(targetId)
-	}
-
-	handler := target.IIncrementalDiscovery
+	handler := theProbe.DiscoveryClient.IIncrementalDiscovery
 	if handler == nil {
 		glog.Errorf("Failed to incrementally discover target (id=%v): cannot find discovery handler.", targetId)
 		return theProbe.createNonSupportedDiscoveryErrorDTO("Incremental", targetId)
@@ -208,13 +169,7 @@ func (theProbe *TurboProbe) DiscoverTargetIncremental(accountValues []*proto.Acc
 func (theProbe *TurboProbe) DiscoverTargetPerformance(accountValues []*proto.AccountValue) *proto.DiscoveryResponse {
 	glog.V(2).Infof("Performance discovery for Target: %s", accountValues)
 	targetId := findTargetId(accountValues, theProbe.RegistrationClient.GetIdentifyingFields())
-	target, exists := theProbe.DiscoveryClientMap[targetId]
-	if !exists {
-		glog.Errorf("Failed to Performance discover target (id=%v): cannot find target in %++v", targetId, theProbe.DiscoveryClientMap)
-		return theProbe.createNonExistentTargetDiscoveryErrorDTO(targetId)
-	}
-
-	handler := target.IPerformanceDiscovery
+	handler := theProbe.DiscoveryClient.IPerformanceDiscovery
 	if handler == nil {
 		glog.Errorf("Failed to performance discover target (id=%v): cannot find discovery handler.", targetId)
 		return theProbe.createNonSupportedDiscoveryErrorDTO("Performance", targetId)
@@ -250,11 +205,15 @@ func (theProbe *TurboProbe) ExecuteAction(actionExecutionDTO *proto.ActionExecut
 // ==============================================================================================================
 // The Targets associated with this probe type
 func (theProbe *TurboProbe) GetProbeTargets() []*TurboTargetInfo {
+	if theProbe.DiscoveryClient.TurboDiscoveryClient == nil {
+		return []*TurboTargetInfo{}
+	}
+
 	// Iterate over the discovery client map and send requests to the server
 	var targets []*TurboTargetInfo
-	for targetId, discoveryClient := range theProbe.DiscoveryClientMap {
+	for targetId := range theProbe.TargetsToAdd {
 
-		targetInfo := discoveryClient.GetAccountValues()
+		targetInfo := theProbe.DiscoveryClient.GetAccountValues()
 		targetInfo.targetType = theProbe.ProbeConfiguration.ProbeType
 		targetInfo.targetIdentifierField = targetId
 
@@ -303,14 +262,9 @@ func (theProbe *TurboProbe) GetProbeInfo() (*proto.ProbeInfo, error) {
 	}
 
 	probeInfo := probeInfoBuilder.Create()
-	glog.V(2).Infof("ProbeInfo %++v\n", probeInfo)
+	glog.V(3).Infof("ProbeInfo %+v", probeInfo)
 
 	return probeInfo, nil
-}
-
-func (theProbe *TurboProbe) createNonExistentTargetValidationErrorDTO(targetId string) *proto.ValidationResponse {
-	errorStr := fmt.Sprintf("Non existent target:%s", targetId)
-	return theProbe.createValidationErrorDTO(errorStr, proto.ErrorDTO_CRITICAL)
 }
 
 func (theProbe *TurboProbe) createNonSupportedValidationErrorDTO(targetId string) *proto.ValidationResponse {
@@ -318,9 +272,10 @@ func (theProbe *TurboProbe) createNonSupportedValidationErrorDTO(targetId string
 	return theProbe.createValidationErrorDTO(errorStr, proto.ErrorDTO_CRITICAL)
 }
 
-func (theProbe *TurboProbe) createNonExistentTargetDiscoveryErrorDTO(targetId string) *proto.DiscoveryResponse {
-	errorStr := fmt.Sprintf("Non existent target:%s", targetId)
-	return theProbe.createDiscoveryErrorDTO(errorStr, proto.ErrorDTO_CRITICAL)
+func (theProbe *TurboProbe) createMisconfiguredValidationErrorDTO(targetId string) *proto.ValidationResponse {
+	errorStr := fmt.Sprintf("Misconfigured target during validation of target %s", targetId)
+	fmt.Errorf(errorStr)
+	return theProbe.createValidationErrorDTO(errorStr, proto.ErrorDTO_CRITICAL)
 }
 
 func (theProbe *TurboProbe) createNonSupportedDiscoveryErrorDTO(discoveryType string, targetId string) *proto.DiscoveryResponse {
@@ -330,6 +285,12 @@ func (theProbe *TurboProbe) createNonSupportedDiscoveryErrorDTO(discoveryType st
 
 func (theProbe *TurboProbe) createDiscoveryTargetErrorDTO(discoveryType string, targetId string, err error) *proto.DiscoveryResponse {
 	errorStr := fmt.Sprintf("Error during %s discovery of target %s: %s", discoveryType, targetId, err)
+	return theProbe.createDiscoveryErrorDTO(errorStr, proto.ErrorDTO_CRITICAL)
+}
+
+func (theProbe *TurboProbe) createMisconfiguredProbeErrorDTO(discoveryType string, targetId string) *proto.DiscoveryResponse {
+	errorStr := fmt.Sprintf("Misconfigured target during %s discovery of target %s", discoveryType, targetId)
+	fmt.Errorf(errorStr)
 	return theProbe.createDiscoveryErrorDTO(errorStr, proto.ErrorDTO_CRITICAL)
 }
 

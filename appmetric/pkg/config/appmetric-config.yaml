@@ -22,8 +22,6 @@ exporters:
             label: destination_svc_ns
           service_name:
             label: destination_svc_name
-          businessApp:
-            label: businessApp
           target:
             label: job
   - name: redis
@@ -61,6 +59,7 @@ exporters:
   - name: webdriver
     entities:
       - type: APPLICATION
+        hostedOnVM: true
         metrics:
           RESPONSE_TIME:
             queries:
@@ -74,15 +73,16 @@ exporters:
             label: job
   - name: mysql
     entities:
-      - type: APPLICATION
+      - type: DATABASE_SERVER
+        hostedOnVM: true
         metrics:
           DB_MEM:
             queries:
-              used: 'mysql_global_status_innodb_buffer_pool_bytes_data{job="mysql"}'
-              capacity: 'mysql_global_variables_innodb_buffer_pool_size{job="mysql"}'
+              used: 'mysql_global_status_innodb_buffer_pool_bytes_data/1024'
+              capacity: 'mysql_global_variables_innodb_buffer_pool_size/1024'
           DB_CACHE_HIT_RATE:
             queries:
-              used: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads{job="mysql"}[10m])/rate(mysql_global_status_innodb_buffer_pool_read_requests[10m]))'
+              used: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads[10m])/delta(mysql_global_status_innodb_buffer_pool_read_requests[10m]))*100'
           CONNECTION:
             queries:
               used: 'mysql_global_status_threads_connected{job="mysql"}'
@@ -95,11 +95,7 @@ exporters:
             label: instance
             matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
             isIdentifier: true
-          turboVersion:
-            label: turbo_version
-          node:
-            label: node
-          target:
+          business_app:
             label: job
   - name: node
     entities:
@@ -117,6 +113,35 @@ exporters:
             matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
             isIdentifier: true
           target:
+            label: job
+  - name: jmx-xl
+    entities:
+      - type: APPLICATION
+        metrics:
+          # TODO: Some of the XL services may be more relevant on kafka messages vs grpc
+          TRANSACTION:
+            queries:
+              used: 'sum by (instance,service) (delta(grpc_server_handled_total{job="xl",code="OK"}[5m]) or delta(api_call_counts{job="xl",failed="false"}[5m]))/300'
+          RESPONSE_TIME:
+            queries:
+              used: 'avg by (instance,service) ((delta(grpc_server_handled_latency_seconds_sum[15m])/delta(grpc_server_handled_latency_seconds_count[15m])) > 0 or (delta(api_call_latency_in_seconds_sum[15m])/delta(api_call_latency_in_seconds_count[15m])) > 0) * 1000'
+          THREADS:
+            queries:
+              used: 'jvm_threads_current{job="xl"}'
+              capacity: 'jvm_threads_peak{job="xl"}'
+          COLLECTION_TIME:
+            queries:
+              used: '(sum without(gc)(jvm_gc_collection_seconds_sum{job="xl"}))/(component_jvm_uptime_minutes*60)*100'
+          HEAP:
+            queries:
+              used: 'jvm_memory_bytes_used{area="heap",job="xl"}/1024'
+              capacity: 'jvm_memory_bytes_max{area="heap",job="xl"}/1024'
+        attributes:
+          ip:
+            label: instance
+            matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
+            isIdentifier: true
+          business_app:
             label: job
   - name: jmx
     entities:
@@ -139,9 +164,5 @@ exporters:
             label: instance
             matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
             isIdentifier: true
-          turboVersion:
-            label: turbo_version
-          node:
-            label: node
           target:
             label: job

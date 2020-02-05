@@ -34,8 +34,8 @@ type DefaultValue struct {
 type CommodityTypeMap map[proto.CommodityDTO_CommodityType]DefaultValue
 
 var EntityTypeMap = map[proto.EntityDTO_EntityType]CommodityTypeMap{
-	proto.EntityDTO_APPLICATION:     SupportedAppCommodities,
-	proto.EntityDTO_DATABASE_SERVER: SupportedDBCommodities,
+	proto.EntityDTO_APPLICATION_COMPONENT: SupportedAppCommodities,
+	proto.EntityDTO_DATABASE_SERVER:       SupportedDBCommodities,
 }
 
 var SupportedVMCommodities = CommodityTypeMap{

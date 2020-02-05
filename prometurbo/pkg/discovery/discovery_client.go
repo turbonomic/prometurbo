@@ -166,7 +166,7 @@ func (d *P8sDiscoveryClient) buildEntities(metrics []*exporter.EntityMetric) ([]
 		//Create a map with key: businessAppName (based on relabeling) and value: vapp dtos
 		if v, ok := metric.Labels["business_app"]; ok {
 			for _, dto := range dtos {
-				if *dto.EntityType == proto.EntityDTO_VIRTUAL_APPLICATION {
+				if *dto.EntityType == proto.EntityDTO_SERVICE {
 					businessAppMap[v] = append(businessAppMap[v], dto)
 				}
 			}

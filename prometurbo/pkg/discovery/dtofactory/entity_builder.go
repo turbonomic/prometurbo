@@ -164,7 +164,7 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 
 	if b.metric.HostedOnVM {
 		if entityType != proto.EntityDTO_APPLICATION && entityType != proto.EntityDTO_DATABASE_SERVER {
-			return nil, fmt.Errorf("unsupported provider type %v to create consumer, " +
+			return nil, fmt.Errorf("unsupported provider type %v to create consumer, "+
 				"only APPLICATION and DATABASE_SERVER is supported when hosted on VM ", entityType)
 		}
 		// Hosted on VM, create non-proxy Virtual Application entity
@@ -188,7 +188,7 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 
 	// Hosted on Container, create proxy Virtual Application entity
 	if entityType != proto.EntityDTO_APPLICATION {
-		return nil, fmt.Errorf("unsupported provider type %v to create consumer, " +
+		return nil, fmt.Errorf("unsupported provider type %v to create consumer, "+
 			"only APPLICATION is supported when hosted on Container", entityType)
 	}
 	var commTypes []proto.CommodityDTO_CommodityType
@@ -279,6 +279,10 @@ func (b *entityBuilder) createEntity(provider *proto.EntityDTO) (*proto.EntityDT
 		commTypes = append(commTypes, commType)
 	}
 
+	if len(commodities) == 0 {
+		return nil, fmt.Errorf("missing commodities")
+	}
+
 	id := b.getEntityId(entityType, ip)
 
 	if provider != nil {
@@ -296,7 +300,6 @@ func (b *entityBuilder) createEntity(provider *proto.EntityDTO) (*proto.EntityDT
 			Create()
 
 		if err != nil {
-			glog.Errorf("Error building EntityDTO from metric %v: %s", metric, err)
 			return nil, err
 		}
 

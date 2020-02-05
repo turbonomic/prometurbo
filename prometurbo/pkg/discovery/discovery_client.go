@@ -99,11 +99,11 @@ func (d *P8sDiscoveryClient) Discover(accountValues []*proto.AccountValue) (*pro
 
 	metrics, err := d.metricExporter.Query(targetAddr, scope)
 	if err != nil {
-		return d.failDiscoveryWithError(targetAddr, err), err
+		return d.failDiscoveryWithError(targetAddr, err), nil
 	}
 	dtos, err := d.buildEntities(metrics)
 	if err != nil {
-		return d.failDiscoveryWithError(targetAddr, err), err
+		return d.failDiscoveryWithError(targetAddr, err), nil
 	}
 
 	glog.Infof("Discovered %d entities (%v) from provider %v (targetAddress=%s)", len(dtos),

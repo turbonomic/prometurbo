@@ -12,7 +12,7 @@ const (
 	// The default namespace of entity property
 	DefaultPropertyNamespace = "DEFAULT"
 
-	// The attribute used for stitching with other probes (e.g., prometurbo) with app and vapp
+	// The attribute used for stitching with other probes (e.g., prometurbo) with app and service
 	StitchingAttr string = "IP"
 
 	// External matching property
@@ -20,8 +20,8 @@ const (
 	SupplyChainConstantIpAddress          = "ipAddress"
 	SupplyChainConstantVirtualMachineData = "virtual_machine_data"
 
-	VAppPrefix   = "vApp-"
-	BizAppPrefix = "businessApp-"
+	ServicePrefix = "Service-"
+	BizAppPrefix  = "BusinessApp-"
 )
 
 // In most cases, the capacity for a commodity should be provided from the input JSON.

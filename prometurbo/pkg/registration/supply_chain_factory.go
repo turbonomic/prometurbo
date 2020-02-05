@@ -112,20 +112,20 @@ func (f *SupplyChainFactory) CreateSupplyChain() ([]*proto.TemplateDTO, error) {
 		return nil, err
 	}
 
-	// vApplication node
-	vAppNode, err := f.buildVAppSupplyBuilder()
+	// Service node
+	serviceNode, err := f.buildServiceSupplyBuilder()
 
 	if err != nil {
 		return nil, err
 	}
 
-	// Stitching metadata for the vApp node
-	vAppMetadata, err := f.getVAppStitchingMetaData()
+	// Stitching metadata for the service node
+	serviceMetadata, err := f.getServiceStitchingMetaData()
 	if err != nil {
 		return nil, err
 	}
 
-	vAppNode.MergedEntityMetaData = vAppMetadata
+	serviceNode.MergedEntityMetaData = serviceMetadata
 
 	// bizApplication node
 	bizAppNode, err := f.buildBusinessAppSupplyBuilder()
@@ -134,8 +134,8 @@ func (f *SupplyChainFactory) CreateSupplyChain() ([]*proto.TemplateDTO, error) {
 		return nil, err
 	}
 
-	// Stitching metadata for the vApp node
-	bizAppMetadata, err := f.getVAppStitchingMetaData()
+	// Stitching metadata for the service node
+	bizAppMetadata, err := f.getServiceStitchingMetaData()
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (f *SupplyChainFactory) CreateSupplyChain() ([]*proto.TemplateDTO, error) {
 
 	return supplychain.NewSupplyChainBuilder().
 		Top(bizAppNode).
-		Entity(vAppNode).
+		Entity(serviceNode).
 		Entity(appNode).
 		Entity(dbServerNode).
 		Entity(vmNode).
@@ -217,19 +217,19 @@ func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error)
 	return appBuilder.Create()
 }
 
-func (f *SupplyChainFactory) buildVAppSupplyBuilder() (*proto.TemplateDTO, error) {
+func (f *SupplyChainFactory) buildServiceSupplyBuilder() (*proto.TemplateDTO, error) {
 
-	vAppBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_SERVICE).
+	serviceBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_SERVICE).
 		Provider(proto.EntityDTO_APPLICATION_COMPONENT, proto.Provider_LAYERED_OVER).
 		Provider(proto.EntityDTO_DATABASE_SERVER, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
 		Buys(respTimeTemplateComm).
 		Sells(transactionTemplateComm).
 		Sells(respTimeTemplateComm)
-	vAppBuilder.SetPriority(-1)
-	vAppBuilder.SetTemplateType(proto.TemplateDTO_BASE)
+	serviceBuilder.SetPriority(-1)
+	serviceBuilder.SetTemplateType(proto.TemplateDTO_BASE)
 
-	return vAppBuilder.Create()
+	return serviceBuilder.Create()
 }
 
 func (f *SupplyChainFactory) buildBusinessAppSupplyBuilder() (*proto.TemplateDTO, error) {
@@ -284,7 +284,7 @@ func (f *SupplyChainFactory) getAppStitchingMetaData() (*proto.MergedEntityMetad
 	return metadata, nil
 }
 
-func (f *SupplyChainFactory) getVAppStitchingMetaData() (*proto.MergedEntityMetadata, error) {
+func (f *SupplyChainFactory) getServiceStitchingMetaData() (*proto.MergedEntityMetadata, error) {
 	commodityList := []proto.CommodityDTO_CommodityType{respTimeType, transactionType}
 
 	var metadataBuilder *builder.MergedEntityMetadataBuilder

@@ -57,12 +57,12 @@ func (b *entityBuilder) Build() ([]*proto.EntityDTO, error) {
 
 }
 
-func (b *entityBuilder) BuildBusinessApp(vapps []*proto.EntityDTO, name string) (*proto.EntityDTO, error) {
+func (b *entityBuilder) BuildBusinessApp(services []*proto.EntityDTO, name string) (*proto.EntityDTO, error) {
 	bizAppDtoBuilder := builder.NewEntityDTOBuilder(proto.EntityDTO_BUSINESS_APPLICATION,
 		b.getEntityId(proto.EntityDTO_BUSINESS_APPLICATION, name))
-	for _, vapp := range vapps {
-		provider := builder.CreateProvider(proto.EntityDTO_SERVICE, *vapp.Id)
-		bizAppDtoBuilder.Provider(provider).BuysCommodities(vapp.CommoditiesSold)
+	for _, service := range services {
+		provider := builder.CreateProvider(proto.EntityDTO_SERVICE, *service.Id)
+		bizAppDtoBuilder.Provider(provider).BuysCommodities(service.CommoditiesSold)
 	}
 	bizAppDto, err := bizAppDtoBuilder.DisplayName(name).
 		WithProperty(getEntityProperty(constant.BizAppPrefix + name)).
@@ -155,8 +155,8 @@ func (b *entityBuilder) createProviderEntity(ip string) (*proto.EntityDTO, error
 	return vmDto, nil
 }
 
-// Creates consumer entity from a given provider entity. Currently, the use case is to create vApp from Application
-// and Database Server.
+// Creates consumer entity from a given provider entity.
+// Currently, the use case is to create service from Application and Database Server.
 func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip string) (*proto.EntityDTO, error) {
 	entityType := *providerDTO.EntityType
 	providerId := b.getEntityId(entityType, ip)
@@ -169,21 +169,21 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 		}
 		// Hosted on VM, create non-proxy Virtual Application entity
 		provider := builder.CreateProvider(entityType, providerId)
-		vAppType := proto.EntityDTO_SERVICE
-		id := b.getEntityId(vAppType, ip)
-		vappDto, err := builder.NewEntityDTOBuilder(vAppType, id).
+		serviceType := proto.EntityDTO_SERVICE
+		id := b.getEntityId(serviceType, ip)
+		serviceDTO, err := builder.NewEntityDTOBuilder(serviceType, id).
 			DisplayName(id).
 			Provider(provider).
 			BuysCommodities(commodities).
-			//Added the sell commodity for VApp due to the businessApp, I don't see any problem doing so even without BizApp
+			//Added the sell commodity for service due to the businessApp, I don't see any problem doing so even without BizApp
 			SellsCommodities(commodities).
 			Monitored(false).
 			Create()
 		if err != nil {
 			return nil, err
 		}
-		glog.V(4).Infof("Entity DTO: %+v", vappDto)
-		return vappDto, nil
+		glog.V(4).Infof("Entity DTO: %+v", serviceDTO)
+		return serviceDTO, nil
 	}
 
 	// Hosted on Container, create proxy Virtual Application entity
@@ -196,16 +196,16 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 		commTypes = append(commTypes, *comm.CommodityType)
 	}
 	provider := builder.CreateProvider(entityType, providerId)
-	vAppType := proto.EntityDTO_SERVICE
-	id := b.getEntityId(vAppType, ip)
-	vappDto, err := builder.NewEntityDTOBuilder(vAppType, id).
+	serviceType := proto.EntityDTO_SERVICE
+	id := b.getEntityId(serviceType, ip)
+	serviceDTO, err := builder.NewEntityDTOBuilder(serviceType, id).
 		DisplayName(id).
 		Provider(provider).
 		BuysCommodities(commodities).
-		//Added the sell commodity for VApp due to the businessApp, I don't see any problem doing so even without BizApp
+		//Added the sell commodity for service due to the businessApp, I don't see any problem doing so even without BizApp
 		SellsCommodities(commodities).
-		WithProperty(getEntityProperty(constant.VAppPrefix + ip)).
-		ReplacedBy(getReplacementMetaData(vAppType, commTypes, true)).
+		WithProperty(getEntityProperty(constant.ServicePrefix + ip)).
+		ReplacedBy(getReplacementMetaData(serviceType, commTypes, true)).
 		Monitored(false).
 		Create()
 
@@ -213,9 +213,9 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 		return nil, err
 	}
 
-	vappDto.KeepStandalone = &b.keepStandalone
-	glog.V(4).Infof("Entity DTO: %+v", vappDto)
-	return vappDto, nil
+	serviceDTO.KeepStandalone = &b.keepStandalone
+	glog.V(4).Infof("Entity DTO: %+v", serviceDTO)
+	return serviceDTO, nil
 }
 
 // Creates entity DTO from the EntityMetric

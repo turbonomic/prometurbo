@@ -16,7 +16,7 @@ var (
 	namespace      = "DEFAULT"
 	ipAttr         = "IP"
 	appPrefix      = "APPLICATION-"
-	appType        = proto.EntityDTO_APPLICATION
+	appType        = proto.EntityDTO_APPLICATION_COMPONENT
 	useTopoExt     = true
 	keepStandalone = false
 	scope          = "k8s-cluster-foo"
@@ -159,7 +159,7 @@ func checkAppResult(metric *exporter.EntityMetric, entity *proto.EntityDTO) erro
 		Value:     &ip,
 	}
 
-	dto, err := builder.NewEntityDTOBuilder(proto.EntityDTO_APPLICATION, appPrefix+scope+"/"+ip).
+	dto, err := builder.NewEntityDTOBuilder(proto.EntityDTO_APPLICATION_COMPONENT, appPrefix+scope+"/"+ip).
 		DisplayName(appPrefix + scope + "/" + ip).
 		SellsCommodities(commodities).
 		WithProperty(entityProperty).

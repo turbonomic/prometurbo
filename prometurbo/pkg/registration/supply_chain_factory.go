@@ -190,7 +190,7 @@ func (f *SupplyChainFactory) buildDBServerSupplyBuilder() (*proto.TemplateDTO, e
 
 func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error) {
 	appToVMExternalLink, err := supplychain.NewExternalEntityLinkBuilder().
-		Link(proto.EntityDTO_APPLICATION, proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
+		Link(proto.EntityDTO_APPLICATION_COMPONENT, proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
 		Commodity(vCpuType, false).Commodity(vMemType, false).
 		Commodity(transactionType, true).Commodity(respTimeType, true).
 		ProbeEntityPropertyDef(constant.StitchingAttr, "IP Address of the VM hosting the discovered node").
@@ -201,7 +201,7 @@ func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error)
 		return nil, err
 	}
 
-	appBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_APPLICATION).
+	appBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_APPLICATION_COMPONENT).
 		Sells(transactionTemplateComm).
 		Sells(respTimeTemplateComm).
 		Sells(heapTemplateComm).
@@ -219,8 +219,8 @@ func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error)
 
 func (f *SupplyChainFactory) buildVAppSupplyBuilder() (*proto.TemplateDTO, error) {
 
-	vAppBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_VIRTUAL_APPLICATION).
-		Provider(proto.EntityDTO_APPLICATION, proto.Provider_LAYERED_OVER).
+	vAppBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_SERVICE).
+		Provider(proto.EntityDTO_APPLICATION_COMPONENT, proto.Provider_LAYERED_OVER).
 		Provider(proto.EntityDTO_DATABASE_SERVER, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
 		Buys(respTimeTemplateComm).
@@ -235,7 +235,7 @@ func (f *SupplyChainFactory) buildVAppSupplyBuilder() (*proto.TemplateDTO, error
 func (f *SupplyChainFactory) buildBusinessAppSupplyBuilder() (*proto.TemplateDTO, error) {
 
 	businessAppBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_BUSINESS_APPLICATION).
-		Provider(proto.EntityDTO_VIRTUAL_APPLICATION, proto.Provider_LAYERED_OVER).
+		Provider(proto.EntityDTO_SERVICE, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
 		Buys(respTimeTemplateComm)
 	businessAppBuilder.SetPriority(-1)
@@ -296,7 +296,7 @@ func (f *SupplyChainFactory) getVAppStitchingMetaData() (*proto.MergedEntityMeta
 		ExternalMatchingPropertyWithDelimiter(constant.StitchingAttr, ",").
 		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
 		PatchSoldList(commodityList).
-		PatchBoughtList(proto.EntityDTO_APPLICATION, commodityList)
+		PatchBoughtList(proto.EntityDTO_APPLICATION_COMPONENT, commodityList)
 
 	metadata, err := metadataBuilder.Build()
 	if err != nil {
@@ -317,7 +317,7 @@ func (f *SupplyChainFactory) getBusinessAppStitchingMetaData() (*proto.MergedEnt
 		InternalMatchingType(builder.MergedEntityMetadata_STRING).
 		ExternalMatchingPropertyWithDelimiter(constant.StitchingAttr, ",").
 		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
-		PatchBoughtList(proto.EntityDTO_VIRTUAL_APPLICATION, commodityList)
+		PatchBoughtList(proto.EntityDTO_SERVICE, commodityList)
 
 	metadata, err := metadataBuilder.Build()
 	if err != nil {

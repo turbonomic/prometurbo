@@ -61,7 +61,7 @@ func (b *entityBuilder) BuildBusinessApp(vapps []*proto.EntityDTO, name string) 
 	bizAppDtoBuilder := builder.NewEntityDTOBuilder(proto.EntityDTO_BUSINESS_APPLICATION,
 		b.getEntityId(proto.EntityDTO_BUSINESS_APPLICATION, name))
 	for _, vapp := range vapps {
-		provider := builder.CreateProvider(proto.EntityDTO_VIRTUAL_APPLICATION, *vapp.Id)
+		provider := builder.CreateProvider(proto.EntityDTO_SERVICE, *vapp.Id)
 		bizAppDtoBuilder.Provider(provider).BuysCommodities(vapp.CommoditiesSold)
 	}
 	bizAppDto, err := bizAppDtoBuilder.DisplayName(name).
@@ -163,13 +163,13 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 	commodities := providerDTO.CommoditiesSold
 
 	if b.metric.HostedOnVM {
-		if entityType != proto.EntityDTO_APPLICATION && entityType != proto.EntityDTO_DATABASE_SERVER {
+		if entityType != proto.EntityDTO_APPLICATION_COMPONENT && entityType != proto.EntityDTO_DATABASE_SERVER {
 			return nil, fmt.Errorf("unsupported provider type %v to create consumer, "+
 				"only APPLICATION and DATABASE_SERVER is supported when hosted on VM ", entityType)
 		}
 		// Hosted on VM, create non-proxy Virtual Application entity
 		provider := builder.CreateProvider(entityType, providerId)
-		vAppType := proto.EntityDTO_VIRTUAL_APPLICATION
+		vAppType := proto.EntityDTO_SERVICE
 		id := b.getEntityId(vAppType, ip)
 		vappDto, err := builder.NewEntityDTOBuilder(vAppType, id).
 			DisplayName(id).
@@ -187,7 +187,7 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 	}
 
 	// Hosted on Container, create proxy Virtual Application entity
-	if entityType != proto.EntityDTO_APPLICATION {
+	if entityType != proto.EntityDTO_APPLICATION_COMPONENT {
 		return nil, fmt.Errorf("unsupported provider type %v to create consumer, "+
 			"only APPLICATION is supported when hosted on Container", entityType)
 	}
@@ -196,7 +196,7 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 		commTypes = append(commTypes, *comm.CommodityType)
 	}
 	provider := builder.CreateProvider(entityType, providerId)
-	vAppType := proto.EntityDTO_VIRTUAL_APPLICATION
+	vAppType := proto.EntityDTO_SERVICE
 	id := b.getEntityId(vAppType, ip)
 	vappDto, err := builder.NewEntityDTOBuilder(vAppType, id).
 		DisplayName(id).

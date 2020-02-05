@@ -6,5 +6,5 @@ require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.3.3 // indirect
 	github.com/gorilla/websocket v1.4.0 // indirect
-	github.com/turbonomic/turbo-go-sdk v0.0.0-20200203194616-ace86b79207d
+	github.com/turbonomic/turbo-go-sdk v0.0.0-20200204215920-1f36f09c35ca
 )

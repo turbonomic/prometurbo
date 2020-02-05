@@ -7,7 +7,7 @@ github.com/gorilla/websocket
 # github.com/turbonomic/turbo-api v0.0.0-20180816193551-ed948ba97e70
 github.com/turbonomic/turbo-api/pkg/api
 github.com/turbonomic/turbo-api/pkg/client
-# github.com/turbonomic/turbo-go-sdk v0.0.0-20200203194616-ace86b79207d
+# github.com/turbonomic/turbo-go-sdk v0.0.0-20200204215920-1f36f09c35ca
 github.com/turbonomic/turbo-go-sdk/pkg
 github.com/turbonomic/turbo-go-sdk/pkg/builder
 github.com/turbonomic/turbo-go-sdk/pkg/mediationcontainer

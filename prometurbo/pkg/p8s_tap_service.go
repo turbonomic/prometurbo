@@ -66,7 +66,9 @@ func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 	}
 	keepStandalone := args.KeepStandalone
 
-	registrationClient := &registration.P8sRegistrationClient{conf.TargetTypeSuffix}
+	registrationClient := &registration.P8sRegistrationClient{
+		TargetTypeSuffix: conf.TargetTypeSuffix,
+	}
 	targetType := registrationClient.TargetType()
 
 	var optionalTargetAddr *string

@@ -164,7 +164,8 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 
 	if b.metric.HostedOnVM {
 		if entityType != proto.EntityDTO_APPLICATION && entityType != proto.EntityDTO_DATABASE_SERVER {
-			return nil, fmt.Errorf("unsupported provider type %v to create consumer", entityType)
+			return nil, fmt.Errorf("unsupported provider type %v to create consumer, " +
+				"only APPLICATION and DATABASE_SERVER is supported when hosted on VM ", entityType)
 		}
 		// Hosted on VM, create non-proxy Virtual Application entity
 		provider := builder.CreateProvider(entityType, providerId)
@@ -187,7 +188,8 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 
 	// Hosted on Container, create proxy Virtual Application entity
 	if entityType != proto.EntityDTO_APPLICATION {
-		return nil, fmt.Errorf("unsupported provider type %v to create consumer", entityType)
+		return nil, fmt.Errorf("unsupported provider type %v to create consumer, " +
+			"only APPLICATION is supported when hosted on Container", entityType)
 	}
 	var commTypes []proto.CommodityDTO_CommodityType
 	for _, comm := range commodities {
@@ -254,7 +256,10 @@ func (b *entityBuilder) createEntity(provider *proto.EntityDTO) (*proto.EntityDT
 			glog.Warningf("Unsupported commodity type %v for entity type %v", commType, entityType)
 			continue
 		}
-
+		if _, found := value[exporter.Used]; !found {
+			glog.Errorf("Missing used value for commodity type %v, entity type %v", commType, entityType)
+			continue
+		}
 		commodityBuilder := builder.NewCommodityDTOBuilder(commType).
 			Used(value[exporter.Used]).Key(commKey)
 		capacity, found := value[exporter.Capacity]

@@ -82,7 +82,7 @@ exporters:
               capacity: 'mysql_global_variables_innodb_buffer_pool_size/1024'
           DB_CACHE_HIT_RATE:
             queries:
-              used: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads[10m])/rate(mysql_global_status_innodb_buffer_pool_read_requests[10m]))*100'
+              used: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads[10m])/delta(mysql_global_status_innodb_buffer_pool_read_requests[10m]))*100'
           CONNECTION:
             queries:
               used: 'mysql_global_status_threads_connected{job="mysql"}'
@@ -118,6 +118,7 @@ exporters:
     entities:
       - type: APPLICATION
         metrics:
+          # TODO: Some of the XL services may be more relevant on kafka messages vs grpc
           TRANSACTION:
             queries:
               used: 'sum by (instance,service) (delta(grpc_server_handled_total{job="xl",code="OK"}[5m]) or delta(api_call_counts{job="xl",failed="false"}[5m]))/300'

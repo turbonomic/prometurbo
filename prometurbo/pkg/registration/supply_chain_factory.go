@@ -161,6 +161,7 @@ func (f *SupplyChainFactory) buildVMSupplyBuilder() (*proto.TemplateDTO, error) 
 	return vmBuilder.Create()
 }
 
+// TODO: Currently we only support DATABASE_SERVER links to VIRTUAL_MACHINE
 func (f *SupplyChainFactory) buildDBServerSupplyBuilder() (*proto.TemplateDTO, error) {
 	dbServerToVMExternalLink, err := supplychain.NewExternalEntityLinkBuilder().
 		Link(proto.EntityDTO_DATABASE_SERVER, proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).

@@ -163,7 +163,7 @@ func (d *P8sDiscoveryClient) buildEntities(metrics []*exporter.EntityMetric) ([]
 			glog.Errorf("Error building entity from metric %v: %s", metric, err)
 			continue
 		}
-		//Create a map with key: businessAppName (based on relabeling) and value: vapp dtos
+		//Create a map with key: businessAppName (based on relabeling) and value: service dtos
 		if v, ok := metric.Labels["business_app"]; ok {
 			for _, dto := range dtos {
 				if *dto.EntityType == proto.EntityDTO_SERVICE {

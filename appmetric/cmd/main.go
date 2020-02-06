@@ -15,6 +15,7 @@ import (
 const (
 	defaultPort           = 8081
 	defaultSampleDuration = "3m"
+	defaultConfigPath     = "/etc/appmetric/appmetric.config"
 )
 
 var (
@@ -25,7 +26,7 @@ var (
 
 func parseFlags() {
 	flag.IntVar(&port, "port", defaultPort, "port to expose metrics (default 8081)")
-	flag.StringVar(&configFileName, "config", "", "path to the metrics discovery config file")
+	flag.StringVar(&configFileName, "config", defaultConfigPath, "path to the metrics discovery config file")
 	flag.StringVar(&sampleDuration, "sampleDuration", defaultSampleDuration, "the sample duration for prometheus query")
 	flag.Parse()
 }

@@ -1,12 +1,14 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometurbo
-  namespace: turbo
   labels:
     app: prometurbo
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: prometurbo
   template:
     metadata:
       labels:
@@ -15,7 +17,7 @@ spec:
       serviceAccount: turbo-user
       containers:
         - name: prometurbo
-          image: turbonomic/prometurbo:6.4dev
+          image: turbonomic/prometurbo
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
@@ -25,17 +27,24 @@ spec:
             readOnly: true
           - name: varlog
             mountPath: /var/log
-        - image: turbonomic/appmetric:6.4dev
+        - image: turbonomic/appmetric
           imagePullPolicy: IfNotPresent
           name: appmetric
           args:
           - --v=2
           ports:
           - containerPort: 8081
+          volumeMounts:
+            - name: appmetric-config
+              mountPath: /etc/appmetric
+              readOnly: true
       volumes:
       - name: prometurbo-config
         configMap: 
           name: prometurbo-config
+      - name: appmetric-config
+        configMap:
+          name: appmetric-config
       - name: varlog
         emptyDir: {}
       restartPolicy: Always

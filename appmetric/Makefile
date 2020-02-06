@@ -18,7 +18,7 @@ debug: clean
 	go build -gcflags "-N -l" -o ${OUTPUT_DIR}/${bin}.debug ./cmd
 
 docker: clean
-	docker build -t turbonomic/appmetric:6.4dev --build-arg GIT_COMMIT=$(shell git rev-parse --short HEAD) .
+	docker build -t turbonomic/appmetric --build-arg GIT_COMMIT=$(shell git rev-parse --short HEAD) .
 
 test: clean
 	@go test -v -race ./pkg/...

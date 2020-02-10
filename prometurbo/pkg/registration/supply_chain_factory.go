@@ -221,6 +221,8 @@ func (f *SupplyChainFactory) buildServiceSupplyBuilder() (*proto.TemplateDTO, er
 
 	serviceBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_SERVICE).
 		Provider(proto.EntityDTO_APPLICATION_COMPONENT, proto.Provider_LAYERED_OVER).
+		Buys(transactionTemplateComm).
+		Buys(respTimeTemplateComm).
 		Provider(proto.EntityDTO_DATABASE_SERVER, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
 		Buys(respTimeTemplateComm).

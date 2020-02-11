@@ -6,7 +6,7 @@ github.com/golang/glog
 github.com/golang/protobuf/proto
 # github.com/prometheus/common v0.4.0
 github.com/prometheus/common/model
-# github.com/turbonomic/turbo-go-sdk v0.0.0-20200204215920-1f36f09c35ca
+# github.com/turbonomic/turbo-go-sdk v0.0.0-20200211010121-f4a0574eb86e
 github.com/turbonomic/turbo-go-sdk/pkg/proto
 # gopkg.in/yaml.v2 v2.2.1
 gopkg.in/yaml.v2

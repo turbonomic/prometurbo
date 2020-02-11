@@ -19,5 +19,5 @@ github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/turbonomic/turbo-api v0.0.0-20180816193551-ed948ba97e70 h1:xfnOa96E4g6MRfLPSVyL4Aprmxf8NBjsUyqUoW0VnIs=
 github.com/turbonomic/turbo-api v0.0.0-20180816193551-ed948ba97e70/go.mod h1:L3eNZzTD3Iw8GV+cfeJD/lfDaEGPbZZGQrtml71yG10=
-github.com/turbonomic/turbo-go-sdk v0.0.0-20200204215920-1f36f09c35ca h1:Hadvn7BuPYDc9e8lsVe/kk9fi4eHFlTgOkU1P5APnT4=
-github.com/turbonomic/turbo-go-sdk v0.0.0-20200204215920-1f36f09c35ca/go.mod h1:l7wONfeAEhgbFSW35nJUKgB6WtpPdWrpyMMjfrgVQHE=
+github.com/turbonomic/turbo-go-sdk v0.0.0-20200211010121-f4a0574eb86e h1:m8ek8yyZqpasAiQdG10m3WnS8KAMt2rUh/BD+z9eihw=
+github.com/turbonomic/turbo-go-sdk v0.0.0-20200211010121-f4a0574eb86e/go.mod h1:l7wONfeAEhgbFSW35nJUKgB6WtpPdWrpyMMjfrgVQHE=

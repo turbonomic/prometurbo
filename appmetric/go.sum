@@ -33,8 +33,8 @@ github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoH
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/turbonomic/turbo-api v0.0.0-20180816193551-ed948ba97e70/go.mod h1:L3eNZzTD3Iw8GV+cfeJD/lfDaEGPbZZGQrtml71yG10=
-github.com/turbonomic/turbo-go-sdk v0.0.0-20200204215920-1f36f09c35ca h1:Hadvn7BuPYDc9e8lsVe/kk9fi4eHFlTgOkU1P5APnT4=
-github.com/turbonomic/turbo-go-sdk v0.0.0-20200204215920-1f36f09c35ca/go.mod h1:l7wONfeAEhgbFSW35nJUKgB6WtpPdWrpyMMjfrgVQHE=
+github.com/turbonomic/turbo-go-sdk v0.0.0-20200211010121-f4a0574eb86e h1:m8ek8yyZqpasAiQdG10m3WnS8KAMt2rUh/BD+z9eihw=
+github.com/turbonomic/turbo-go-sdk v0.0.0-20200211010121-f4a0574eb86e/go.mod h1:l7wONfeAEhgbFSW35nJUKgB6WtpPdWrpyMMjfrgVQHE=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/net v0.0.0-20181114220301-adae6a3d119a/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/sync v0.0.0-20181108010431-42b317875d0f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=

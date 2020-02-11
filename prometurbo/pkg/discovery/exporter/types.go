@@ -16,6 +16,7 @@ type EntityMetric struct {
 	Labels     map[string]string                                       `json:"labels,omitempty"`
 	Metrics    map[proto.CommodityDTO_CommodityType]map[string]float64 `json:"metrics,omitempty"`
 	HostedOnVM bool                                                    `json:"hostedOnVM"`
+	Source     string                                                  `json:"source"`
 }
 
 type MetricResponse struct {

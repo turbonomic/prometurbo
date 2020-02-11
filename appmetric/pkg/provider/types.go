@@ -10,6 +10,7 @@ type EntityMetric struct {
 	HostedOnVM bool                                                    `json:"hostedOnVM"`
 	Labels     map[string]string                                       `json:"labels,omitempty"`
 	Metrics    map[proto.CommodityDTO_CommodityType]map[string]float64 `json:"metrics,omitempty"`
+	Source     string                                                  `json:"source"`
 }
 
 type MetricResponse struct {
@@ -18,12 +19,13 @@ type MetricResponse struct {
 	Data    []*EntityMetric `json:"data:omitempty"`
 }
 
-func NewEntityMetric(id string, t proto.EntityDTO_EntityType) *EntityMetric {
+func NewEntityMetric(t proto.EntityDTO_EntityType, id, source string) *EntityMetric {
 	m := &EntityMetric{
 		UID:     id,
 		Type:    t,
 		Labels:  make(map[string]string),
 		Metrics: make(map[proto.CommodityDTO_CommodityType]map[string]float64),
+		Source:  source,
 	}
 
 	return m

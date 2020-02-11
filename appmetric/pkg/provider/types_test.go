@@ -11,10 +11,11 @@ const (
 	AppEntity   = proto.EntityDTO_APPLICATION_COMPONENT
 	LatencyType = proto.CommodityDTO_RESPONSE_TIME
 	TpsType     = proto.CommodityDTO_TRANSACTION
+	URL         = "http://prometheus-server.turbonomic:9090"
 )
 
 func TestEntityMetric_Marshall(t *testing.T) {
-	em := NewEntityMetric("aid1", AppEntity)
+	em := NewEntityMetric(AppEntity, "aid1", URL)
 	em.SetLabel("name", "default/curl-1xfj")
 	em.SetLabel("ip", "10.0.2.3")
 	em.SetLabel("scope", "k8s1")
@@ -41,7 +42,7 @@ func TestEntityMetric_Marshall(t *testing.T) {
 }
 
 func TestNewMetricResponse(t *testing.T) {
-	em := NewEntityMetric("aid1", AppEntity)
+	em := NewEntityMetric(AppEntity, "aid1", URL)
 	em.SetLabel("name", "default/curl-1xfj")
 	em.SetLabel("ip", "10.0.2.3")
 	em.SetLabel("scope", "k8s1")
@@ -49,7 +50,7 @@ func TestNewMetricResponse(t *testing.T) {
 	em.SetMetric(LatencyType, Used, 133.2)
 	em.SetMetric(TpsType, Used, 12)
 
-	em2 := NewEntityMetric("aid2", AppEntity)
+	em2 := NewEntityMetric(AppEntity, "aid2", URL)
 	em2.SetLabel("name", "istio/music-ftaf2")
 	em2.SetLabel("ip", "10.0.3.2")
 	em2.SetLabel("scope", "k8s1")

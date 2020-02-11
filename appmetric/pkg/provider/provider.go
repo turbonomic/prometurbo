@@ -6,6 +6,7 @@ import (
 )
 
 type Provider struct {
+	promHost     string
 	promClient   *prometheus.RestClient
 	exporterDefs []*exporterDef
 }
@@ -26,6 +27,7 @@ func (pf *ProviderFactory) NewProvider(promHost string) (*Provider, error) {
 	}
 
 	return &Provider{
+		promHost:     promHost,
 		promClient:   promClient,
 		exporterDefs: pf.exporterDefs,
 	}, nil
@@ -36,30 +38,28 @@ func (p *Provider) GetMetrics() ([]*EntityMetric, error) {
 
 	// TODO: use goroutine
 	for _, exporterDef := range p.exporterDefs {
-		metricsForExporters := getMetricsForExporter(p.promClient, exporterDef)
+		metricsForExporters := p.getMetricsForExporter(exporterDef)
 		metrics = append(metrics, metricsForExporters...)
 	}
 
 	return metrics, nil
 }
 
-func getMetricsForExporter(
-	promClient *prometheus.RestClient, exporterDef *exporterDef) []*EntityMetric {
+func (p *Provider) getMetricsForExporter(exporterDef *exporterDef) []*EntityMetric {
 	var metricsForExporter []*EntityMetric
 	for _, entityDef := range exporterDef.entityDefs {
-		metricsForEntity := getMetricsForEntity(promClient, entityDef)
+		metricsForEntity := p.getMetricsForEntity(entityDef)
 		metricsForExporter = append(metricsForExporter, metricsForEntity...)
 	}
 	return metricsForExporter
 }
 
-func getMetricsForEntity(
-	promClient *prometheus.RestClient, entityDef *entityDef) []*EntityMetric {
+func (p *Provider) getMetricsForEntity(entityDef *entityDef) []*EntityMetric {
 	var metricsForEntity []*EntityMetric
 	var metricsForEntityMap = map[string]*EntityMetric{}
 	for metricType, metricDef := range entityDef.metricDefs {
 		for metricKind, metricQuery := range metricDef.queries {
-			metricSeries, err := promClient.GetMetrics(metricQuery)
+			metricSeries, err := p.promClient.GetMetrics(metricQuery)
 			if err != nil {
 				glog.Errorf("Failed to query metric %v [%v] for entity type %v: %v.",
 					metricKind, metricQuery, entityDef.eType, err)
@@ -86,7 +86,7 @@ func getMetricsForEntity(
 				}
 
 				if _, found := metricsForEntityMap[id]; !found {
-					metricsForEntityMap[id] = NewEntityMetric(id, entityDef.eType).OnVM(entityDef.hostedOnVM)
+					metricsForEntityMap[id] = NewEntityMetric(entityDef.eType, id, p.promHost).OnVM(entityDef.hostedOnVM)
 				}
 				for name, value := range attr {
 					metricsForEntityMap[id].SetLabel(name, value)

@@ -21,3 +21,54 @@ data:
         },
         "targetTypeSuffix":""
     }
+  businessapp.config: |-
+    # This configuration defines business applications and their associated business transactions
+    # and dependent services.
+    #
+    # [Schema]
+    # businessApplications: [ businessApplication ]
+    # businessApplication:
+    #   name: string                   # The name of the business application. Required.
+    #   from: string                   # The discovering source (target URL) of the business application. Required.
+    #   transactions: [ transaction ]  # A list of business transactions. Optional.
+    #   services: [ string ]           # A list of services that the business application depends on. Required.
+    # transaction:
+    #   name: string                   # The display name of the transaction. Optional.
+    #   path: string                   # The request path of a business transaction. Required.
+    #   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
+    businessApplications:
+      - name: Turbonomic
+        from: http://prometheus-server.turbonomic:9090
+        transactions:
+          - name: supplychains
+            path: /supplychains
+            dependOn:
+              - repository
+              - topology-processor
+          - name: actionsForGroup
+            path: /groups/{group_Uuid}/actions
+            dependOn:
+              - action-orchestrator
+          - name: actionsForEntity
+            path: /entities/{entity_Uuid}/actions
+            dependOn:
+              - action-orchestrator
+          - name: actionsForMarket
+            path: /markets/{market_Uuid}/actions
+            dependOn:
+              - action-orchestrator
+        services:
+          - action-orchestrator
+          - api
+          - auth
+          - cost
+          - db
+          - group
+          - history
+          - market
+          - mediation-appdynamics
+          - mediation-vcenter
+          - mediation-vcenterbrowsing
+          - plan-orchestrator
+          - repository
+          - topology-processor

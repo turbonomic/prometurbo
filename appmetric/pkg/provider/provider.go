@@ -57,7 +57,7 @@ func (p *Provider) getMetricsForExporter(exporterDef *exporterDef) []*EntityMetr
 func (p *Provider) getMetricsForEntity(entityDef *entityDef) []*EntityMetric {
 	var metricsForEntity []*EntityMetric
 	var metricsForEntityMap = map[string]*EntityMetric{}
-	for metricType, metricDef := range entityDef.metricDefs {
+	for _, metricDef := range entityDef.metricDefs {
 		for metricKind, metricQuery := range metricDef.queries {
 			metricSeries, err := p.promClient.GetMetrics(metricQuery)
 			if err != nil {
@@ -91,7 +91,7 @@ func (p *Provider) getMetricsForEntity(entityDef *entityDef) []*EntityMetric {
 				for name, value := range attr {
 					metricsForEntityMap[id].SetLabel(name, value)
 				}
-				metricsForEntityMap[id].SetMetric(metricType, metricKind, basicMetricData.GetValue())
+				metricsForEntityMap[id].SetMetric(metricDef.mType, metricKind, basicMetricData.GetValue())
 			}
 		}
 	}

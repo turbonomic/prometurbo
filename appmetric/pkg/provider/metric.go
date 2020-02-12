@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/turbonomic/prometurbo/appmetric/pkg/config"
+	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 )
 
 const (
@@ -17,6 +18,7 @@ const (
 )
 
 type metricDef struct {
+	mType   proto.CommodityDTO_CommodityType
 	queries map[string]string
 }
 
@@ -28,6 +30,10 @@ type attributeValueDef struct {
 }
 
 func newMetricDef(metricConfig config.MetricConfig) (*metricDef, error) {
+	mType, ok := proto.CommodityDTO_CommodityType_value[strings.ToUpper(metricConfig.Type)]
+	if !ok {
+		return nil, fmt.Errorf("unsupported metric type %q", metricConfig.Type)
+	}
 	if len(metricConfig.Queries) == 0 {
 		return nil, fmt.Errorf("empty queries")
 	}
@@ -35,6 +41,7 @@ func newMetricDef(metricConfig config.MetricConfig) (*metricDef, error) {
 		return nil, fmt.Errorf("missing query for used value")
 	}
 	metricDef := metricDef{
+		mType:   proto.CommodityDTO_CommodityType(mType),
 		queries: make(map[string]string),
 	}
 	for k, v := range metricConfig.Queries {

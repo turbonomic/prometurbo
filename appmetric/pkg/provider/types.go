@@ -4,13 +4,15 @@ import (
 	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
 )
 
+type MetricMap map[proto.CommodityDTO_CommodityType]map[string]float64
+
 type EntityMetric struct {
-	UID        string                                                  `json:"uid"`
-	Type       proto.EntityDTO_EntityType                              `json:"type,omitempty"`
-	HostedOnVM bool                                                    `json:"hostedOnVM"`
-	Labels     map[string]string                                       `json:"labels,omitempty"`
-	Metrics    map[proto.CommodityDTO_CommodityType]map[string]float64 `json:"metrics,omitempty"`
-	Source     string                                                  `json:"source"`
+	UID        string                     `json:"uid"`
+	Type       proto.EntityDTO_EntityType `json:"type,omitempty"`
+	HostedOnVM bool                       `json:"hostedOnVM"`
+	Labels     map[string]string          `json:"labels,omitempty"`
+	Metrics    MetricMap                  `json:"metrics,omitempty"`
+	Source     string                     `json:"source"`
 }
 
 type MetricResponse struct {
@@ -24,7 +26,7 @@ func NewEntityMetric(t proto.EntityDTO_EntityType, id, source string) *EntityMet
 		UID:     id,
 		Type:    t,
 		Labels:  make(map[string]string),
-		Metrics: make(map[proto.CommodityDTO_CommodityType]map[string]float64),
+		Metrics: make(MetricMap),
 		Source:  source,
 	}
 

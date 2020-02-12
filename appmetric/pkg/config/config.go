@@ -12,11 +12,12 @@ type ExporterConfig struct {
 type EntityConfig struct {
 	Type             string                  `yaml:"type"`
 	HostedOnVM       bool                    `yaml:"hostedOnVM,omitempty"`
-	MetricConfigs    map[string]MetricConfig `yaml:"metrics"`
+	MetricConfigs    []MetricConfig          `yaml:"metrics"`
 	AttributeConfigs map[string]ValueMapping `yaml:"attributes"`
 }
 
 type MetricConfig struct {
+	Type    string            `yaml:"type"`
 	Queries map[string]string `yaml:"queries"`
 }
 

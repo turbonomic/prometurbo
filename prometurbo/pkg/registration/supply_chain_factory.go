@@ -10,17 +10,8 @@ import (
 var (
 	VMIPFieldPaths = []string{constant.SupplyChainConstantVirtualMachineData}
 
-	vCpuType = proto.CommodityDTO_VCPU
-	vMemType = proto.CommodityDTO_VMEM
-
-	vCpuTemplateComm = &proto.TemplateCommodity{
-		CommodityType: &vCpuType,
-	}
-
-	vMemTemplateComm = &proto.TemplateCommodity{
-		CommodityType: &vMemType,
-	}
-
+	vCpuType         = proto.CommodityDTO_VCPU
+	vMemType         = proto.CommodityDTO_VMEM
 	respTimeType     = proto.CommodityDTO_RESPONSE_TIME
 	transactionType  = proto.CommodityDTO_TRANSACTION
 	heapType         = proto.CommodityDTO_HEAP
@@ -29,7 +20,16 @@ var (
 	cacheHitRateType = proto.CommodityDTO_DB_CACHE_HIT_RATE
 	dbMemType        = proto.CommodityDTO_DB_MEM
 	connectionType   = proto.CommodityDTO_CONNECTION
+	applicationType  = proto.CommodityDTO_APPLICATION
 	key              = "key-placeholder"
+
+	vCpuTemplateComm = &proto.TemplateCommodity{
+		CommodityType: &vCpuType,
+	}
+
+	vMemTemplateComm = &proto.TemplateCommodity{
+		CommodityType: &vMemType,
+	}
 
 	respTimeTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &respTimeType,
@@ -43,32 +43,30 @@ var (
 
 	heapTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &heapType,
-		Key:           &key,
 	}
 
 	collectionTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &collectionType,
-		Key:           &key,
 	}
 
 	threadsTemplateComm = &proto.TemplateCommodity{
 		CommodityType: &threadsType,
-		Key:           &key,
 	}
 
 	cachHitRateTemplateComm = &proto.TemplateCommodity{
-		CommodityType:        &cacheHitRateType,
-		Key:                  &key,
+		CommodityType: &cacheHitRateType,
 	}
 
 	dbMemTemplateComm = &proto.TemplateCommodity{
-		CommodityType:        &dbMemType,
-		Key:                  &key,
+		CommodityType: &dbMemType,
 	}
 
-	connectionComm = &proto.TemplateCommodity{
-		CommodityType:        &connectionType,
-		Key:                  &key,
+	connectionTemplateComm = &proto.TemplateCommodity{
+		CommodityType: &connectionType,
+	}
+
+	applicationTemplateComm = &proto.TemplateCommodity{
+		CommodityType: &applicationType,
 	}
 )
 
@@ -127,23 +125,22 @@ func (f *SupplyChainFactory) CreateSupplyChain() ([]*proto.TemplateDTO, error) {
 
 	serviceNode.MergedEntityMetaData = serviceMetadata
 
-	// bizApplication node
+	// BizTransaction node
+	bizTranNode, err := f.buildBusinessTranSupplyBuilder()
+	if err != nil {
+		return nil, err
+	}
+
+	// BizApplication node
 	bizAppNode, err := f.buildBusinessAppSupplyBuilder()
 
 	if err != nil {
 		return nil, err
 	}
 
-	// Stitching metadata for the service node
-	bizAppMetadata, err := f.getServiceStitchingMetaData()
-	if err != nil {
-		return nil, err
-	}
-
-	bizAppNode.MergedEntityMetaData = bizAppMetadata
-
 	return supplychain.NewSupplyChainBuilder().
 		Top(bizAppNode).
+		Entity(bizTranNode).
 		Entity(serviceNode).
 		Entity(appNode).
 		Entity(dbServerNode).
@@ -175,9 +172,10 @@ func (f *SupplyChainFactory) buildDBServerSupplyBuilder() (*proto.TemplateDTO, e
 	dbServerBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_DATABASE_SERVER).
 		Sells(cachHitRateTemplateComm).
 		Sells(dbMemTemplateComm).
-		Sells(connectionComm).
+		Sells(connectionTemplateComm).
 		Sells(respTimeTemplateComm).
 		Sells(transactionTemplateComm).
+		Sells(applicationTemplateComm).
 		ConnectsTo(dbServerToVMExternalLink).
 		Provider(proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
 		Buys(vCpuTemplateComm).
@@ -207,8 +205,9 @@ func (f *SupplyChainFactory) buildAppSupplyBuilder() (*proto.TemplateDTO, error)
 		Sells(heapTemplateComm).
 		Sells(collectionTemplateComm).
 		Sells(threadsTemplateComm).
-		Provider(proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
+		Sells(applicationTemplateComm).
 		ConnectsTo(appToVMExternalLink).
+		Provider(proto.EntityDTO_VIRTUAL_MACHINE, proto.Provider_HOSTING).
 		Buys(vCpuTemplateComm).
 		Buys(vMemTemplateComm)
 	appBuilder.SetPriority(-1)
@@ -223,15 +222,34 @@ func (f *SupplyChainFactory) buildServiceSupplyBuilder() (*proto.TemplateDTO, er
 		Provider(proto.EntityDTO_APPLICATION_COMPONENT, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
 		Buys(respTimeTemplateComm).
+		Buys(applicationTemplateComm).
 		Provider(proto.EntityDTO_DATABASE_SERVER, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
 		Buys(respTimeTemplateComm).
+		Buys(applicationTemplateComm).
 		Sells(transactionTemplateComm).
-		Sells(respTimeTemplateComm)
+		Sells(respTimeTemplateComm).
+		Sells(applicationTemplateComm)
 	serviceBuilder.SetPriority(-1)
 	serviceBuilder.SetTemplateType(proto.TemplateDTO_BASE)
 
 	return serviceBuilder.Create()
+}
+
+func (f *SupplyChainFactory) buildBusinessTranSupplyBuilder() (*proto.TemplateDTO, error) {
+
+	businessTranBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_BUSINESS_TRANSACTION).
+		Provider(proto.EntityDTO_SERVICE, proto.Provider_LAYERED_OVER).
+		Buys(transactionTemplateComm).
+		Buys(respTimeTemplateComm).
+		Buys(applicationTemplateComm).
+		Sells(transactionTemplateComm).
+		Sells(respTimeTemplateComm).
+		Sells(applicationTemplateComm)
+	businessTranBuilder.SetPriority(-1)
+	businessTranBuilder.SetTemplateType(proto.TemplateDTO_BASE)
+
+	return businessTranBuilder.Create()
 }
 
 func (f *SupplyChainFactory) buildBusinessAppSupplyBuilder() (*proto.TemplateDTO, error) {
@@ -239,7 +257,12 @@ func (f *SupplyChainFactory) buildBusinessAppSupplyBuilder() (*proto.TemplateDTO
 	businessAppBuilder := supplychain.NewSupplyChainNodeBuilder(proto.EntityDTO_BUSINESS_APPLICATION).
 		Provider(proto.EntityDTO_SERVICE, proto.Provider_LAYERED_OVER).
 		Buys(transactionTemplateComm).
-		Buys(respTimeTemplateComm)
+		Buys(respTimeTemplateComm).
+		Buys(applicationTemplateComm).
+		Provider(proto.EntityDTO_BUSINESS_TRANSACTION, proto.Provider_LAYERED_OVER).
+		Buys(transactionTemplateComm).
+		Buys(respTimeTemplateComm).
+		Buys(applicationTemplateComm)
 	businessAppBuilder.SetPriority(-1)
 	businessAppBuilder.SetTemplateType(proto.TemplateDTO_BASE)
 
@@ -299,27 +322,6 @@ func (f *SupplyChainFactory) getServiceStitchingMetaData() (*proto.MergedEntityM
 		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
 		PatchSoldList(commodityList).
 		PatchBoughtList(proto.EntityDTO_APPLICATION_COMPONENT, commodityList)
-
-	metadata, err := metadataBuilder.Build()
-	if err != nil {
-		return nil, err
-	}
-
-	return metadata, nil
-}
-
-func (f *SupplyChainFactory) getBusinessAppStitchingMetaData() (*proto.MergedEntityMetadata, error) {
-	commodityList := []proto.CommodityDTO_CommodityType{respTimeType, transactionType}
-
-	var metadataBuilder *builder.MergedEntityMetadataBuilder
-
-	metadataBuilder = builder.NewMergedEntityMetadataBuilder().
-		KeepInTopology(false).
-		InternalMatchingProperty(constant.StitchingAttr).
-		InternalMatchingType(builder.MergedEntityMetadata_STRING).
-		ExternalMatchingPropertyWithDelimiter(constant.StitchingAttr, ",").
-		ExternalMatchingType(builder.MergedEntityMetadata_LIST_STRING).
-		PatchBoughtList(proto.EntityDTO_SERVICE, commodityList)
 
 	metadata, err := metadataBuilder.Build()
 	if err != nil {

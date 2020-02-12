@@ -69,6 +69,7 @@ func (p *P8sRegistrationClient) GetEntityMetadata() []*proto.EntityIdentityMetad
 		proto.EntityDTO_APPLICATION_COMPONENT,
 		proto.EntityDTO_SERVICE,
 		proto.EntityDTO_BUSINESS_APPLICATION,
+		proto.EntityDTO_BUSINESS_TRANSACTION,
 		proto.EntityDTO_DATABASE_SERVER,
 	}
 

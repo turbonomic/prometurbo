@@ -10,13 +10,15 @@ const (
 	Scope         = "scope"
 )
 
+type MetricMap map[proto.CommodityDTO_CommodityType]map[string]float64
+
 type EntityMetric struct {
-	UID        string                                                  `json:"uid,omitempty"`
-	Type       proto.EntityDTO_EntityType                              `json:"type,omitempty"`
-	Labels     map[string]string                                       `json:"labels,omitempty"`
-	Metrics    map[proto.CommodityDTO_CommodityType]map[string]float64 `json:"metrics,omitempty"`
-	HostedOnVM bool                                                    `json:"hostedOnVM"`
-	Source     string                                                  `json:"source"`
+	UID        string                     `json:"uid,omitempty"`
+	Type       proto.EntityDTO_EntityType `json:"type,omitempty"`
+	Labels     map[string]string          `json:"labels,omitempty"`
+	Metrics    MetricMap                  `json:"metrics,omitempty"`
+	HostedOnVM bool                       `json:"hostedOnVM"`
+	Source     string                     `json:"source"`
 }
 
 type MetricResponse struct {

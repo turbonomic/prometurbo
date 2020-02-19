@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/conf"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery"
@@ -42,32 +43,35 @@ func (p *P8sTAPService) Start() {
 }
 
 func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
-	confPath := conf.DefaultConfPath
+	prometurboConfPath := conf.DefaultConfPath
+	bizAppConfPath := conf.DefaultBizAppConfPath
 
 	if os.Getenv("PROMETURBO_LOCAL_DEBUG") == "1" {
-		confPath = conf.LocalDebugConfPath
-		glog.V(2).Infof("Using config file %s for local debugging", confPath)
+		prometurboConfPath = conf.LocalDebugConfPath
+		bizAppConfPath = conf.LocalDebugBizAppConfPath
+		glog.V(2).Infof("Using config file %s, %s for local debugging",
+			prometurboConfPath, bizAppConfPath)
 	}
 
-	conf, err := conf.NewPrometurboConf(confPath)
+	prometurboConf, err := conf.NewPrometurboConf(prometurboConfPath)
 	if err != nil {
-		glog.Errorf("Error while parsing the service config file %s: %v", confPath, err)
+		glog.Errorf("Error while parsing the service config file %s: %v", prometurboConfPath, err)
 		os.Exit(1)
 	}
 
-	glog.V(3).Infof("Read service configuration from %s: %++v", confPath, conf)
+	glog.V(3).Infof("Read service configuration from %s: %++v", prometurboConfPath, prometurboConf)
 
-	communicator := conf.Communicator
-	metricExporter := exporter.NewMetricExporter(conf.MetricExporterEndpoint)
+	communicator := prometurboConf.Communicator
+	metricExporter := exporter.NewMetricExporter(prometurboConf.MetricExporterEndpoint)
 	var targetAddr, scope string
-	if conf.TargetConf != nil {
-		targetAddr = conf.TargetConf.Address
-		scope = conf.TargetConf.Scope
+	if prometurboConf.TargetConf != nil {
+		targetAddr = prometurboConf.TargetConf.Address
+		scope = prometurboConf.TargetConf.Scope
 	}
 	keepStandalone := args.KeepStandalone
 
 	registrationClient := &registration.P8sRegistrationClient{
-		TargetTypeSuffix: conf.TargetTypeSuffix,
+		TargetTypeSuffix: prometurboConf.TargetTypeSuffix,
 	}
 	targetType := registrationClient.TargetType()
 
@@ -75,8 +79,16 @@ func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 	if len(targetAddr) > 0 {
 		optionalTargetAddr = &targetAddr
 	}
+
+	bizAppConfBySource, err := conf.NewBusinessApplicationConf(bizAppConfPath)
+	if err != nil {
+		glog.Warningf("Failed to create business application configuration: %v", err)
+	} else {
+		glog.V(2).Infof("Business application configuration: %s",
+			spew.Sdump(bizAppConfBySource))
+	}
 	discoveryClient := discovery.NewDiscoveryClient(*keepStandalone,
-		scope, optionalTargetAddr, targetType, metricExporter)
+		scope, optionalTargetAddr, targetType, bizAppConfBySource, metricExporter)
 
 	builder := probe.NewProbeBuilder(targetType, registration.ProbeCategory).
 		WithDiscoveryOptions(probe.FullRediscoveryIntervalSecondsOption(int32(*args.DiscoveryIntervalSec))).

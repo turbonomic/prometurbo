@@ -10,22 +10,22 @@ import (
 	"github.com/turbonomic/turbo-go-sdk/pkg/supplychain"
 )
 
-type entityBuilder struct {
+type appBuilder struct {
 	// TODO: Add the scope to the property for stitching, which needs corresponding change at kubeturbo side
 	keepStandalone bool
 	scope          string
 	metric         *exporter.EntityMetric
 }
 
-func NewEntityBuilder(keepStandalone bool, scope string, metric *exporter.EntityMetric) *entityBuilder {
-	return &entityBuilder{
+func NewApplicationBuilder(keepStandalone bool, scope string, metric *exporter.EntityMetric) *appBuilder {
+	return &appBuilder{
 		keepStandalone: keepStandalone,
 		scope:          scope,
 		metric:         metric,
 	}
 }
 
-func (b *entityBuilder) Build() ([]*proto.EntityDTO, error) {
+func (b *appBuilder) Build() ([]*proto.EntityDTO, error) {
 	var provider *proto.EntityDTO
 	var entities []*proto.EntityDTO
 	var err error
@@ -57,32 +57,6 @@ func (b *entityBuilder) Build() ([]*proto.EntityDTO, error) {
 
 }
 
-func (b *entityBuilder) BuildBusinessApp(services []*proto.EntityDTO, name string) (*proto.EntityDTO, error) {
-	bizAppDtoBuilder := builder.NewEntityDTOBuilder(proto.EntityDTO_BUSINESS_APPLICATION,
-		b.getEntityId(proto.EntityDTO_BUSINESS_APPLICATION, name))
-	for _, service := range services {
-		provider := builder.CreateProvider(proto.EntityDTO_SERVICE, *service.Id)
-		bizAppDtoBuilder.Provider(provider).BuysCommodities(service.CommoditiesSold)
-	}
-	bizAppDto, err := bizAppDtoBuilder.DisplayName(name).
-		WithProperty(getEntityProperty(constant.BizAppPrefix + name)).
-		Monitored(false).
-		Create()
-
-	if err != nil {
-		return nil, err
-	}
-	bizAppDto.KeepStandalone = &b.keepStandalone
-	glog.V(4).Infof("Entity DTO: %+v", bizAppDto)
-	return bizAppDto, nil
-}
-
-func (b *entityBuilder) getEntityId(entityType proto.EntityDTO_EntityType, entityName string) string {
-	eType := proto.EntityDTO_EntityType_name[int32(entityType)]
-
-	return fmt.Sprintf("%s-%s:%s", eType, b.scope, entityName)
-}
-
 func getReplacementMetaData(entityType proto.EntityDTO_EntityType, commTypes []proto.CommodityDTO_CommodityType, bought bool) *proto.EntityDTO_ReplacementEntityMetaData {
 	attr := constant.StitchingAttr
 	useTopoExt := true
@@ -106,22 +80,11 @@ func getReplacementMetaData(entityType proto.EntityDTO_EntityType, commTypes []p
 	return b.Build()
 }
 
-func getEntityProperty(value string) *proto.EntityDTO_EntityProperty {
-	attr := constant.StitchingAttr
-	ns := constant.DefaultPropertyNamespace
-
-	return &proto.EntityDTO_EntityProperty{
-		Namespace: &ns,
-		Name:      &attr,
-		Value:     &value,
-	}
-}
-
 // Creates provider entity from the application entity. Currently, the use case is to create VM for Application.
-func (b *entityBuilder) createProviderEntity(ip string) (*proto.EntityDTO, error) {
+func (b *appBuilder) createProviderEntity(ip string) (*proto.EntityDTO, error) {
 	// For application entity, we also want to create proxy VM entity.
 	VMType := proto.EntityDTO_VIRTUAL_MACHINE
-	id := b.getEntityId(VMType, ip)
+	id := getEntityId(VMType, b.scope, ip)
 
 	var commodities []*proto.CommodityDTO
 
@@ -156,27 +119,40 @@ func (b *entityBuilder) createProviderEntity(ip string) (*proto.EntityDTO, error
 }
 
 // Creates consumer entity from a given provider entity.
-// Currently, the use case is to create service from Application and Database Server.
-func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip string) (*proto.EntityDTO, error) {
+// Currently, the use case is to create Service from Application and Database Server.
+func (b *appBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip string) (*proto.EntityDTO, error) {
 	entityType := *providerDTO.EntityType
-	providerId := b.getEntityId(entityType, ip)
-	commodities := providerDTO.CommoditiesSold
+	providerId := getEntityId(entityType, b.scope, ip)
 
+	commoditiesBought := providerDTO.CommoditiesSold
+
+	id := getEntityId(proto.EntityDTO_SERVICE, b.scope, ip)
+
+	// Create application commodity sold by the Service
+	var commoditiesSold = []*proto.CommodityDTO{createAppCommodity()}
+	var commTypes []proto.CommodityDTO_CommodityType
+	for _, comm := range commoditiesBought {
+		// Add SLO commodities from the bought list to the sold commodities
+		if isSLOCommodity(comm.GetCommodityType()) {
+			// Clear the commodity key, as we don't need to set key for
+			// SLO commodities on the sold side of Service
+			comm.Key = nil
+			commoditiesSold = append(commoditiesSold, comm)
+			commTypes = append(commTypes, *comm.CommodityType)
+		}
+	}
 	if b.metric.HostedOnVM {
 		if entityType != proto.EntityDTO_APPLICATION_COMPONENT && entityType != proto.EntityDTO_DATABASE_SERVER {
 			return nil, fmt.Errorf("unsupported provider type %v to create consumer, "+
 				"only APPLICATION and DATABASE_SERVER is supported when hosted on VM ", entityType)
 		}
-		// Hosted on VM, create non-proxy Virtual Application entity
+		// Hosted on VM, create non-proxy Service entity
 		provider := builder.CreateProvider(entityType, providerId)
-		serviceType := proto.EntityDTO_SERVICE
-		id := b.getEntityId(serviceType, ip)
-		serviceDTO, err := builder.NewEntityDTOBuilder(serviceType, id).
+		serviceDTO, err := builder.NewEntityDTOBuilder(proto.EntityDTO_SERVICE, id).
 			DisplayName(id).
 			Provider(provider).
-			BuysCommodities(commodities).
-			//Added the sell commodity for service due to the businessApp, I don't see any problem doing so even without BizApp
-			SellsCommodities(commodities).
+			BuysCommodities(commoditiesBought).
+			SellsCommodities(commoditiesSold).
 			Monitored(false).
 			Create()
 		if err != nil {
@@ -186,136 +162,105 @@ func (b *entityBuilder) createConsumerEntity(providerDTO *proto.EntityDTO, ip st
 		return serviceDTO, nil
 	}
 
-	// Hosted on Container, create proxy Virtual Application entity
+	// Hosted on Container, create proxy Service entity
 	if entityType != proto.EntityDTO_APPLICATION_COMPONENT {
 		return nil, fmt.Errorf("unsupported provider type %v to create consumer, "+
 			"only APPLICATION is supported when hosted on Container", entityType)
 	}
-	var commTypes []proto.CommodityDTO_CommodityType
-	for _, comm := range commodities {
-		commTypes = append(commTypes, *comm.CommodityType)
-	}
 	provider := builder.CreateProvider(entityType, providerId)
-	serviceType := proto.EntityDTO_SERVICE
-	id := b.getEntityId(serviceType, ip)
-	serviceDTO, err := builder.NewEntityDTOBuilder(serviceType, id).
+	serviceDTO, err := builder.NewEntityDTOBuilder(proto.EntityDTO_SERVICE, id).
 		DisplayName(id).
 		Provider(provider).
-		BuysCommodities(commodities).
-		//Added the sell commodity for service due to the businessApp, I don't see any problem doing so even without BizApp
-		SellsCommodities(commodities).
+		BuysCommodities(commoditiesBought).
+		SellsCommodities(commoditiesSold).
 		WithProperty(getEntityProperty(constant.ServicePrefix + ip)).
-		ReplacedBy(getReplacementMetaData(serviceType, commTypes, true)).
+		ReplacedBy(getReplacementMetaData(proto.EntityDTO_SERVICE, commTypes, true)).
 		Monitored(false).
 		Create()
-
 	if err != nil {
 		return nil, err
 	}
-
 	serviceDTO.KeepStandalone = &b.keepStandalone
 	glog.V(4).Infof("Entity DTO: %+v", serviceDTO)
 	return serviceDTO, nil
 }
 
 // Creates entity DTO from the EntityMetric
-func (b *entityBuilder) createEntity(provider *proto.EntityDTO) (*proto.EntityDTO, error) {
+// Create application commodity for non-proxy app entities only
+func (b *appBuilder) createEntity(provider *proto.EntityDTO) (*proto.EntityDTO, error) {
 	metric := b.metric
-
 	entityType := metric.Type
-	supportedCommodities, ok := constant.EntityTypeMap[entityType]
-	if !ok {
-		return nil, fmt.Errorf("unsupported entity type %v", metric.Type)
-	}
-
 	ip := metric.UID
 	labels := metric.Labels
 
+	// Get the entity ID
+	id := getEntityId(entityType, b.scope, ip)
+
+	// Get the commodity key
 	var commKey, serviceName, serviceNamespace string
 	serviceName, serviceNameExists := labels["service_name"]
 	serviceNamespace, serviceNamespaceExists := labels["service_ns"]
-
 	if serviceNameExists && serviceNamespaceExists {
 		commKey = fmt.Sprintf("%s/%s", serviceNamespace, serviceName)
 	} else {
 		commKey = ip
 	}
-
 	if serviceNamespace != "" && serviceName != "" {
 		commKey = fmt.Sprintf("%s/%s", serviceNamespace, serviceName)
 	} else {
 		commKey = ip
 	}
 
-	var commodities []*proto.CommodityDTO
-	var commTypes []proto.CommodityDTO_CommodityType
-
-	for commType, value := range metric.Metrics {
-		defaultValue, ok := supportedCommodities[commType]
-		if !ok {
-			glog.Warningf("Unsupported commodity type %v for entity type %v", commType, entityType)
-			continue
-		}
-		if _, found := value[exporter.Used]; !found {
-			glog.Errorf("Missing used value for commodity type %v, entity type %v", commType, entityType)
-			continue
-		}
-		commodityBuilder := builder.NewCommodityDTOBuilder(commType).
-			Used(value[exporter.Used]).Key(commKey)
-		capacity, found := value[exporter.Capacity]
-		if found && capacity > 0 {
-			commodityBuilder.Capacity(capacity)
-		} else if defaultValue.Capacity > 0 {
-			commodityBuilder.Capacity(defaultValue.Capacity)
-		}
-
-		commodity, err := commodityBuilder.Create()
-		if err != nil {
-			glog.Errorf("Error building a commodity: %s", err)
-			continue
-		}
-
-		commodities = append(commodities, commodity)
-		commTypes = append(commTypes, commType)
-	}
-
-	if len(commodities) == 0 {
-		return nil, fmt.Errorf("missing commodities")
-	}
-
-	id := b.getEntityId(entityType, ip)
-
 	if provider != nil {
 		providerEntityType := *provider.EntityType
-		providerId := b.getEntityId(providerEntityType, ip)
+		providerId := getEntityId(providerEntityType, b.scope, ip)
 		commoditiesBought := provider.CommoditiesSold
 		provider := builder.CreateProvider(providerEntityType, providerId)
+		// Create an application commodity
+		commoditiesSold := []*proto.CommodityDTO{createAppCommodity()}
+		commodities, err := createCommodities(metric, "")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create commodities for "+
+				"entity %v: %v", id, err)
+		}
+		commoditiesSold = append(commoditiesSold, commodities...)
 		entityDto, err := builder.NewEntityDTOBuilder(entityType, id).
 			DisplayName(id).
-			SellsCommodities(commodities).
+			SellsCommodities(commoditiesSold).
 			Provider(provider).
 			BuysCommodities(commoditiesBought).
 			WithProperty(getEntityProperty(ip)).
 			Monitored(false).
 			Create()
-
 		if err != nil {
 			return nil, err
 		}
-
 		glog.V(4).Infof("Entity DTO: %+v", entityDto)
 		return entityDto, nil
 	}
 
 	// Create a proxy entity
+	// Do not create application commodity for the proxy app entity
+	commoditiesSold, err := createCommodities(metric, commKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create commodities sold for "+
+			"entity %v: %v", id, err)
+	}
+	if len(commoditiesSold) == 0 {
+		return nil, fmt.Errorf("missing commodities sold for "+
+			"entity %v: %v", id, err)
+	}
+	var commTypes []proto.CommodityDTO_CommodityType
+	for _, commodity := range commoditiesSold {
+		commTypes = append(commTypes, *commodity.CommodityType)
+	}
 	entityDto, err := builder.NewEntityDTOBuilder(entityType, id).
 		DisplayName(id).
-		SellsCommodities(commodities).
+		SellsCommodities(commoditiesSold).
 		WithProperty(getEntityProperty(ip)).
 		ReplacedBy(getReplacementMetaData(entityType, commTypes, false)).
 		Monitored(false).
 		Create()
-
 	if err != nil {
 		glog.Errorf("Error building EntityDTO from metric %v: %s", metric, err)
 		return nil, err

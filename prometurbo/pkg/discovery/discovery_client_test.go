@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/conf"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/constant"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/registration"
@@ -52,11 +53,12 @@ var (
 		newIncompleteMetric("9.10.11.12", appType),
 		newMetric("13.14.15.16", 0, 0, appType),
 	}
+	bizAppConfBySource = conf.BusinessAppConfBySource{}
 )
 
 func TestP8sDiscoveryClient_GetAccountValues(t *testing.T) {
 	ex := mockExporter{metrics: metrics}
-	d := NewDiscoveryClient(keepStandalone, scope, &targetAddr, targetType, ex)
+	d := NewDiscoveryClient(keepStandalone, scope, &targetAddr, targetType, bizAppConfBySource, ex)
 
 	for _, f := range d.GetAccountValues().GetTargetInstance().InputFields {
 		if f.Name == "targetIdentifier" && f.Value == targetAddr {
@@ -69,14 +71,14 @@ func TestP8sDiscoveryClient_GetAccountValues(t *testing.T) {
 
 func TestP8sDiscoveryClient_Discover(t *testing.T) {
 	ex := &mockExporter{metrics: metrics}
-	d := NewDiscoveryClient(keepStandalone, scope, &targetAddr, targetType, ex)
+	d := NewDiscoveryClient(keepStandalone, scope, &targetAddr, targetType, bizAppConfBySource, ex)
 
 	testDiscoverySucceeded(d, metrics)
 }
 
 func TestP8sDiscoveryClient_Discover_Query_Failed(t *testing.T) {
 	ex := mockExporter{err: fmt.Errorf("query failed with the mocked exporter")}
-	d := NewDiscoveryClient(keepStandalone, scope, &targetAddr, targetType, ex)
+	d := NewDiscoveryClient(keepStandalone, scope, &targetAddr, targetType, bizAppConfBySource, ex)
 
 	res, err := d.Discover(accountValues)
 
@@ -92,10 +94,11 @@ func TestP8sDiscoveryClient_Discover_Query_Failed(t *testing.T) {
 }
 
 func TestP8sDiscoveryClient_Discover_Incomplete_Metrics(t *testing.T) {
-	d := NewDiscoveryClient(false, scope, &targetAddr, targetType, &mockExporter{
-		metrics: inCompleteMetrics,
-		err:     nil,
-	})
+	d := NewDiscoveryClient(false, scope, &targetAddr, targetType, bizAppConfBySource,
+		&mockExporter{
+			metrics: inCompleteMetrics,
+			err:     nil,
+		})
 	res, err := d.Discover(accountValues)
 	if err != nil {
 		t.Errorf("P8sDiscoveryClient.Discover() error = %v", err)

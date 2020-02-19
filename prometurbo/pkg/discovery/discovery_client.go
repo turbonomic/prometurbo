@@ -3,7 +3,9 @@ package discovery
 import (
 	"fmt"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/glog"
+	"github.com/turbonomic/prometurbo/prometurbo/pkg/conf"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/dtofactory"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/discovery/exporter"
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/registration"
@@ -17,16 +19,19 @@ type P8sDiscoveryClient struct {
 	scope                 string
 	optionalTargetAddress *string
 	targetType            string
+	bizAppConfBySource    conf.BusinessAppConfBySource
 	metricExporter        exporter.MetricExporter
 }
 
 func NewDiscoveryClient(keepStandalone bool, scope string, optionalTargetAddress *string,
-	targetType string, metricExporter exporter.MetricExporter) *P8sDiscoveryClient {
+	targetType string, bizAppConfBySource conf.BusinessAppConfBySource,
+	metricExporter exporter.MetricExporter) *P8sDiscoveryClient {
 	return &P8sDiscoveryClient{
 		keepStandalone:        keepStandalone,
 		scope:                 scope,
 		optionalTargetAddress: optionalTargetAddress,
 		targetType:            targetType,
+		bizAppConfBySource:    bizAppConfBySource,
 		metricExporter:        metricExporter,
 	}
 }
@@ -155,34 +160,55 @@ func entityCountByType(entities []*proto.EntityDTO) map[string]int {
 
 func (d *P8sDiscoveryClient) buildEntities(metrics []*exporter.EntityMetric) ([]*proto.EntityDTO, error) {
 	var entities []*proto.EntityDTO
-	businessAppMap := make(map[string][]*proto.EntityDTO)
+	var bizAppInfoBySource = dtofactory.BusinessAppInfoBySource{}
 
 	for _, metric := range metrics {
-		dtos, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.scope, metric).Build()
-		if err != nil {
-			glog.Errorf("Error building entity from metric %v: %s", metric, err)
-			continue
+		bizAppInfo, ok := bizAppInfoBySource[metric.Source]
+		if !ok {
+			// Create a new entry
+			bizAppInfo = dtofactory.NewBusinessAppInfo()
+			bizAppInfoBySource[metric.Source] = bizAppInfo
 		}
-		//Create a map with key: businessAppName (based on relabeling) and value: service dtos
-		if v, ok := metric.Labels["business_app"]; ok {
-			for _, dto := range dtos {
-				if *dto.EntityType == proto.EntityDTO_SERVICE {
-					businessAppMap[v] = append(businessAppMap[v], dto)
-				}
-			}
-		}
-		entities = append(entities, dtos...)
-	}
-	if len(businessAppMap) > 0 {
-		for k, v := range businessAppMap {
-			dto, err := dtofactory.NewEntityBuilder(d.keepStandalone, d.scope, nil).BuildBusinessApp(v, k)
+		var entityDTOs []*proto.EntityDTO
+		var err error
+		switch eType := metric.Type; eType {
+		case proto.EntityDTO_APPLICATION_COMPONENT, proto.EntityDTO_DATABASE_SERVER:
+			// For APPLICATION_COMPONENT or DATABASE_SERVER metrics, we create entity DTOs with corresponding
+			// VIRTUAL_MACHINE provider DTO (if needed) and SERVICE consumer DTO if needed
+			entityDTOs, err = dtofactory.NewApplicationBuilder(d.keepStandalone, d.scope, metric).Build()
 			if err != nil {
-				glog.Errorf("Error building business app entity for %s", k)
+				glog.Errorf("Error building entity from metric %v: %s", metric, err)
 				continue
 			}
-			entities = append(entities, dto)
+			entities = append(entities, entityDTOs...)
+		case proto.EntityDTO_BUSINESS_TRANSACTION:
+			bizAppInfo.Transactions[metric.UID] = metric
+		default:
+			glog.V(2).Infof("Metric with entity type %v is not supported yet.", eType)
+			continue
+		}
+		for _, entityDTO := range entityDTOs {
+			if entityDTO.GetEntityType() == proto.EntityDTO_SERVICE {
+				svcName, ok := metric.Labels["service"]
+				if !ok || svcName == "" {
+					continue
+				}
+				bizAppInfo.Services[svcName] = entityDTO
+			}
 		}
 	}
+
+	glog.V(4).Infof("%s", spew.Sdump(bizAppInfoBySource))
+
+	// Create BUSINESS_APPLICATION and BUSINESS_TRANSACTION entity DTOs
+	entityDTOS, err := dtofactory.NewBusinessAppBuilder(d.scope,
+		bizAppInfoBySource, d.bizAppConfBySource).Build()
+	if err != nil {
+		glog.Errorf("Error building business app entities: %v", err)
+	} else {
+		entities = append(entities, entityDTOS...)
+	}
+
 	return entities, nil
 }
 

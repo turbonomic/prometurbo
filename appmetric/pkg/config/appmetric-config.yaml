@@ -139,6 +139,7 @@ exporters:
             isIdentifier: true
   - name: turbonomic
     entities:
+      # Transaction for api calls
       - type: BUSINESS_TRANSACTION
         metrics:
           - type: TRANSACTION
@@ -150,6 +151,18 @@ exporters:
         attributes:
           id:
             label: uri
+            isIdentifier: true
+      # Transaction for plan
+      - type: BUSINESS_TRANSACTION
+        metrics:
+          - type: RESPONSE_TIME
+            queries:
+              used: 'avg by (instance,job,service,status) (delta(plan_run_time_seconds_sum{status="SUCCEEDED"}[10m])/delta(plan_run_time_seconds_count[10m]) > 0) * 1000'
+        attributes:
+          id:
+            label: service
+            matches: plan-orchestrator
+            as: /plan
             isIdentifier: true
       - type: APPLICATION_COMPONENT
         metrics:

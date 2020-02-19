@@ -45,18 +45,16 @@ data:
             dependOn:
               - repository
               - topology-processor
-          - name: actionsForGroup
-            path: /groups/{group_Uuid}/actions
+          - path: /plan
             dependOn:
+              - plan-orchestrator
+              - topology-processor
+              - group
+              - market
+              - cost
               - action-orchestrator
-          - name: actionsForEntity
-            path: /entities/{entity_Uuid}/actions
-            dependOn:
-              - action-orchestrator
-          - name: actionsForMarket
-            path: /markets/{market_Uuid}/actions
-            dependOn:
-              - action-orchestrator
+              - history
+              - repository
         services:
           - action-orchestrator
           - api

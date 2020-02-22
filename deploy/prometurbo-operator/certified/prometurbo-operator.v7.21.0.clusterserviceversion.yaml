@@ -11,20 +11,23 @@ metadata:
     description: Turbonomic Workload Automation for Multicloud simultaneously optimizes performance, compliance, and cost in real-time. Workloads are precisely resourced, automatically, to perform while satisfying business constraints.
     repository: https://github.com/turbonomic/prometurbo/tree/master/deploy/prometurbo-operator
     support: Turbonomic, Inc.
-  name: prometurbo-operator.v6.4.0
+  name: prometurbo-operator.v7.21.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-      - description: Turbonomic Workload Automation for Multicloud simultaneously optimizes performance, compliance, and cost in real-time. Workloads are precisely resourced, automatically, to perform while satisfying business constraints.
-        displayName: Prometurbo Operator
-        kind: Prometurbo
-        name: prometurbos.charts.helm.k8s.io
-        version: v1alpha1
+    - description: Turbonomic Workload Automation for Multicloud simultaneously optimizes performance, compliance, and cost in real-time. Workloads are precisely resourced, automatically, to perform while satisfying business constraints.
+      displayName: Prometurbo Operator
+      kind: Prometurbo
+      name: prometurbos.charts.helm.k8s.io
+      version: v1alpha1
   description: |-
-    ### Decision Automation for Kubernetes
-    Turbonomic makes workloads smart—enabling them to self-manage—and determines the specific actions that will drive continuous health:
+    ### Application Resource Management for Kubernetes
+    Turbonomic AI-powered Application Resource Management simultaneously optimizes performance, compliance, and cost in real time.
+    Software manages the complete application stack, automatically. Applications are continually resourced to perform while satisfying business constraints.
+
+    Turbonomic makes workloads smart — enabling them to self-manage and determines the specific actions that will drive continuous health:
 
     * Continuous placement for Pods (rescheduling)
     * Continuous scaling for applications and  the underlying cluster.
@@ -32,8 +35,8 @@ spec:
     It assures application performance by giving workloads the resources they need when they need them.
 
     ### How does it work?
-    Turbonomic uses a container — KubeTurbo — that runs in your Kubernetes or Red Hat OpenShift cluster to discover and monitor your environment.
-    KubeTurbo runs together with the default scheduler and sends this data back to the Turbonomic analytics engine.
+    Turbonomic uses a container — PromeTurbo — that runs next to your Prometheus sever, which monitors your environment.
+    PromeTurbo sends application and infrastructure monitoring data back to the Turbonomic analytics engine.
     Turbonomic determines the right actions that drive continuous health, including continuous placement for Pods and continuous scaling for applications and the underlying cluster.
   displayName: Prometurbo Operator
   icon:
@@ -41,165 +44,95 @@ spec:
       mediatype: image/png
   install:
     spec:
+      deployments:
+      - name: prometurbo-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: prometurbo-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: prometurbo-operator
+            spec:
+              containers:
+              - env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: prometurbo-operator
+                image: registry.connect.redhat.com/turbonomic/prometurbo-operator:7.21
+                imagePullPolicy: Always
+                name: prometurbo-operator
+                resources: {}
+              serviceAccountName: prometurbo-operator
       permissions:
         - rules:
             - apiGroups:
-                - ""
-                - apps
-                - extensions
+                - ''
               resources:
-                - nodes
                 - pods
-                - configmaps
+                - services
                 - endpoints
+                - persistentvolumeclaims
                 - events
-                - deployments
-                - replicasets
-                - replicationcontrollers
-                - services
-                - secrets
-                - serviceaccounts
-              verbs:
-                - '*'
-            - apiGroups:
-                - ""
-                - apps
-                - extensions
-                - policy
-              resources:
-                - daemonsets
-                - endpoints
-                - limitranges
-                - namespaces
-                - persistentvolumes
-                - persistentvolumeclaims
-                - poddisruptionbudget
-                - resourcequotas
-                - statefulsets
-              verbs:
-                - get
-                - list
-                - watch
-            - apiGroups:
-                - ""
-              resources:
-                - nodes/spec
-                - nodes/stats
-              verbs:
-                - get
-            - apiGroups:
-                - charts.helm.k8s.io
-              resources:
-                - '*'
-              verbs:
-                - '*'
-          serviceAccountName: prometurbo-operator
-      clusterPermissions:
-        - rules:
-            - apiGroups:
-                - ""
-                - apps
-                - extensions
-              resources:
-                - nodes
-                - pods
                 - configmaps
-                - deployments
-                - replicasets
-                - replicationcontrollers
-                - serviceaccounts
+                - secrets
               verbs:
                 - '*'
             - apiGroups:
-                - ""
                 - apps
-                - extensions
-                - policy
               resources:
-                - services
-                - endpoints
-                - namespaces
-                - limitranges
-                - resourcequotas
-                - daemonsets
-                - persistentvolumes
-                - persistentvolumeclaims
-                - poddisruptionbudget
+                - deployments
               verbs:
-                - get
-                - list
-                - watch
+                - '*'
             - apiGroups:
-                - ""
+                - ''
               resources:
-                - nodes/spec
-                - nodes/stats
+                - namespaces
               verbs:
                 - get
+            - apiGroups:
+                - ''
+              resources:
+                - configmaps
+                - secrets
+              verbs:
+                - '*'
             - apiGroups:
                 - charts.helm.k8s.io
               resources:
                 - '*'
               verbs:
                 - '*'
-            - apiGroups:
-                - rbac.authorization.k8s.io
-              resources:
-                - clusterroles
-                - clusterrolebindings
-              verbs:
-                - '*'
-          serviceAccountName: prometurbo-operator
-      deployments:
-        - name: prometurbo-operator
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                name: prometurbo-operator
-            strategy: {}
-            template:
-              metadata:
-                labels:
-                  name: prometurbo-operator
-              spec:
-                containers:
-                  - env:
-                      - name: WATCH_NAMESPACE
-                        valueFrom:
-                          fieldRef:
-                            fieldPath: metadata.namespace
-                      - name: POD_NAME
-                        valueFrom:
-                          fieldRef:
-                            fieldPath: metadata.name
-                      - name: OPERATOR_NAME
-                        value: prometurbo-operator
-                    image: registry.connect.redhat.com/turbonomic/prometurbo-operator:7.21
-                    imagePullPolicy: Always
-                    name: prometurbo-operator
-                    resources: {}
-                serviceAccountName: prometurbo-operator
+        serviceAccountName: prometurbo-operator
     strategy: deployment
   installModes:
-    - supported: true
-      type: OwnNamespace
-    - supported: true
-      type: SingleNamespace
-    - supported: false
-      type: MultiNamespace
-    - supported: true
-      type: AllNamespaces
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
   links:
-    - name: Turbonomic, Inc.
-      url: https://www.turbonomic.com/
-    - name: Prometurbo Operator
-      url: https://github.com/turbonomic/prometurbo/tree/master/deploy/prometurbo-operator
+  - name: Turbonomic, Inc.
+    url: https://www.turbonomic.com/
+  - name: Prometurbo Operator
+    url: https://github.com/turbonomic/prometurbo/tree/master/deploy/prometurbo-operator
   maintainers:
-    - email: endre.sara@turbonomic.com
-      name: Endre Sara
+  - email: endre.sara@turbonomic.com
+    name: Endre Sara
   maturity: alpha
   provider:
     name: Turbonomic, Inc.
-  replaces: prometurbo-operator.v6.4.0
   version: 7.21.0

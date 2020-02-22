@@ -1,0 +1,40 @@
+apiVersion: charts.helm.k8s.io/v1alpha1
+kind: Prometurbo
+metadata:
+  name: prometurbo-release
+spec:
+  # Default values copied from <project_dir>/helm-charts/prometurbo/values.yaml
+
+  # Replace the image with desired version
+  image:
+    promerepository: turbonomic/prometurbo
+    prometag: 7.21.0
+    apprepository: turbonomic/appmetric
+    apptag: 7.21.0
+    pullPolicy: IfNotPresent
+
+  #nameOverride: ""
+  #fullnameOverride: ""
+
+  # Turbo server version and address
+  serverMeta:
+    version: 7.21
+    turboServer: https://Turbo_server_URL
+
+  # Turbo server api user and password
+  # The opsManagerUserName requires Turbo administrator role
+  restAPIConfig:
+    opsManagerUserName: Turbo_username
+    opsManagerPassword: Turbo_password
+
+  prometurboTargetConfig:
+    targetAddress: http://prometheus.istio-system:9090
+    keepStandalone: false
+    createProxyVM: false
+    scope: prometheus
+
+  targetTypeSuffix: ""
+
+  args:
+    # logging level
+    logginglevel: 2

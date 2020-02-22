@@ -1,0 +1,4 @@
+packageName: prometurbo-certified
+channels:
+  - name: alpha
+    currentCSV: prometurbo-operator.v7.21.0

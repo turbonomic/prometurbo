@@ -1,0 +1,4 @@
+channels:
+- currentCSV: prometurbo-operator.v7.21.0
+  name: alpha
+packageName: prometurbo

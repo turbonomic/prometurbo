@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometurbo-config-{{ .Release.Name }}
+data:
+  turbo.config: |-
+    {
+        "communicationConfig": {
+            "serverMeta": {
+                "version": "{{ .Values.serverMeta.version }}",
+                "turboServer": "{{ .Values.serverMeta.turboServer }}"
+            },
+            "restAPIConfig": {
+                "opsManagerUserName": "{{ .Values.restAPIConfig.opsManagerUserName }}",
+                "opsManagerPassword": "{{ .Values.restAPIConfig.opsManagerPassword }}"
+            }
+        },
+        "prometurboTargetConfig": {
+            "targetAddress": "{{ .Values.prometurboTargetConfig.targetAddress }}",
+            "scope": "{{ .Values.prometurboTargetConfig.scope }}"
+        },
+        "targetTypeSuffix": {{ .Values.targetTypeSuffix }}
+    }

@@ -5,17 +5,6 @@ metadata:
 spec:
   # Default values copied from <project_dir>/helm-charts/prometurbo/values.yaml
 
-  # Replace the image with desired version
-  image:
-    promerepository: turbonomic/prometurbo
-    prometag: 7.21.0
-    apprepository: turbonomic/appmetric
-    apptag: 7.21.0
-    pullPolicy: IfNotPresent
-
-  #nameOverride: ""
-  #fullnameOverride: ""
-
   # Turbo server version and address
   serverMeta:
     version: 7.21
@@ -23,19 +12,7 @@ spec:
 
   # Turbo server api user and password stored in a secret or optionally specified as username and password
   # The opsManagerUserName requires Turbo administrator role
-  restAPIConfig:
-    turbonomicCredentialsSecretName: "turbonomic-credentials"
-    opsManagerUserName: Turbo_username
-    opsManagerPassword: Turbo_password
-
-  prometurboTargetConfig:
-    targetAddress: http://prometheus.istio-system:9090
-    keepStandalone: false
-    createProxyVM: false
-    scope: prometheus
-
-  targetTypeSuffix: ""
-
-  args:
-    # logging level
-    logginglevel: 2
+  #restAPIConfig:
+    #turbonomicCredentialsSecretName: "turbonomic-credentials"
+    #opsManagerUserName: Turbo_username
+    #opsManagerPassword: Turbo_password

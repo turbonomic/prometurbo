@@ -5,6 +5,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: prometurbo-operator
+  namespace: turbo
 roleRef:
   kind: Role
   name: prometurbo-operator

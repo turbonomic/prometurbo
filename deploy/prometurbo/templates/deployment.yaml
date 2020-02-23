@@ -31,6 +31,9 @@ spec:
           - name: prometurbo-config
             mountPath: /etc/prometurbo
             readOnly: true
+          - name: turbonomic-credentials-volume
+            mountPath: /etc/turbonomic-credentials
+            readOnly: true
           - name: varlog
             mountPath: /var/log
         - name: appmetric
@@ -44,6 +47,11 @@ spec:
       - name: prometurbo-config
         configMap:
           name: prometurbo-config-{{ .Release.Name }}
+      - name: turbonomic-credentials-volume
+        secret:
+          defaultMode: 420
+          optional: true
+          secretName: {{ .Values.restAPIConfig.turbonomicCredentialsSecretName | quote }}
       - name: varlog
         emptyDir: {}
       restartPolicy: Always

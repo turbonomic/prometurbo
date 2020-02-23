@@ -21,9 +21,10 @@ spec:
     version: 7.21
     turboServer: https://Turbo_server_URL
 
-  # Turbo server api user and password
+  # Turbo server api user and password stored in a secret or optionally specified as username and password
   # The opsManagerUserName requires Turbo administrator role
   restAPIConfig:
+    turbonomicCredentialsSecretName: "turbonomic-credentials"
     opsManagerUserName: Turbo_username
     opsManagerPassword: Turbo_password
 

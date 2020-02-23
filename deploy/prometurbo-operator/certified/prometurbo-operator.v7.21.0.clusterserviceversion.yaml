@@ -2,7 +2,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"charts.helm.k8s.io/v1alpha1","kind":"Prometurbo","metadata":{"name":"prometurbo-release"},"spec":{"restAPIConfig":{"opsManagerPassword":"Turbo_password","opsManagerUserName":"Turbo_username"},"serverMeta":{"turboServer":"https://Turbo_server_URL","version":6.4}}}]'
+    alm-examples: '[{"apiVersion":"charts.helm.k8s.io/v1alpha1","kind":"Prometurbo","metadata":{"name":"prometurbo-release"},"spec":{"serverMeta":{"turboServer":"https://Turbo_server_URL","version":7.21}}}]'
     capabilities: Basic Install
     categories: Monitoring
     certified: "false"

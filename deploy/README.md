@@ -78,10 +78,9 @@ spec:
       labels:
         app: prometurbo
     spec:
-      serviceAccount: turbo-user
       containers:
         - name: prometurbo
-          image: turbonomic/prometurbo:6.4dev
+          image: turbonomic/prometurbo:7.21.0
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
@@ -91,7 +90,7 @@ spec:
             readOnly: true
           - name: varlog
             mountPath: /var/log
-        - image: turbonomic/appmetric:6.4dev
+        - image: turbonomic/appmetric:7.21.0
           imagePullPolicy: IfNotPresent
           name: appmetric
           args:

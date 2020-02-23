@@ -5,19 +5,23 @@ metadata:
 data:
   turbo.config: |-
     {
-        "communicationConfig": {
-            "serverMeta": {
-                "version": "{{ .Values.serverMeta.version }}",
-                "turboServer": "{{ .Values.serverMeta.turboServer }}"
-            },
-            "restAPIConfig": {
-                "opsManagerUserName": "{{ .Values.restAPIConfig.opsManagerUserName }}",
-                "opsManagerPassword": "{{ .Values.restAPIConfig.opsManagerPassword }}"
-            }
+      "communicationConfig": {
+        "serverMeta": {
+            "version": "{{ .Values.serverMeta.version }}",
+            "turboServer": "{{ .Values.serverMeta.turboServer }}"
         },
-        "prometurboTargetConfig": {
-            "targetAddress": "{{ .Values.prometurboTargetConfig.targetAddress }}",
-            "scope": "{{ .Values.prometurboTargetConfig.scope }}"
-        },
-        "targetTypeSuffix": {{ .Values.targetTypeSuffix }}
+        "restAPIConfig": {
+            "opsManagerUserName": "{{ .Values.restAPIConfig.opsManagerUserName }}",
+            "opsManagerPassword": "{{ .Values.restAPIConfig.opsManagerPassword }}"
+        }
+      },
+      "prometurboTargetConfig": {
+        "targetAddress": "{{ .Values.prometurboTargetConfig.targetAddress }}",
+        "scope": "{{ .Values.prometurboTargetConfig.scope }}"
+      {{- if .Values.targetTypeSuffix }}
+      },
+      "targetTypeSuffix": "{{ .Values.targetTypeSuffix }}"
+      {{- else }}
+      }
+      {{- end }}
     }

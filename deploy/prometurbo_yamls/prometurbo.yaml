@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometurbo
@@ -28,7 +28,8 @@ spec:
           imagePullPolicy: IfNotPresent
           name: appmetric
           args:
-          - --v=2
+            - --promUrl=http://prometheus.istio-system:9090
+            - --v=2
           ports:
           - containerPort: 8081
       volumes:

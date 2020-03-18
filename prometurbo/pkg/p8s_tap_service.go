@@ -1,8 +1,11 @@
 package pkg
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/golang/glog"
@@ -12,6 +15,11 @@ import (
 	"github.com/turbonomic/prometurbo/prometurbo/pkg/registration"
 	"github.com/turbonomic/turbo-go-sdk/pkg/probe"
 	"github.com/turbonomic/turbo-go-sdk/pkg/service"
+)
+
+const (
+	usernameFilePath = "/etc/turbonomic-credentials/username"
+	passwordFilePath = "/etc/turbonomic-credentials/password"
 )
 
 type disconnectFromTurboFunc func()
@@ -57,6 +65,10 @@ func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 
 	glog.V(3).Infof("Read service configuration from %s: %++v", confPath, conf)
 
+	if err := loadOpsMgrCredentialsFromSecret(conf); err != nil {
+		return nil, err
+	}
+
 	communicator := conf.Communicator
 	metricExporter := exporter.NewMetricExporter(conf.MetricExporterEndpoint)
 	var targetAddr, scope string
@@ -66,7 +78,7 @@ func createTAPService(args *conf.PrometurboArgs) (*service.TAPService, error) {
 	}
 	keepStandalone := args.KeepStandalone
 
-	registrationClient := &registration.P8sRegistrationClient{conf.TargetTypeSuffix}
+	registrationClient := &registration.P8sRegistrationClient{TargetTypeSuffix: conf.TargetTypeSuffix}
 	targetType := registrationClient.TargetType()
 
 	var optionalTargetAddr *string
@@ -116,4 +128,31 @@ func handleExit(disconnectFunc disconnectFromTurboFunc) {
 			disconnectFunc()
 		}
 	}()
+}
+
+func loadOpsMgrCredentialsFromSecret(conf *conf.PrometurboConf) error {
+	// Return unchanged if the mounted file isn't present
+	// for backward compatibility.
+	if _, err := os.Stat(usernameFilePath); os.IsNotExist(err) {
+		glog.V(3).Infof("credentials from secret unavailable. Checked path: %s", usernameFilePath)
+		return nil
+	}
+	if _, err := os.Stat(passwordFilePath); os.IsNotExist(err) {
+		glog.V(3).Infof("credentials from secret unavailable. Checked path: %s", passwordFilePath)
+		return nil
+	}
+
+	username, err := ioutil.ReadFile(usernameFilePath)
+	if err != nil {
+		return fmt.Errorf("error reading credentials from secret: username: %v", err)
+	}
+	password, err := ioutil.ReadFile(passwordFilePath)
+	if err != nil {
+		return fmt.Errorf("error reading credentials from secret: password: %v", err)
+	}
+
+	conf.Communicator.OpsManagerUsername = strings.TrimSpace(string(username))
+	conf.Communicator.OpsManagerPassword = strings.TrimSpace(string(password))
+
+	return nil
 }

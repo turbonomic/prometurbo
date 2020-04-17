@@ -73,6 +73,6 @@ func (e *entityDef) reconcileAttributes(labels map[string]string) (string, map[s
 			id = reconciledAttributes[name]
 		}
 	}
-	glog.V(2).Infof("Reconciled attributes: %s", spew.Sdump(reconciledAttributes))
+	glog.V(4).Infof("Reconciled attributes: %s", spew.Sdump(reconciledAttributes))
 	return id, reconciledAttributes, nil
 }

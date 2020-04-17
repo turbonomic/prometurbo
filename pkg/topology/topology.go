@@ -66,7 +66,7 @@ func buildSvcMap(entities []*data.DIFEntity) map[string][]*data.DIFEntity {
 			svcName := partOf.Label
 			svcMap[svcName] = append(svcMap[svcName], svc)
 		}
-		glog.Infof("Entity: %v", svc)
+		glog.V(2).Infof("Service entity: %v", svc)
 	}
 	return svcMap
 }
@@ -76,7 +76,7 @@ func (t *BusinessTopology) buildBizDIFEntities(svcMap map[string][]*data.DIFEnti
 	var bizEntities []*data.DIFEntity
 	for source, bizAppConfByName := range t.BizAppConfBySource {
 		for name, bizAppConf := range bizAppConfByName {
-			glog.Infof("Source %s Name %s BizApp %v", source, name, bizAppConf)
+			glog.V(4).Infof("Source %s Name %s BizApp %v", source, name, bizAppConf)
 			bizAppId := fmt.Sprintf("%s-%s", bizAppConf.Name, bizAppConf.From)
 			for _, service := range bizAppConf.Services {
 				svcEntities, exists := svcMap[service]
@@ -118,7 +118,7 @@ func bizAppToDIFEntity(bizApp *config.BusinessApplication) *data.DIFEntity {
 	bizAppDIFEntity := data.NewDIFEntity(fmt.Sprintf("%s-%s", bizApp.Name, bizApp.From),
 		"businessApplication").
 		WithName(bizApp.Name)
-	glog.Infof("Creating business app entity %v", bizAppDIFEntity)
+	glog.V(4).Infof("Creating business app entity %v", bizAppDIFEntity)
 	return bizAppDIFEntity
 }
 
@@ -130,6 +130,6 @@ func bizTransToDIFEntity(bizTrans config.Transaction, bizApp string) *data.DIFEn
 	bizTransDIFEntity := data.NewDIFEntity(bizTrans.Path, "businessTransaction").
 		WithName(name).
 		PartOfEntity("businessApplication", bizApp, "")
-	glog.Infof("Creating business transaction entity %v", bizTransDIFEntity)
+	glog.V(4).Infof("Creating business transaction entity %v", bizTransDIFEntity)
 	return bizTransDIFEntity
 }

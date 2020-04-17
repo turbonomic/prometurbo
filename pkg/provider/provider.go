@@ -99,7 +99,7 @@ func getMetricsForEntity(promClient *prometheus.RestClient, entityDef *entityDef
 				}
 				// Process metrics
 				if metricKey, ok := metricKindToKey[metricKind]; ok {
-					glog.Infof("Processing %v, %v, %v",
+					glog.V(4).Infof("Processing %v, %v, %v",
 						difEntity.Name, metricType, metricKey)
 					difEntity.AddMetric(metricType, metricKey, basicMetricData.GetValue())
 				}

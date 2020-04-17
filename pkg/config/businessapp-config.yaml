@@ -31,6 +31,12 @@ businessApplications:
           - action-orchestrator
           - history
           - repository
+      - name: status
+        path: /stats/{statistic_Uuid}
+        dependOn:
+          - history
+          - plan-orchestrator
+          - group
     services:
       - action-orchestrator
       - api
@@ -40,7 +46,18 @@ businessApplications:
       - group
       - history
       - market
+      - mediation-aws
+      - mediation-actionscript
       - mediation-appdynamics
+      - mediation-appinsights
+      - mediation-aws
+      - mediation-awsbilling
+      - mediation-awscost
+      - mediation-azure
+      - mediation-azurecost
+      - mediation-azureea
+      - mediation-azuresp
+      - mediation-azurevolumes
       - mediation-vcenter
       - mediation-vcenterbrowsing
       - plan-orchestrator

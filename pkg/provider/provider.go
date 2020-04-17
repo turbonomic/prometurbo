@@ -1,0 +1,123 @@
+package provider
+
+import (
+	"github.com/golang/glog"
+	"github.com/turbonomic/prometurbo/pkg/prometheus"
+	"github.com/turbonomic/turbo-go-sdk/pkg/dataingestionframework/data"
+)
+
+var metricKindToKey = map[string]data.DIFMetricValKey{
+	Used:     data.AVERAGE,
+	Capacity: data.CAPACITY,
+}
+
+type MetricProvider struct {
+	promClients  []*prometheus.RestClient
+	exporterDefs []*exporterDef
+}
+
+func NewProvider(promClients []*prometheus.RestClient, exporterDefs []*exporterDef) *MetricProvider {
+	return &MetricProvider{
+		promClients:  promClients,
+		exporterDefs: exporterDefs,
+	}
+}
+
+func (p *MetricProvider) GetEntityMetrics() ([]*data.DIFEntity, error) {
+	var entityMetrics []*data.DIFEntity
+
+	// TODO: use goroutine
+	for _, promClient := range p.promClients {
+		var metricsForProms []*data.DIFEntity
+		for _, exporterDef := range p.exporterDefs {
+			metricsForExporters := getMetricsForExporter(promClient, exporterDef)
+			metricsForProms = append(metricsForProms, metricsForExporters...)
+		}
+		entityMetrics = append(entityMetrics, metricsForProms...)
+	}
+
+	return entityMetrics, nil
+}
+
+func getMetricsForExporter(promClient *prometheus.RestClient, exporterDef *exporterDef) []*data.DIFEntity {
+	var entityMetricsForExporter []*data.DIFEntity
+	for _, entityDef := range exporterDef.entityDefs {
+		metricsForEntity := getMetricsForEntity(promClient, entityDef)
+		entityMetricsForExporter = append(entityMetricsForExporter, metricsForEntity...)
+	}
+	return entityMetricsForExporter
+}
+
+func getMetricsForEntity(promClient *prometheus.RestClient, entityDef *entityDef) []*data.DIFEntity {
+	var entityMetrics []*data.DIFEntity
+	var entityMetricsMap = map[string]*data.DIFEntity{}
+	for _, metricDef := range entityDef.metricDefs {
+		entityType, valid := data.DIFEntityType[entityDef.eType]
+		if !valid {
+			glog.Errorf("Entity type %v is not valid", entityDef.eType)
+			continue
+		}
+		for metricKind, metricQuery := range metricDef.queries {
+			metricType, valid := data.DIFMetricType[metricDef.mType]
+			if !valid {
+				glog.Errorf("Metric type %v is not valid", metricDef.mType)
+			}
+			metricSeries, err := promClient.GetMetrics(metricQuery)
+			if err != nil {
+				glog.Errorf("Failed to query metric %v [%v] for entity type %v: %v.",
+					metricKind, metricQuery, entityDef.eType, err)
+				continue
+			}
+			for _, metricData := range metricSeries {
+				basicMetricData, ok := metricData.(*prometheus.BasicMetricData)
+				if !ok {
+					// TODO: Enhance error messages
+					glog.Errorf("Type assertion failed for metricData %+v obtained from %v [%v] for entity type %v.",
+						metricData, metricKind, metricQuery, entityDef.eType)
+					continue
+				}
+				id, attr, err := entityDef.reconcileAttributes(basicMetricData.Labels)
+				if err != nil {
+					glog.Errorf("Failed to reconcile attributes from labels %+v obtained from %v [%v] for entity %v: %v.",
+						basicMetricData.Labels, metricKind, metricQuery, entityDef.eType, err)
+					continue
+				}
+				if id == "" {
+					glog.Warningf("Failed to get identifier from labels %+v obtained from %v [%v] for entity %v.",
+						basicMetricData.Labels, metricKind, metricQuery, entityDef.eType)
+					continue
+				}
+				difEntity, found := entityMetricsMap[id]
+				if !found {
+					// Create new entity if it does not exist
+					difEntity = data.NewDIFEntity(id, entityType).Matching(id)
+					if entityDef.hostedOnVM {
+						difEntity.HostedOnType(data.VM).HostedOnIP(id)
+					}
+					processOwner(difEntity, attr)
+					entityMetricsMap[id] = difEntity
+				}
+				// Process metrics
+				if metricKey, ok := metricKindToKey[metricKind]; ok {
+					glog.Infof("Processing %v, %v, %v",
+						difEntity.Name, metricType, metricKey)
+					difEntity.AddMetric(metricType, metricKey, basicMetricData.GetValue())
+				}
+			}
+		}
+	}
+	for _, metric := range entityMetricsMap {
+		entityMetrics = append(entityMetrics, metric)
+	}
+	return entityMetrics
+}
+
+func processOwner(entity *data.DIFEntity, attr map[string]string) {
+	for key, label := range attr {
+		if key == "service" {
+			ServicePrefix := "Service-"
+			svcID := ServicePrefix + entity.UID
+			entity.PartOfEntity("service", svcID, label)
+		}
+	}
+}

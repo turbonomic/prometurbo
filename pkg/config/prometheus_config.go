@@ -7,19 +7,18 @@ import (
 )
 
 type MetricsDiscoveryConfig struct {
-	ServerConfigs   []ServerConfig   `yaml:"servers"`
-	ExporterConfigs []ExporterConfig `yaml:"exporters"`
+	ServerConfigs   map[string]ServerConfig   `yaml:"servers"`
+	ExporterConfigs map[string]ExporterConfig `yaml:"exporters"`
 }
 
 type ServerConfig struct {
-	Name     string `yaml:"name,omitempty"`
-	URL      string `yaml:"url"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
+	URL       string   `yaml:"url"`
+	Username  string   `yaml:"username"`
+	Password  string   `yaml:"password"`
+	Exporters []string `yaml:"exporters"`
 }
 
 type ExporterConfig struct {
-	Name          string         `yaml:"name"`
 	EntityConfigs []EntityConfig `yaml:"entities"`
 }
 

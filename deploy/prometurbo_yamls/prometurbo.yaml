@@ -28,14 +28,21 @@ spec:
           imagePullPolicy: IfNotPresent
           name: appmetric
           args:
-            - --promUrl=http://prometheus.istio-system:9090
+            - --config=/etc/appmetric/appmetric.config
             - --v=2
           ports:
           - containerPort: 8081
+          volumeMounts:
+            - mountPath: /etc/appmetric
+              name: appmetric-config
+              readOnly: true
       volumes:
       - name: prometurbo-config
         configMap: 
           name: prometurbo-config
+      - name: appmetric-config
+        configMap:
+          name: appmetric-config
       - name: varlog
         emptyDir: {}
       restartPolicy: Always

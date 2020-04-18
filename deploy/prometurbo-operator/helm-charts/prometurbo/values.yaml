@@ -26,10 +26,7 @@ restAPIConfig:
   opsManagerPassword: Turbo_password
 
 prometurboTargetConfig:
-  targetAddress: http://prometheus.istio-system:9090
   keepStandalone: false
-  createProxyVM: false
-  scope: prometheus
 
 targetTypeSuffix: ""
 

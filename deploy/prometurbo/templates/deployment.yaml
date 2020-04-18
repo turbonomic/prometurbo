@@ -25,7 +25,6 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - --keepStandalone={{ .Values.prometurboTargetConfig.keepStandalone }}
-            - --createProxyVM={{ .Values.prometurboTargetConfig.createProxyVM }}
             - --v={{ .Values.args.logginglevel }}
           volumeMounts:
           - name: prometurbo-config
@@ -40,14 +39,21 @@ spec:
           image: {{ .Values.image.apprepository }}:{{ .Values.image.apptag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            - --promUrl={{ .Values.prometurboTargetConfig.targetAddress }}
+            - --config=/etc/appmetric/appmetric.config
             - --v={{ .Values.args.logginglevel }}
           ports:
           - containerPort: 8081
+          volumeMounts:
+            - mountPath: /etc/appmetric
+              name: appmetric-config
+              readOnly: true
       volumes:
       - name: prometurbo-config
         configMap:
           name: prometurbo-config-{{ .Release.Name }}
+      - name: appmetric-config
+        configMap:
+          name: appmetric-config-{{ .Release.Name }}
       - name: turbonomic-credentials-volume
         secret:
           defaultMode: 420

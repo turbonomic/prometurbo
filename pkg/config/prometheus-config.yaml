@@ -1,10 +1,19 @@
-# A list of prometheus servers
+# A map of prometheus servers and metrics to scrape
 servers:
-#  - url: http://prometheus-server.turbonomic:9090
-  - url: http://10.10.168.193:9090
-# A list of exporter configurations to discover entities and related metrics
+  turbonomic:
+    url: http://prometheus-server.turbonomic:9090
+    exporters:
+      - istio
+      - turbonomic
+  server1:
+    url: http://10.10.168.193:9090
+    exporters:
+      - turbonomic
+      - node
+
+# A map of exporter configurations to discover entities and related metrics
 exporters:
-  - name: istio
+  istio:
     entities:
       - type: APPLICATION_COMPONENT
         metrics:
@@ -31,7 +40,7 @@ exporters:
             label: destination_svc_name
           target:
             label: job
-  - name: redis
+  redis:
     entities:
       - type: APPLICATION_COMPONENT
         metrics:
@@ -46,7 +55,7 @@ exporters:
             isIdentifier: true
           target:
             label: job
-  - name: cassandra
+  cassandra:
     entities:
       - type: APPLICATION_COMPONENT
         metrics:
@@ -63,7 +72,7 @@ exporters:
             isIdentifier: true
           target:
             label: job
-  - name: webdriver
+  webdriver:
     entities:
       - type: APPLICATION_COMPONENT
         hostedOnVM: true
@@ -78,7 +87,7 @@ exporters:
             isIdentifier: true
           target:
             label: job
-  - name: node
+  node:
     entities:
       - type: VIRTUAL_MACHINE
         metrics:
@@ -93,7 +102,7 @@ exporters:
             label: instance
             matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
             isIdentifier: true
-  - name: jmx-tomcat
+  jmx-tomcat:
     entities:
       - type: APPLICATION_COMPONENT
         hostedOnVM: true
@@ -116,7 +125,7 @@ exporters:
             label: instance
             matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
             isIdentifier: true
-  - name: turbonomic
+  turbonomic:
     entities:
       # Transaction for api calls
       - type: BUSINESS_TRANSACTION

@@ -7,7 +7,6 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/pkg/config"
-	"github.com/turbonomic/prometurbo/pkg/prometheus"
 	"github.com/turbonomic/prometurbo/pkg/provider"
 	"github.com/turbonomic/prometurbo/pkg/server"
 	"github.com/turbonomic/prometurbo/pkg/topology"
@@ -70,20 +69,17 @@ func main() {
 			prometheusConfigFileName, err)
 	}
 	glog.V(2).Infof("%s", spew.Sdump(metricConf))
+	// Construct prometheus servers from configuration
+	promServers, err := provider.ServersFromConfig(metricConf)
+	if err != nil {
+		glog.Fatalf("Failed to construct servers from configuration %s: %v.",
+			prometheusConfigFileName, err)
+	}
 	// Construct exporter provider from configuration
 	promExporters, err := provider.ExportersFromConfig(metricConf)
 	if err != nil {
 		glog.Fatalf("Failed to construct exporters from configuration %s: %v.",
 			prometheusConfigFileName, err)
-	}
-	var promClients []*prometheus.RestClient
-	for _, serverConfig := range metricConf.ServerConfigs {
-		promClient, err := prometheus.NewRestClient(serverConfig.URL)
-		if err != nil {
-			glog.Fatalf("Failed to create prometheus client from %v: %v",
-				serverConfig.URL, err)
-		}
-		promClients = append(promClients, promClient)
 	}
 	bizAppConfBySource, err := config.NewBusinessApplicationConfig(topologyConfigFileName)
 	if err != nil {
@@ -98,7 +94,7 @@ func main() {
 	}
 
 	server.NewServer(port).
-		MetricProvider(provider.NewProvider(promClients, promExporters)).
+		MetricProvider(provider.NewProvider(promServers, promExporters)).
 		Topology(topologyConf).
 		Run()
 

@@ -158,7 +158,8 @@ func (s *Server) handleMetric(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) sendEntityMetrics(entities []*dif.DIFEntity, w http.ResponseWriter, r *http.Request) {
 	for _, entity := range entities {
-		glog.V(2).Infof("Adding entity %v", spew.Sdump(entity))
+		glog.Infof("Adding entity %v", entity)
+		glog.V(4).Infof("Adding entity %v", spew.Sdump(entity))
 	}
 	// Create topology
 	topology := dif.NewTopology().SetUpdateTime()

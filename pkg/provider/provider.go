@@ -12,13 +12,13 @@ var metricKindToKey = map[string]data.DIFMetricValKey{
 }
 
 type MetricProvider struct {
-	promClients  []*prometheus.RestClient
-	exporterDefs []*exporterDef
+	serverDefs   map[string]*serverDef
+	exporterDefs map[string]*exporterDef
 }
 
-func NewProvider(promClients []*prometheus.RestClient, exporterDefs []*exporterDef) *MetricProvider {
+func NewProvider(serverDefs map[string]*serverDef, exporterDefs map[string]*exporterDef) *MetricProvider {
 	return &MetricProvider{
-		promClients:  promClients,
+		serverDefs:   serverDefs,
 		exporterDefs: exporterDefs,
 	}
 }
@@ -27,10 +27,14 @@ func (p *MetricProvider) GetEntityMetrics() ([]*data.DIFEntity, error) {
 	var entityMetrics []*data.DIFEntity
 
 	// TODO: use goroutine
-	for _, promClient := range p.promClients {
+	for _, serverDef := range p.serverDefs {
 		var metricsForProms []*data.DIFEntity
-		for _, exporterDef := range p.exporterDefs {
-			metricsForExporters := getMetricsForExporter(promClient, exporterDef)
+		for _, exporter := range serverDef.exporters {
+			exporterDef, found := p.exporterDefs[exporter]
+			if !found {
+				continue
+			}
+			metricsForExporters := getMetricsForExporter(serverDef.promClient, exporterDef)
 			metricsForProms = append(metricsForProms, metricsForExporters...)
 		}
 		entityMetrics = append(entityMetrics, metricsForProms...)

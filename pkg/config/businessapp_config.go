@@ -46,7 +46,8 @@ func NewBusinessApplicationConfig(path string) (BusinessAppConfBySource, error) 
 	}
 
 	if len(bizAppConf.BusinessApplications) < 1 {
-		return nil, fmt.Errorf("no business application is configured in file %v", path)
+		glog.Info("No business application is configured.")
+		return nil, nil
 	}
 
 	var bizAppConfBySource = BusinessAppConfBySource{}

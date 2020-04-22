@@ -3,33 +3,15 @@ kind: ConfigMap
 metadata:
   name: prometurbo-config-{{ .Release.Name }}
 data:
-  turbo.config: |-
-    {
-      "communicationConfig": {
-        "serverMeta": {
-            "version": "{{ .Values.serverMeta.version }}",
-            "turboServer": "{{ .Values.serverMeta.turboServer }}"
-        },
-        "restAPIConfig": {
-            "opsManagerUserName": "{{ .Values.restAPIConfig.opsManagerUserName }}",
-            "opsManagerPassword": "{{ .Values.restAPIConfig.opsManagerPassword }}"
-        }
-      {{- if .Values.targetTypeSuffix }}
-      },
-      "targetTypeSuffix": "{{ .Values.targetTypeSuffix }}"
-      {{- else }}
-      }
-      {{- end }}
-    }
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: appmetric-config-{{ .Release.Name }}
-data:
-  appmetric.config: |-
+  prometheus.config: |-
+    # Prometheus servers and metrics to scrape
+    servers:
+{{- if .Values.prometheusServers }}
+{{ tpl .Values.prometheusServers . | indent 6 }}
+{{- end }}
+    # A map of exporter configurations to discover entities and related metrics
     exporters:
-      - name: istio
+      istio:
         entities:
           - type: APPLICATION_COMPONENT
             metrics:
@@ -56,7 +38,7 @@ data:
                 label: destination_svc_name
               target:
                 label: job
-      - name: redis
+      redis:
         entities:
           - type: APPLICATION_COMPONENT
             metrics:
@@ -71,7 +53,7 @@ data:
                 isIdentifier: true
               target:
                 label: job
-      - name: cassandra
+      cassandra:
         entities:
           - type: APPLICATION_COMPONENT
             metrics:
@@ -88,7 +70,7 @@ data:
                 isIdentifier: true
               target:
                 label: job
-      - name: webdriver
+      webdriver:
         entities:
           - type: APPLICATION_COMPONENT
             hostedOnVM: true
@@ -103,33 +85,7 @@ data:
                 isIdentifier: true
               target:
                 label: job
-      - name: mysql
-        entities:
-          - type: DATABASE_SERVER
-            hostedOnVM: true
-            metrics:
-              - type: DB_MEM
-                queries:
-                  used: 'mysql_global_status_innodb_buffer_pool_bytes_data/1024'
-                  capacity: 'mysql_global_variables_innodb_buffer_pool_size/1024'
-              - type: DB_CACHE_HIT_RATE
-                queries:
-                  used: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads[10m])/delta(mysql_global_status_innodb_buffer_pool_read_requests[10m]))*100'
-              - type: CONNECTION
-                queries:
-                  used: 'mysql_global_status_threads_connected'
-                  capacity: 'mysql_global_variables_max_connections'
-              - type: TRANSACTION
-                queries:
-                  used: 'sum(rate(mysql_global_status_commands_total{command=~"(commit|rollback)"}[5m])) without (command)'
-            attributes:
-              ip:
-                label: instance
-                matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
-                isIdentifier: true
-              service:
-                label: service
-      - name: node
+      node:
         entities:
           - type: VIRTUAL_MACHINE
             metrics:
@@ -144,7 +100,7 @@ data:
                 label: instance
                 matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
                 isIdentifier: true
-      - name: jmx-tomcat
+      jmx-tomcat:
         entities:
           - type: APPLICATION_COMPONENT
             hostedOnVM: true
@@ -167,7 +123,7 @@ data:
                 label: instance
                 matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
                 isIdentifier: true
-      - name: turbonomic
+      turbonomic:
         entities:
           # Transaction for api calls
           - type: BUSINESS_TRANSACTION
@@ -229,4 +185,49 @@ data:
                 isIdentifier: true
               service:
                 label: service
-
+          - type: DATABASE_SERVER
+            hostedOnVM: true
+            metrics:
+              - type: DB_MEM
+                queries:
+                  used: 'mysql_global_status_innodb_buffer_pool_bytes_data{job="xl"}/1024'
+                  capacity: 'mysql_global_variables_innodb_buffer_pool_size{job="xl"}/1024'
+              - type: DB_CACHE_HIT_RATE
+                queries:
+                  used: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads{job="xl"}[10m])/delta(mysql_global_status_innodb_buffer_pool_read_requests[10m]))*100'
+              - type: CONNECTION
+                queries:
+                  used: 'mysql_global_status_threads_connected{job="xl"}'
+                  capacity: 'mysql_global_variables_max_connections{job="xl"}'
+              - type: TRANSACTION
+                queries:
+                  used: 'sum(rate(mysql_global_status_commands_total{job="xl",command=~"(commit|rollback)"}[5m])) without (command)'
+            attributes:
+              ip:
+                label: host_ip
+                matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
+                isIdentifier: true
+              service:
+                label: service
+{{- if .Values.extraPrometheusExporters }}
+{{ tpl .Values.extraPrometheusExporters . | indent 6 }}
+{{- end }}
+  businessapp.config: |-
+    # This configuration defines business applications and their associated business transactions
+    # and dependent services.
+    #
+    # [Schema]
+    # businessApplications: [ businessApplication ]
+    # businessApplication:
+    #   name: string                   # The name of the business application. Required.
+    #   from: string                   # The discovering source (target URL) of the business application. Required.
+    #   transactions: [ transaction ]  # A list of business transactions. Optional.
+    #   services: [ string ]           # A list of services that the business application depends on. Required.
+    # transaction:
+    #   name: string                   # The display name of the transaction. Optional.
+    #   path: string                   # The request path of a business transaction. Required.
+    #   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
+    businessApplications:
+{{- if .Values.businessApplications }}
+{{ tpl .Values.businessApplications . | indent 6 }}
+{{- end }}

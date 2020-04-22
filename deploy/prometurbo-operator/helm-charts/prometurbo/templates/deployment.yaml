@@ -21,39 +21,37 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.image.promerepository }}:{{ .Values.image.prometag }}
+          image: {{ .Values.image.prometurboRepository }}:{{ .Values.image.prometurboTag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            - --keepStandalone={{ .Values.prometurboTargetConfig.keepStandalone }}
+            - --v={{ .Values.args.logginglevel }}
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: prometurbo-config
+              mountPath: /etc/prometurbo
+              readOnly: true
+        - name: turbodif
+          image: {{ .Values.image.turbodifRepository }}:{{ .Values.image.turbodifTag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
             - --v={{ .Values.args.logginglevel }}
           volumeMounts:
-          - name: prometurbo-config
-            mountPath: /etc/prometurbo
+          - name: turbodif-config
+            mountPath: /etc/turbodif
             readOnly: true
           - name: turbonomic-credentials-volume
             mountPath: /etc/turbonomic-credentials
             readOnly: true
           - name: varlog
             mountPath: /var/log
-        - name: appmetric
-          image: {{ .Values.image.apprepository }}:{{ .Values.image.apptag }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args:
-            - --config=/etc/appmetric/appmetric.config
-            - --v={{ .Values.args.logginglevel }}
-          ports:
-          - containerPort: 8081
-          volumeMounts:
-            - mountPath: /etc/appmetric
-              name: appmetric-config
-              readOnly: true
       volumes:
       - name: prometurbo-config
         configMap:
           name: prometurbo-config-{{ .Release.Name }}
-      - name: appmetric-config
+      - name: turbodif-config
         configMap:
-          name: appmetric-config-{{ .Release.Name }}
+          name: turbodif-config-{{ .Release.Name }}
       - name: turbonomic-credentials-volume
         secret:
           defaultMode: 420
@@ -62,4 +60,3 @@ spec:
       - name: varlog
         emptyDir: {}
       restartPolicy: Always
-

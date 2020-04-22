@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometurbo
+  labels:
+    app: prometurbo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometurbo
+  template:
+    metadata:
+      labels:
+        app: prometurbo
+    spec:
+      containers:
+        - image: turbonomic/prometurbo
+          imagePullPolicy: IfNotPresent
+          name: prometurbo
+          args:
+            - --v=2
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: prometurbo-config
+              mountPath: /etc/prometurbo
+              readOnly: true
+        - name: turbodif
+          image: turbonomic/turbodif
+          imagePullPolicy: IfNotPresent
+          args:
+            - --v=2
+          volumeMounts:
+          - name: turbodif-config
+            mountPath: /etc/turbodif
+            readOnly: true
+          - name: varlog
+            mountPath: /var/log
+      volumes:
+        - name: prometurbo-config
+          configMap:
+            name: prometurbo-config
+        - name: turbodif-config
+          configMap:
+            name: turbodif-config
+        - name: varlog
+          emptyDir: {}
+      restartPolicy: Always

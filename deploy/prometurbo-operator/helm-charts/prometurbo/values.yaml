@@ -4,32 +4,68 @@
 
 # Replace the image with desired version
 image:
-  promerepository: turbonomic/prometurbo
-  prometag: 7.21.0
-  apprepository: turbonomic/appmetric
-  apptag: 7.21.0
+  prometurboRepository: turbonomic/prometurbo
+  prometurboTag: 7.22.0
+  turbodifRepository: turbonomic/turbodif
+  turbodifTag: 7.22.0
   pullPolicy: IfNotPresent
 
 #nameOverride: ""
 #fullnameOverride: ""
 
-# Turbo server version and address
+# Turbonomic server version and address
 serverMeta:
-  version: 7.21
+  version: 7.22
   turboServer: https://Turbo_server_URL
 
-# Turbo server api user and password
+# Turbonomic server api user and password
 # The opsManagerUserName requires Turbo administrator role
 restAPIConfig:
   turbonomicCredentialsSecretName: "turbonomic-credentials"
   opsManagerUserName: Turbo_username
   opsManagerPassword: Turbo_password
 
-prometurboTargetConfig:
-  keepStandalone: false
+# Specify a unique target name
+targetName: Prometheus
+# Specify metric endpoint from Prometurbo
+targetAddress: http://127.0.0.1:8081/metrics
 
-targetTypeSuffix: ""
+# Specify a unique suffix to the DataIngestionFramework target type
+# The Target Type will appear as DataIngestionFramework-<targetTypeSuffix> on the UI
+# Do not specify Turbonomic as the targetTypeSuffix, it is reserved for internal use
+targetTypeSuffix: Prometheus
 
 args:
   # logging level
   logginglevel: 2
+
+# Prometheus servers and metrics to scrape
+prometheusServers: |
+  server1:
+    # The URL of the prometheus server
+    url: http://Prometheus_Server_URL
+    # The list of supported exporters for the above prometheus server
+    exporters:
+      - cassandra
+      - istio
+      - jmx-tomcat
+      - node
+      - redis
+      - webdriver
+
+# Configure extra prometheus exporters here
+extraPrometheusExporters:
+
+# Configure business applications here
+# [Schema]
+# businessApplications: [ businessApplication ]
+# businessApplication:
+#   name: string                   # The name of the business application. Required.
+#   from: string                   # The discovering source (target URL) of the business application. Required.
+#   transactions: [ transaction ]  # A list of business transactions. Optional.
+#   services: [ string ]           # A list of services that the business application depends on. Required.
+# transaction:
+#   name: string                   # The display name of the transaction. Optional.
+#   path: string                   # The request path of a business transaction. Required.
+#   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
+businessApplications:

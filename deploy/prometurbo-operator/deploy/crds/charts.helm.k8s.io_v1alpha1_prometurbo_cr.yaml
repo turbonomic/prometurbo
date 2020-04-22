@@ -5,6 +5,20 @@ metadata:
 spec:
   # Default values copied from <project_dir>/helm-charts/prometurbo/values.yaml
 
+  # Prometheus servers and metrics to scrape
+  prometheusServers: |
+    server1:
+      # The URL of the prometheus server
+      url: https://Prometheus_Server_URL
+      # The list of supported exporters for the above prometheus server
+      exporters:
+        - cassandra
+        - istio
+        - jmx-tomcat
+        - node
+        - redis
+        - webdriver
+
   # Turbo server version and address
   serverMeta:
     version: 7.21
@@ -16,3 +30,11 @@ spec:
     #turbonomicCredentialsSecretName: "turbonomic-credentials"
     #opsManagerUserName: Turbo_username
     #opsManagerPassword: Turbo_password
+
+  # Specify a unique target name, defaults to Prometheus
+  #targetName: Prometheus
+
+  # Specify a unique target type suffix, defaults to Prometheus
+  # The Target Type will appear as DataIngestionFramework-<targetTypeSuffix> on the UI
+  # Do not specify Turbonomic as the targetTypeSuffix, it is reserved for internal use
+  #targetTypeSuffix: Prometheus

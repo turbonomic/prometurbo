@@ -56,20 +56,13 @@ func getMetricsForEntity(promClient *prometheus.RestClient, entityDef *entityDef
 	var entityMetrics []*data.DIFEntity
 	var entityMetricsMap = map[string]*data.DIFEntity{}
 	for _, metricDef := range entityDef.metricDefs {
-		entityType, valid := data.DIFEntityType[entityDef.eType]
-		if !valid {
-			glog.Errorf("Entity type %v is not valid", entityDef.eType)
-			continue
-		}
+		entityType := entityDef.eType
 		for metricKind, metricQuery := range metricDef.queries {
-			metricType, valid := data.DIFMetricType[metricDef.mType]
-			if !valid {
-				glog.Errorf("Metric type %v is not valid", metricDef.mType)
-			}
+			metricType := metricDef.mType
 			metricSeries, err := promClient.GetMetrics(metricQuery)
 			if err != nil {
 				glog.Errorf("Failed to query metric %v [%v] for entity type %v: %v.",
-					metricKind, metricQuery, entityDef.eType, err)
+					metricKind, metricQuery, entityType, err)
 				continue
 			}
 			for _, metricData := range metricSeries {
@@ -77,18 +70,18 @@ func getMetricsForEntity(promClient *prometheus.RestClient, entityDef *entityDef
 				if !ok {
 					// TODO: Enhance error messages
 					glog.Errorf("Type assertion failed for metricData %+v obtained from %v [%v] for entity type %v.",
-						metricData, metricKind, metricQuery, entityDef.eType)
+						metricData, metricKind, metricQuery, entityType)
 					continue
 				}
 				id, attr, err := entityDef.reconcileAttributes(basicMetricData.Labels)
 				if err != nil {
 					glog.Errorf("Failed to reconcile attributes from labels %+v obtained from %v [%v] for entity %v: %v.",
-						basicMetricData.Labels, metricKind, metricQuery, entityDef.eType, err)
+						basicMetricData.Labels, metricKind, metricQuery, entityType, err)
 					continue
 				}
 				if id == "" {
 					glog.Warningf("Failed to get identifier from labels %+v obtained from %v [%v] for entity %v.",
-						basicMetricData.Labels, metricKind, metricQuery, entityDef.eType)
+						basicMetricData.Labels, metricKind, metricQuery, entityType)
 					continue
 				}
 				difEntity, found := entityMetricsMap[id]

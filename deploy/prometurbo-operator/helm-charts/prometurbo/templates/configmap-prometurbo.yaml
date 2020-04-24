@@ -13,12 +13,12 @@ data:
     exporters:
       istio:
         entities:
-          - type: APPLICATION_COMPONENT
+          - type: application
             metrics:
-              - type: RESPONSE_TIME
+              - type: responseTime
                 queries:
                   used: '1000.0*rate(istio_turbo_pod_latency_time_ms_sum{response_code="200"}[3m])/rate(istio_turbo_pod_latency_time_ms_count{response_code="200"}[3m]) >= 0'
-              - type: TRANSACTION
+              - type: transaction
                 queries:
                   used: 'rate(istio_turbo_pod_request_count{response_code="200"}[3m]) > 0'
             attributes:
@@ -40,9 +40,9 @@ data:
                 label: job
       redis:
         entities:
-          - type: APPLICATION_COMPONENT
+          - type: application
             metrics:
-              - type: TRANSACTION
+              - type: transaction
                 queries:
                   used: 'rate(redis_commands_processed_total[3m])'
             attributes:
@@ -55,12 +55,12 @@ data:
                 label: job
       cassandra:
         entities:
-          - type: APPLICATION_COMPONENT
+          - type: application
             metrics:
-              - type: RESPONSE_TIME
+              - type: responseTime
                 queries:
                   used: '0.001*max(cassandra_stats{name=~"org:apache:cassandra:metrics:table:(write|read)latency:99thpercentile"}) by (instance)'
-              - type: TRANSACTION
+              - type: transaction
                 queries:
                   used: 'sum(cassandra_stats{name=~"org:apache:cassandra:metrics:table:(write|read)latency:oneminuterate"}) by (instance)'
             attributes:
@@ -72,10 +72,10 @@ data:
                 label: job
       webdriver:
         entities:
-          - type: APPLICATION_COMPONENT
+          - type: application
             hostedOnVM: true
             metrics:
-              - type: RESPONSE_TIME
+              - type: responseTime
                 queries:
                   used: '1000*(navigation_timing_load_event_end_seconds{job="webdriver"}-navigation_timing_start_seconds{job="webdriver"})'
             attributes:
@@ -87,12 +87,12 @@ data:
                 label: job
       node:
         entities:
-          - type: VIRTUAL_MACHINE
+          - type: virtualMachine
             metrics:
-              - type: VCPU
+              - type: cpu
                 queries:
                   used: 'sum by (instance, job) (irate(node_cpu_seconds_total{}[3m]))'
-              - type: VMEM
+              - type: memory
                 queries:
                   used: 'node_memory_MemTotal_bytes{} - node_memory_MemAvailable_bytes{}'
             attributes:
@@ -102,20 +102,20 @@ data:
                 isIdentifier: true
       jmx-tomcat:
         entities:
-          - type: APPLICATION_COMPONENT
+          - type: application
             hostedOnVM: true
             metrics:
-              - type: VCPU
+              - type: cpu
                 queries:
                   used: 'java_lang_OperatingSystem_ProcessCpuLoad'
-              - type: VMEM
+              - type: memory
                 queries:
                   used: 'java_lang_Memory_HeapMemoryUsage_used/1024'
                   capacity: 'java_lang_Memory_HeapMemoryUsage_max/1024'
-              - type: COLLECTION_TIME
+              - type: collectionTime
                 queries:
                   used: 'sum without (name) (java_lang_GarbageCollector_CollectionTime)/java_lang_Runtime_Uptime*100'
-              - type: RESPONSE_TIME
+              - type: responseTime
                 queries:
                   used: 'rate(Catalina_GlobalRequestProcessor_processingTime{name=~".*http-.*"}[3m])'
             attributes:
@@ -126,12 +126,12 @@ data:
       turbonomic:
         entities:
           # Transaction for api calls
-          - type: BUSINESS_TRANSACTION
+          - type: businessTransaction
             metrics:
-              - type: TRANSACTION
+              - type: transaction
                 queries:
                   used: 'sum by (instance,job,service,uri) (rate(api_call_latency_in_seconds_count[5m]))'
-              - type: RESPONSE_TIME
+              - type: responseTime
                 queries:
                   used: 'avg by (instance,job,service,uri) ((delta(api_call_latency_in_seconds_sum[15m])/delta(api_call_latency_in_seconds_count[15m])) > 0) * 1000'
             attributes:
@@ -139,9 +139,9 @@ data:
                 label: uri
                 isIdentifier: true
           # Transaction for plan
-          - type: BUSINESS_TRANSACTION
+          - type: businessTransaction
             metrics:
-              - type: RESPONSE_TIME
+              - type: responseTime
                 queries:
                   used: 'avg by (instance,job,service,status) (delta(plan_run_time_seconds_sum{status="SUCCEEDED"}[10m])/delta(plan_run_time_seconds_count[10m]) > 0) * 1000'
             attributes:
@@ -150,31 +150,31 @@ data:
                 matches: plan-orchestrator
                 as: /plan
                 isIdentifier: true
-          - type: APPLICATION_COMPONENT
+          - type: application
             metrics:
               # TODO: Some of the XL services may be more relevant on kafka messages vs grpc
               # HTTP metrics
-              - type: TRANSACTION
+              - type: transaction
                 queries:
                   used: 'sum by (instance,service) (delta(api_call_counts{job="xl",failed="false"}[5m]))/300'
-              - type: RESPONSE_TIME
+              - type: responseTime
                 queries:
                   used: 'avg by (instance,service) ((delta(api_call_latency_in_seconds_sum[15m])/delta(api_call_latency_in_seconds_count[15m])) > 0) * 1000'
               # GRPC metrics
-              - type: TRANSACTION
+              - type: transaction
                 queries:
                   used: 'sum by (instance,service) (delta(grpc_server_handled_total{job="xl",code="OK"}[5m]))/300'
-              - type: RESPONSE_TIME
+              - type: responseTime
                 queries:
                   used: 'avg by (instance,service) ((delta(grpc_server_handled_latency_seconds_sum[15m])/delta(grpc_server_handled_latency_seconds_count[15m])) > 0) * 1000'
-              - type: THREADS
+              - type: threads
                 queries:
                   used: 'jvm_threads_current{job="xl"}'
                   capacity: 'jvm_threads_peak{job="xl"}'
-              - type: COLLECTION_TIME
+              - type: collectionTime
                 queries:
                   used: '(sum without(gc)(jvm_gc_collection_seconds_sum{job="xl"}))/(component_jvm_uptime_minutes*60)*100'
-              - type: HEAP
+              - type: heap
                 queries:
                   used: 'jvm_memory_bytes_used{area="heap",job="xl"}/1024'
                   capacity: 'jvm_memory_bytes_max{area="heap",job="xl"}/1024'
@@ -185,21 +185,21 @@ data:
                 isIdentifier: true
               service:
                 label: service
-          - type: DATABASE_SERVER
+          - type: databaseServer
             hostedOnVM: true
             metrics:
-              - type: DB_MEM
+              - type: dbMem
                 queries:
                   used: 'mysql_global_status_innodb_buffer_pool_bytes_data{job="xl"}/1024'
                   capacity: 'mysql_global_variables_innodb_buffer_pool_size{job="xl"}/1024'
-              - type: DB_CACHE_HIT_RATE
+              - type: dbCacheHitRate
                 queries:
                   used: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads{job="xl"}[10m])/delta(mysql_global_status_innodb_buffer_pool_read_requests[10m]))*100'
-              - type: CONNECTION
+              - type: connection
                 queries:
                   used: 'mysql_global_status_threads_connected{job="xl"}'
                   capacity: 'mysql_global_variables_max_connections{job="xl"}'
-              - type: TRANSACTION
+              - type: transaction
                 queries:
                   used: 'sum(rate(mysql_global_status_commands_total{job="xl",command=~"(commit|rollback)"}[5m])) without (command)'
             attributes:

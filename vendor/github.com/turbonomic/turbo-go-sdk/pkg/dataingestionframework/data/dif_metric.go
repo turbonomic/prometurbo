@@ -1,5 +1,7 @@
 package data
 
+import "fmt"
+
 type DIFMetric struct {
 	MetricMap map[string]*DIFMetricVal
 }
@@ -43,3 +45,20 @@ const (
 	UNSET_FLOAT  = 0.0
 	UNSET_STRING = ""
 )
+
+func (m *DIFMetricVal) String() string {
+	s := ""
+	if m.Average != nil {
+		s += fmt.Sprintf("Average:%v ", *m.Average)
+	}
+	if m.Capacity != nil {
+		s += fmt.Sprintf("Capacity:%v ", *m.Capacity)
+	}
+	if m.Unit != nil {
+		s += fmt.Sprintf("Unit:%v ", *m.Unit)
+	}
+	if m.Key != nil {
+		s += fmt.Sprintf("Key:%v ", *m.Key)
+	}
+	return s
+}

@@ -141,5 +141,10 @@ func (e *DIFEntity) String() string {
 		s += fmt.Sprintf("[%s:%s]",
 			e.HostedOn.HostUuid, e.HostedOn.IPAddress)
 	}
+	for metricName, metricList := range e.Metrics {
+		for _, metric := range metricList {
+			s += fmt.Sprintf(" Metric %s:[%v]", metricName, metric)
+		}
+	}
 	return s
 }

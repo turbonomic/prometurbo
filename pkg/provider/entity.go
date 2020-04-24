@@ -2,16 +2,15 @@ package provider
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/pkg/config"
-	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
+	"github.com/turbonomic/turbo-go-sdk/pkg/dataingestionframework/data"
 )
 
 type entityDef struct {
-	eType         proto.EntityDTO_EntityType
+	eType         string
 	hostedOnVM    bool
 	attributeDefs map[string]*attributeValueDef
 	metricDefs    []*metricDef
@@ -21,8 +20,7 @@ func newEntityDef(entityConfig config.EntityConfig) (*entityDef, error) {
 	if entityConfig.Type == "" {
 		return nil, fmt.Errorf("empty entityDef type")
 	}
-	eType, ok := proto.EntityDTO_EntityType_value[strings.ToUpper(entityConfig.Type)]
-	if !ok {
+	if !data.IsValidDIFEntity(entityConfig.Type) {
 		return nil, fmt.Errorf("unsupported entityDef type %v", entityConfig.Type)
 	}
 	if len(entityConfig.MetricConfigs) == 0 {
@@ -42,7 +40,7 @@ func newEntityDef(entityConfig config.EntityConfig) (*entityDef, error) {
 		return nil, fmt.Errorf("failed to create attributeDefs for entityDef type %v: %v", entityConfig.Type, err)
 	}
 	return &entityDef{
-		eType:         proto.EntityDTO_EntityType(eType),
+		eType:         entityConfig.Type,
 		hostedOnVM:    entityConfig.HostedOnVM,
 		metricDefs:    metrics,
 		attributeDefs: attributes,

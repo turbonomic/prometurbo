@@ -1,6 +1,9 @@
 package data
 
-import "github.com/turbonomic/turbo-go-sdk/pkg/proto"
+import (
+	set "github.com/deckarep/golang-set"
+	"github.com/turbonomic/turbo-go-sdk/pkg/proto"
+)
 
 // USING the common DIF Data
 var DIFEntityType = map[proto.EntityDTO_EntityType]string{
@@ -31,4 +34,39 @@ var DIFMetricType = map[proto.CommodityDTO_CommodityType]string{
 	proto.CommodityDTO_DB_CACHE_HIT_RATE: "dbCacheHitRate",
 	proto.CommodityDTO_CONNECTION:        "connection",
 	proto.CommodityDTO_KPI:               "kpi",
+}
+
+var validDIFEntities = []interface{}{
+	"application",
+	"businessApplication",
+	"businessTransaction",
+	"databaseServer",
+	"service",
+	"virtualMachine",
+}
+
+var validDIFMetrics = []interface{}{
+	"collectionTime",
+	"connection",
+	"cpu",
+	"dbCacheHitRate",
+	"dbMem",
+	"heap",
+	"kpi",
+	"memory",
+	"threads",
+	"responseTime",
+	"transaction",
+}
+
+var DIFEntities = set.NewSetFromSlice(validDIFEntities)
+
+func IsValidDIFEntity(entity string) bool {
+	return DIFEntities.Contains(entity)
+}
+
+var DIFMetrics = set.NewSetFromSlice(validDIFMetrics)
+
+func IsValidDIFMetric(metric string) bool {
+	return DIFMetrics.Contains(metric)
 }

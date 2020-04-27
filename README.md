@@ -43,4 +43,4 @@ type DIFEntity struct {
 
 
 # Deploy
-Follow the deployment instructions at [here](../deploy/) to deploy **Prometurbo** and **DIFProbe** container in the same Pod. 
+Follow the deployment instructions at [here](./deploy/) to deploy **Prometurbo** and **DIFProbe** container in the same Pod. 

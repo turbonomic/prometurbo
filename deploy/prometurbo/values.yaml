@@ -54,6 +54,7 @@ prometheusServers: |
       - webdriver
 
 # Configure extra prometheus exporters here
+# Must be a string so you have to add a | after extraPrometheusExporters:
 extraPrometheusExporters:
 
 # Configure business applications here
@@ -68,4 +69,6 @@ extraPrometheusExporters:
 #   name: string                   # The display name of the transaction. Optional.
 #   path: string                   # The request path of a business transaction. Required.
 #   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
+#
+# Must be a string so you have to add a | after businessApplications:
 businessApplications:

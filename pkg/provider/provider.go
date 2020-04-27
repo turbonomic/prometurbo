@@ -4,6 +4,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/pkg/prometheus"
 	"github.com/turbonomic/turbo-go-sdk/pkg/dataingestionframework/data"
+	"math"
 )
 
 var metricKindToKey = map[string]data.DIFMetricValKey{
@@ -70,6 +71,12 @@ func getMetricsForEntity(promClient *prometheus.RestClient, entityDef *entityDef
 				if !ok {
 					// TODO: Enhance error messages
 					glog.Errorf("Type assertion failed for metricData %+v obtained from %v [%v] for entity type %v.",
+						metricData, metricKind, metricQuery, entityType)
+					continue
+				}
+				metricValue := basicMetricData.GetValue()
+				if math.IsNaN(metricValue) || math.IsInf(metricValue, 0) {
+					glog.Warningf("Invalid value for metricData %+v obtained from %v [%v] for entity type %v.",
 						metricData, metricKind, metricQuery, entityType)
 					continue
 				}

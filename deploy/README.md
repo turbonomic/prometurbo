@@ -1,20 +1,22 @@
 
 Prometurbo can be deployed in Kubernetes with the following steps:
 
-0. Setup Istio prometheus exporter
+## Setup prometheus exporters
+
+The following is an example on how to set up and configure an Istio prometheus exporter in an Istio 1.4 environment:
 
 Creating some Istio resources to collect  http-related metrics of the Pods and Services. 
 
-The definition of these Istio metrics, handlers and rule are defined in [`appmetric/scripts/istio/ip.turbo.metric.yaml`](../appmetric/scripts/istio/ip.turbo.metric.yaml), and can be deployed with:
+The definition of these Istio metrics, handlers and rule are defined in [`scripts/istio/ip.turbo.metric.istio-1.4.yaml`](../scripts/istio/ip.turbo.metric.istio-1.4.yaml), and can be deployed with:
 
 ```bash
-istioctl create -f appmetric/scripts/istio/ip.turbo.metric.yaml
+istioctl create -f scripts/istio/ip.turbo.metric.istio-1.4.yaml
 ```
  
  With these resources, `Response time` and `Transactions` of Applications can be monitored through Istio.
  
 
-1. Create a namespace
+## Create a namespace
 
 Use an existing namespace, or create one where to deploy prometurbo. The yaml examples will use `turbo`.
 
@@ -25,7 +27,7 @@ metadata:
   name: turbo 
 ```
 
-2. Create a service account, and add the role of cluster-admin
+## Create a service account, and add the role of cluster-admin
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -34,14 +36,45 @@ metadata:
   namespace: turbo
 ```
 
-3. create a configMap for prometurbo, The <TURBONOMIC_SERVER_VERSION> is Turbonomic release version, e.g. 6.2.0
+## Create a configMap for Prometurbo
 ```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometurbo-config
 data:
-  turbo.config: |-
+  prometheus.config: |-
+    # A map of prometheus servers and metrics to scrape
+    servers:
+      # The unique name of the prometheus server
+      server1:
+        # The URL of the prometheus server
+        url: http://Prometheus_Server_URL
+        # The list of configured exporters to discover entities and metrics
+        exporters:
+          - cassandra
+          - istio
+          - jmx-tomcat
+          - node
+          - redis
+          - webdriver
+    # A map of exporter configurations to discover entities and related metrics
+    exporters:
+      istio:
+        entities:
+...
+...
+```
+
+## Create a configMap for Turbodif
+The <TURBONOMIC_SERVER_VERSION> is the release version of Turbonomic release, e.g. 7.22.0
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: turbodif-config
+data:
+  turbodif-config.json: |-
     {
         "communicationConfig": {
             "serverMeta": {
@@ -53,55 +86,64 @@ data:
                 "opsManagerPassword": "<TURBO-SERVER-PASSWORD>"
             }
         },
-        "prometurboTargetConfig": {
-            "targetAddress":"<PROMETHEUS-SERVER-ADDRESS>",
-            "scope":"<THE-K8S-TARGET-NAME>"
+        "targetConfig": {
+            "targetName": "Prometheus",
+            "targetAddress": "http://127.0.0.1:8081/metrics"
         },
-        "targetTypeSuffix": "" <-- Adjust this value as necessary. No suffix is appended to target name if empty.
+        "targetTypeSuffix": "Prometheus" <-- Adjust this value as necessary to change the DIFProbe type name.
     }
 ```
 
-
-4. Create a deployment for prometurbo
+## Create a deployment for prometurbo
 ```yaml
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometurbo
-  namespace: turbo
   labels:
     app: prometurbo
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: prometurbo
   template:
     metadata:
       labels:
         app: prometurbo
     spec:
       containers:
-        - name: prometurbo
-          image: turbonomic/prometurbo:7.21.0
+        - image: turbonomic/prometurbo
+          imagePullPolicy: IfNotPresent
+          name: prometurbo
+          args:
+            - --v=2
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: prometurbo-config
+              mountPath: /etc/prometurbo
+              readOnly: true
+        - name: turbodif
+          image: turbonomic/turbodif
           imagePullPolicy: IfNotPresent
           args:
             - --v=2
           volumeMounts:
-          - name: prometurbo-config
-            mountPath: /etc/prometurbo
+          - name: turbodif-config
+            mountPath: /etc/turbodif
             readOnly: true
           - name: varlog
             mountPath: /var/log
-        - image: turbonomic/appmetric:7.21.0
-          imagePullPolicy: IfNotPresent
-          name: appmetric
-          args:
-            - --v=2
-          ports:
-          - containerPort: 8081
       volumes:
-      - name: prometurbo-config
-        configMap: 
-          name: prometurbo-config
-      - name: varlog
-        emptyDir: {}
+        - name: prometurbo-config
+          configMap:
+            name: prometurbo-config
+        - name: turbodif-config
+          configMap:
+            name: turbodif-config
+        - name: varlog
+          emptyDir: {}
       restartPolicy: Always
+
 ```

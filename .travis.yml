@@ -1,0 +1,38 @@
+language: go
+
+env:
+  global:
+    - DOCKER_IMAGE_NAME=$TRAVIS_REPO_SLUG
+
+services:
+  - docker
+
+go:
+  - 1.14
+
+go_import_path: github.com/turbonomic/prometurbo
+
+before_install:
+  - go get -v github.com/mattn/goveralls
+
+script:
+  - make fmtcheck
+  - make vet
+  - make product
+  - $HOME/gopath/bin/goveralls -v -race -service=travis-ci
+  - cd build
+  - docker build -t $DOCKER_IMAGE_NAME --build-arg GIT_COMMIT=$TRAVIS_COMMIT --label "git-version=$TRAVIS_COMMIT" .
+
+after_success:
+  - |
+    if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+      echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      if [ -n "$TRAVIS_TAG" ]; then
+          # Push a release image triggered by a git tag
+          docker tag $DOCKER_IMAGE_NAME $DOCKER_IMAGE_NAME:$TRAVIS_TAG
+          docker push $DOCKER_IMAGE_NAME:$TRAVIS_TAG
+      elif [ "$TRAVIS_BRANCH" == "master" ]; then
+          # Push the latest image built from master branch
+          docker push $DOCKER_IMAGE_NAME
+      fi
+    fi

@@ -49,6 +49,10 @@ var (
 	`
 )
 
+const (
+	defaultScope = "Prometheus"
+)
+
 func getHead(title string, head string) (string, error) {
 	tmp, err := template.New("head").Parse(htmlHeadTemplate)
 	if err != nil {
@@ -163,6 +167,7 @@ func (s *Server) sendEntityMetrics(entities []*dif.DIFEntity, w http.ResponseWri
 	}
 	// Create topology
 	topology := dif.NewTopology().SetUpdateTime()
+	topology.Scope = defaultScope
 	// Add entities
 	topology.AddEntities(entities)
 	glog.V(4).Infof("content: %s", spew.Sdump(topology))

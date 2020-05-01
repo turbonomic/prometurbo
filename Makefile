@@ -32,4 +32,4 @@ vet:
 	@go vet $(shell $(PACKAGES))
 
 clean:
-	@rm -rf ${OUTPUT_DIR}/prometurbo.linux
+	@rm -rf ${OUTPUT_DIR}/${bin}.linux ${bin}

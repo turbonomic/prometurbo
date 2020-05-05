@@ -603,7 +603,9 @@ func init() {
 	proto.RegisterType((*CostDataDTO)(nil), "common_dto.CostDataDTO")
 }
 
-func init() { proto.RegisterFile("NonMarketEntityDTO.proto", fileDescriptor_a7ef4e88daee47ae) }
+func init() {
+	proto.RegisterFile("NonMarketEntityDTO.proto", fileDescriptor_a7ef4e88daee47ae)
+}
 
 var fileDescriptor_a7ef4e88daee47ae = []byte{
 	// 851 bytes of a gzipped FileDescriptorProto

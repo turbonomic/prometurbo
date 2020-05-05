@@ -908,7 +908,9 @@ func init() {
 	proto.RegisterType((*DeploymentProfileDTO)(nil), "common_dto.DeploymentProfileDTO")
 }
 
-func init() { proto.RegisterFile("ProfileDTO.proto", fileDescriptor_9c3ac0a62ca7565a) }
+func init() {
+	proto.RegisterFile("ProfileDTO.proto", fileDescriptor_9c3ac0a62ca7565a)
+}
 
 var fileDescriptor_9c3ac0a62ca7565a = []byte{
 	// 1196 bytes of a gzipped FileDescriptorProto

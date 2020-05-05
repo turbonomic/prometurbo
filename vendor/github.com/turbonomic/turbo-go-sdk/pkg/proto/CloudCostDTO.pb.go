@@ -731,7 +731,9 @@ func init() {
 	proto.RegisterType((*ReservedInstanceSpec)(nil), "common_dto.ReservedInstanceSpec")
 }
 
-func init() { proto.RegisterFile("CloudCostDTO.proto", fileDescriptor_6e61221a66d0df59) }
+func init() {
+	proto.RegisterFile("CloudCostDTO.proto", fileDescriptor_6e61221a66d0df59)
+}
 
 var fileDescriptor_6e61221a66d0df59 = []byte{
 	// 915 bytes of a gzipped FileDescriptorProto

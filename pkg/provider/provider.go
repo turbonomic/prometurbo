@@ -1,13 +1,15 @@
 package provider
 
 import (
+	"fmt"
+	"math"
+
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/pkg/prometheus"
 	"github.com/turbonomic/turbo-go-sdk/pkg/dataingestionframework/data"
-	"math"
 )
 
-var metricKindToKey = map[string]data.DIFMetricValKey{
+var metricKindToDIFMetricValKind = map[string]data.DIFMetricValKind{
 	Used:     data.AVERAGE,
 	Capacity: data.CAPACITY,
 }
@@ -102,10 +104,11 @@ func getMetricsForEntity(promClient *prometheus.RestClient, entityDef *entityDef
 					entityMetricsMap[id] = difEntity
 				}
 				// Process metrics
-				if metricKey, ok := metricKindToKey[metricKind]; ok {
+				key := processKey(attr)
+				if difMetricValKind, ok := metricKindToDIFMetricValKind[metricKind]; ok {
 					glog.V(4).Infof("Processing %v, %v, %v",
-						difEntity.Name, metricType, metricKey)
-					difEntity.AddMetric(metricType, metricKey, basicMetricData.GetValue())
+						difEntity.Name, metricType, difMetricValKind)
+					difEntity.AddMetric(metricType, difMetricValKind, basicMetricData.GetValue(), key)
 				}
 			}
 		}
@@ -124,4 +127,16 @@ func processOwner(entity *data.DIFEntity, attr map[string]string) {
 			entity.PartOfEntity("service", svcID, label)
 		}
 	}
+}
+
+func processKey(attr map[string]string) (key string) {
+	ns, found := attr["service_ns"]
+	if !found {
+		return
+	}
+	svcName, found := attr["service_name"]
+	if !found {
+		return
+	}
+	return fmt.Sprintf("%s/%s", ns, svcName)
 }

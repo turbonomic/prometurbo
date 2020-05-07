@@ -186,6 +186,10 @@ exporters:
             isIdentifier: true
           service:
             label: service
+          service_ns:
+            label: namespace
+          service_name:
+            label: service
       - type: databaseServer
         hostedOnVM: true
         metrics:

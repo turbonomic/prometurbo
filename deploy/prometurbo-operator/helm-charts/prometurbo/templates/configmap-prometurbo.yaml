@@ -17,6 +17,33 @@ data:
             metrics:
               - type: responseTime
                 queries:
+                  used: 'rate(istio_request_duration_milliseconds_sum{request_protocol="http",response_code="200",reporter="destination"}[3m])/rate(istio_request_duration_milliseconds_count{}[3m]) >= 0'
+              - type: transaction
+                queries:
+                  used: 'rate(istio_requests_total{request_protocol="http",response_code="200",reporter="destination"}[3m]) > 0'
+              - type: responseTime
+                queries:
+                  used: 'rate(istio_request_duration_milliseconds_sum{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[3m])/rate(istio_request_duration_milliseconds_count{}[3m]) >= 0'
+              - type: transaction
+                queries:
+                  used: 'rate(istio_requests_total{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[3m]) > 0'
+            attributes:
+              ip:
+                label: instance
+                matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
+                isIdentifier: true
+              service_ns:
+                label: destination_service_namespace
+              service_name:
+                label: destination_service_name
+              service:
+                label: destination_service
+      istio-1.4:
+        entities:
+          - type: application
+            metrics:
+              - type: responseTime
+                queries:
                   used: '1000.0*rate(istio_turbo_pod_latency_time_ms_sum{response_code="200"}[3m])/rate(istio_turbo_pod_latency_time_ms_count{response_code="200"}[3m]) >= 0'
               - type: transaction
                 queries:
@@ -208,6 +235,10 @@ data:
                 matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
                 isIdentifier: true
               service:
+                label: service
+              service_ns:
+                label: namespace
+              service_name:
                 label: service
 {{- if .Values.extraPrometheusExporters }}
 {{ tpl .Values.extraPrometheusExporters . | indent 6 }}

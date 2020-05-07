@@ -28,17 +28,17 @@ const (
 	PCT   DIFMetricUnit = "pct"
 )
 
-type DIFMetricValKey string
+type DIFMetricValKind string
 
 const (
-	KEY         DIFMetricValKey = "key"
-	DESCRIPTION DIFMetricValKey = "description"
-	RAWDATA     DIFMetricValKey = "rawData"
-	AVERAGE     DIFMetricValKey = "average"
-	MAX         DIFMetricValKey = "max"
-	MIN         DIFMetricValKey = "min"
-	CAPACITY    DIFMetricValKey = "capacity"
-	UNIT        DIFMetricValKey = "unit"
+	KEY         DIFMetricValKind = "key"
+	DESCRIPTION DIFMetricValKind = "description"
+	RAWDATA     DIFMetricValKind = "rawData"
+	AVERAGE     DIFMetricValKind = "average"
+	MAX         DIFMetricValKind = "max"
+	MIN         DIFMetricValKind = "min"
+	CAPACITY    DIFMetricValKind = "capacity"
+	UNIT        DIFMetricValKind = "unit"
 )
 
 const (

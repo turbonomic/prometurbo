@@ -105,7 +105,7 @@ func (e *DIFEntity) Matching(id string) *DIFEntity {
 	return e
 }
 
-func (e *DIFEntity) AddMetric(metricType string, key DIFMetricValKey, value float64) {
+func (e *DIFEntity) AddMetric(metricType string, kind DIFMetricValKind, value float64, key string) {
 	meList, found := e.Metrics[metricType]
 	if !found {
 		meList = append(meList, &DIFMetricVal{})
@@ -114,10 +114,13 @@ func (e *DIFEntity) AddMetric(metricType string, key DIFMetricValKey, value floa
 	if len(meList) < 1 {
 		return
 	}
-	if key == AVERAGE {
+	if kind == AVERAGE {
 		meList[0].Average = &value
-	} else if key == CAPACITY {
+	} else if kind == CAPACITY {
 		meList[0].Capacity = &value
+	}
+	if key != "" {
+		meList[0].Key = &key
 	}
 }
 

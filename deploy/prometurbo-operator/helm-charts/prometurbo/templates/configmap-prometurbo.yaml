@@ -17,16 +17,16 @@ data:
             metrics:
               - type: responseTime
                 queries:
-                  used: 'rate(istio_request_duration_milliseconds_sum{request_protocol="http",response_code="200",reporter="destination"}[3m])/rate(istio_request_duration_milliseconds_count{}[3m]) >= 0'
+                  used: 'rate(istio_request_duration_milliseconds_sum{request_protocol="http",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
               - type: transaction
                 queries:
-                  used: 'rate(istio_requests_total{request_protocol="http",response_code="200",reporter="destination"}[3m]) > 0'
+                  used: 'rate(istio_requests_total{request_protocol="http",response_code="200",reporter="destination"}[1m]) > 0'
               - type: responseTime
                 queries:
-                  used: 'rate(istio_request_duration_milliseconds_sum{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[3m])/rate(istio_request_duration_milliseconds_count{}[3m]) >= 0'
+                  used: 'rate(istio_request_duration_milliseconds_sum{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
               - type: transaction
                 queries:
-                  used: 'rate(istio_requests_total{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[3m]) > 0'
+                  used: 'rate(istio_requests_total{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m]) > 0'
             attributes:
               ip:
                 label: instance

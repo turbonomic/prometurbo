@@ -14,30 +14,32 @@ type BusinessTopology struct {
 
 func (t *BusinessTopology) BuildTopologyEntities(entities []*data.DIFEntity) []*data.DIFEntity {
 	topologyEntities := entities
-	transMap := buildTransMap(topologyEntities)
-	svcMap := buildSvcMap(topologyEntities)
+	filteredEntities, transMap := buildTransMap(topologyEntities)
+	svcMap := buildSvcMap(filteredEntities)
 	for _, svcEntities := range svcMap {
 		for _, svcEntity := range svcEntities {
-			topologyEntities = append(topologyEntities, svcEntity)
+			filteredEntities = append(filteredEntities, svcEntity)
 		}
 	}
 	bizEntities := t.buildBizDIFEntities(svcMap, transMap)
 	if bizEntities != nil {
 		glog.Infof("Number of business entities: %d.", len(bizEntities))
-		topologyEntities = append(topologyEntities, bizEntities...)
+		filteredEntities = append(filteredEntities, bizEntities...)
 	}
-	return topologyEntities
+	return filteredEntities
 }
 
-func buildTransMap(entities []*data.DIFEntity) map[string]*data.DIFEntity {
+func buildTransMap(entities []*data.DIFEntity) ([]*data.DIFEntity, map[string]*data.DIFEntity) {
+	var filteredEntites []*data.DIFEntity
 	transMap := make(map[string]*data.DIFEntity)
 	for _, entity := range entities {
 		if entity.Type != "businessTransaction" {
+			filteredEntites = append(filteredEntites, entity)
 			continue
 		}
 		transMap[entity.UID] = entity
 	}
-	return transMap
+	return filteredEntites, transMap
 }
 
 func buildSvcMap(entities []*data.DIFEntity) map[string][]*data.DIFEntity {
@@ -100,12 +102,12 @@ func (t *BusinessTopology) buildBizDIFEntities(svcMap map[string][]*data.DIFEnti
 					}
 				}
 				bizTransEntity := bizTransToDIFEntity(trans, bizAppId)
-				bizTransEntityDiscovered, found := transMap[trans.Path]
-				if !found {
+				if bizTransEntityDiscovered, found := transMap[trans.Path]; found {
+					bizTransEntityDiscovered.PartOf = bizTransEntity.PartOf
+					bizEntities = append(bizEntities, bizTransEntityDiscovered)
+				} else {
 					bizEntities = append(bizEntities, bizTransEntity)
-					continue
 				}
-				bizTransEntityDiscovered.PartOf = bizTransEntity.PartOf
 			}
 			bizAppEntity := bizAppToDIFEntity(bizAppConf)
 			bizEntities = append(bizEntities, bizAppEntity)

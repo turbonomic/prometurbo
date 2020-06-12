@@ -157,10 +157,10 @@ data:
             metrics:
               - type: transaction
                 queries:
-                  used: 'sum by (instance,job,service,uri) (rate(api_call_latency_in_seconds_count[5m]))'
+                  used: 'sum by (instance,job,service,uri) (rate(api_call_latency_in_seconds_count{job="xl"}[10m]))'
               - type: responseTime
                 queries:
-                  used: 'avg by (instance,job,service,uri) ((delta(api_call_latency_in_seconds_sum[15m])/delta(api_call_latency_in_seconds_count[15m])) > 0) * 1000'
+                  used: 'avg by (instance,job,service,uri) ((delta(api_call_latency_in_seconds_sum{job="xl"}[10m])/delta(api_call_latency_in_seconds_count[10m])) > 0) * 1000'
             attributes:
               id:
                 label: uri
@@ -183,17 +183,17 @@ data:
               # HTTP metrics
               - type: transaction
                 queries:
-                  used: 'sum by (instance,service) (delta(api_call_counts{job="xl",failed="false"}[5m]))/300'
+                  used: 'sum by (instance,service) (delta(api_call_counts{job="xl",failed="false"}[10m]))/600'
               - type: responseTime
                 queries:
-                  used: 'avg by (instance,service) ((delta(api_call_latency_in_seconds_sum[15m])/delta(api_call_latency_in_seconds_count[15m])) > 0) * 1000'
+                  used: 'avg by (instance,service) ((delta(api_call_latency_in_seconds_sum{job="xl"}[10m])/delta(api_call_latency_in_seconds_count[10m])) > 0) * 1000'
               # GRPC metrics
               - type: transaction
                 queries:
-                  used: 'sum by (instance,service) (delta(grpc_server_handled_total{job="xl",code="OK"}[5m]))/300'
+                  used: 'sum by (instance,service) (delta(grpc_server_handled_total{job="xl",code="OK"}[10m]))/600'
               - type: responseTime
                 queries:
-                  used: 'avg by (instance,service) ((delta(grpc_server_handled_latency_seconds_sum[15m])/delta(grpc_server_handled_latency_seconds_count[15m])) > 0) * 1000'
+                  used: 'avg by (instance,service) ((delta(grpc_server_handled_latency_seconds_sum{job="xl"}[10m])/delta(grpc_server_handled_latency_seconds_count[10m])) > 0) * 1000'
               - type: collectionTime
                 queries:
                   used: 'sum without(gc) (delta(jvm_gc_collection_seconds_sum{job="xl"}[10m]))/600*100'
@@ -207,6 +207,10 @@ data:
                 matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
                 isIdentifier: true
               service:
+                label: service
+              service_ns:
+                label: namespace
+              service_name:
                 label: service
           - type: databaseServer
             hostedOnVM: true
@@ -224,17 +228,13 @@ data:
                   capacity: 'mysql_global_variables_max_connections{job="xl"}'
               - type: transaction
                 queries:
-                  used: 'sum(rate(mysql_global_status_commands_total{job="xl",command=~"(commit|rollback)"}[5m])) without (command)'
+                  used: 'sum(rate(mysql_global_status_commands_total{job="xl",command=~"(commit|rollback)"}[10m])) without (command)'
             attributes:
               ip:
                 label: host_ip
                 matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
                 isIdentifier: true
               service:
-                label: service
-              service_ns:
-                label: namespace
-              service_name:
                 label: service
 {{- if .Values.extraPrometheusExporters }}
 {{ tpl .Values.extraPrometheusExporters . | indent 6 }}

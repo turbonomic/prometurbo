@@ -135,7 +135,7 @@ data:
                   capacity: 'java_lang_Memory_HeapMemoryUsage_max/1024'
               - type: collectionTime
                 queries:
-                  used: 'sum without (name) (java_lang_GarbageCollector_CollectionTime)/java_lang_Runtime_Uptime*100'
+                  used: 'sum without (name) (delta(java_lang_GarbageCollector_CollectionTime)[10m])/600*100'
               - type: responseTime
                 queries:
                   used: 'rate(Catalina_GlobalRequestProcessor_processingTime{name=~".*http-.*"}[3m])'
@@ -194,7 +194,7 @@ data:
                   capacity: 'jvm_threads_peak{job="xl"}'
               - type: collectionTime
                 queries:
-                  used: '(sum without(gc)(jvm_gc_collection_seconds_sum{job="xl"}))/(component_jvm_uptime_minutes*60)*100'
+                  used: 'sum without(gc) (delta(jvm_gc_collection_seconds_sum{job="xl"}[10m]))/600*100'
               - type: heap
                 queries:
                   used: 'jvm_memory_bytes_used{area="heap",job="xl"}/1024'

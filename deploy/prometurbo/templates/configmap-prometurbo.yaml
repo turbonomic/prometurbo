@@ -188,10 +188,6 @@ data:
               - type: responseTime
                 queries:
                   used: 'avg by (instance,service) ((delta(grpc_server_handled_latency_seconds_sum[15m])/delta(grpc_server_handled_latency_seconds_count[15m])) > 0) * 1000'
-              - type: threads
-                queries:
-                  used: 'jvm_threads_current{job="xl"}'
-                  capacity: 'jvm_threads_peak{job="xl"}'
               - type: collectionTime
                 queries:
                   used: 'sum without(gc) (delta(jvm_gc_collection_seconds_sum{job="xl"}[10m]))/600*100'

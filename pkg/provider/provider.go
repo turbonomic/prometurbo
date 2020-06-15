@@ -93,12 +93,17 @@ func getMetricsForEntity(promClient *prometheus.RestClient, entityDef *entityDef
 						basicMetricData.Labels, metricKind, metricQuery, entityType)
 					continue
 				}
+				ip := processIP(attr)
+				if ip == "" {
+					glog.Warningf("Failed to parse IP address from labels %+v obtained from %v [%v] for entity %v.",
+						basicMetricData.Labels, metricKind, metricQuery, entityType)
+				}
 				difEntity, found := entityMetricsMap[id]
 				if !found {
 					// Create new entity if it does not exist
-					difEntity = data.NewDIFEntity(id, entityType).Matching(id)
+					difEntity = data.NewDIFEntity(id, entityType).Matching(ip)
 					if entityDef.hostedOnVM {
-						difEntity.HostedOnType(data.VM).HostedOnIP(id)
+						difEntity.HostedOnType(data.VM).HostedOnIP(ip)
 					}
 					processOwner(difEntity, attr)
 					entityMetricsMap[id] = difEntity
@@ -117,6 +122,14 @@ func getMetricsForEntity(promClient *prometheus.RestClient, entityDef *entityDef
 		entityMetrics = append(entityMetrics, metric)
 	}
 	return entityMetrics
+}
+
+func processIP(attr map[string]string) (IP string) {
+	ip, found := attr["ip"]
+	if !found {
+		return
+	}
+	return ip
 }
 
 func processOwner(entity *data.DIFEntity, attr map[string]string) {

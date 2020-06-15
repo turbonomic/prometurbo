@@ -2,6 +2,7 @@ package topology
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/pkg/config"
@@ -104,7 +105,7 @@ func (t *BusinessTopology) buildBizDIFEntities(svcMap map[string][]*data.DIFEnti
 				bizTransEntity := bizTransToDIFEntity(trans, bizAppId)
 				if bizTransEntityDiscovered, found := transMap[trans.Path]; found {
 					bizTransEntityDiscovered.PartOf = bizTransEntity.PartOf
-					bizEntities = append(bizEntities, bizTransEntityDiscovered)
+					bizEntities = append(bizEntities, bizTransEntityDiscovered.WithName(bizTransEntity.Name))
 				} else {
 					bizEntities = append(bizEntities, bizTransEntity)
 				}
@@ -128,6 +129,9 @@ func bizTransToDIFEntity(bizTrans config.Transaction, bizApp string) *data.DIFEn
 	name := bizTrans.Name
 	if name == "" {
 		name = bizTrans.Path
+	}
+	if !strings.HasPrefix(name, "/") {
+		name = "/" + name
 	}
 	bizTransDIFEntity := data.NewDIFEntity(bizTrans.Path, "businessTransaction").
 		WithName(name).

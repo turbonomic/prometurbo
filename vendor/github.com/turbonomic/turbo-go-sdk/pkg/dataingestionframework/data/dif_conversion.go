@@ -23,17 +23,17 @@ const (
 )
 
 var DIFMetricType = map[proto.CommodityDTO_CommodityType]string{
-	proto.CommodityDTO_RESPONSE_TIME:     "responseTime",
-	proto.CommodityDTO_TRANSACTION:       "transaction",
-	proto.CommodityDTO_VCPU:              "cpu",
-	proto.CommodityDTO_VMEM:              "memory",
-	proto.CommodityDTO_THREADS:           "threads",
-	proto.CommodityDTO_HEAP:              "heap",
-	proto.CommodityDTO_COLLECTION_TIME:   "collectionTime",
-	proto.CommodityDTO_DB_MEM:            "dbMem",
-	proto.CommodityDTO_DB_CACHE_HIT_RATE: "dbCacheHitRate",
-	proto.CommodityDTO_CONNECTION:        "connection",
-	proto.CommodityDTO_KPI:               "kpi",
+	proto.CommodityDTO_RESPONSE_TIME:         "responseTime",
+	proto.CommodityDTO_TRANSACTION:           "transaction",
+	proto.CommodityDTO_VCPU:                  "cpu",
+	proto.CommodityDTO_VMEM:                  "memory",
+	proto.CommodityDTO_THREADS:               "threads",
+	proto.CommodityDTO_HEAP:                  "heap",
+	proto.CommodityDTO_REMAINING_GC_CAPACITY: "remainingGCCapacity",
+	proto.CommodityDTO_DB_MEM:                "dbMem",
+	proto.CommodityDTO_DB_CACHE_HIT_RATE:     "dbCacheHitRate",
+	proto.CommodityDTO_CONNECTION:            "connection",
+	proto.CommodityDTO_KPI:                   "kpi",
 }
 
 var validDIFEntities = []interface{}{

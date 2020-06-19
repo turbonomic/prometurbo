@@ -183,17 +183,17 @@ data:
               # HTTP metrics
               - type: transaction
                 queries:
-                  used: 'sum by (instance,service) (delta(api_call_counts{job="xl",failed="false"}[10m]))/600'
+                  used: 'sum by (instance,service,namespace) (delta(api_call_counts{job="xl",failed="false"}[10m]))/600'
               - type: responseTime
                 queries:
-                  used: 'avg by (instance,service) ((delta(api_call_latency_in_seconds_sum{job="xl"}[10m])/delta(api_call_latency_in_seconds_count[10m])) > 0) * 1000'
+                  used: 'avg by (instance,service,namespace) ((delta(api_call_latency_in_seconds_sum{job="xl"}[10m])/delta(api_call_latency_in_seconds_count[10m])) > 0) * 1000'
               # GRPC metrics
               - type: transaction
                 queries:
-                  used: 'sum by (instance,service) (delta(grpc_server_handled_total{job="xl",code="OK"}[10m]))/600'
+                  used: 'sum by (instance,service,namespace) (delta(grpc_server_handled_total{job="xl",code="OK"}[10m]))/600'
               - type: responseTime
                 queries:
-                  used: 'avg by (instance,service) ((delta(grpc_server_handled_latency_seconds_sum{job="xl"}[10m])/delta(grpc_server_handled_latency_seconds_count[10m])) > 0) * 1000'
+                  used: 'avg by (instance,service,namespace) ((delta(grpc_server_handled_latency_seconds_sum{job="xl"}[10m])/delta(grpc_server_handled_latency_seconds_count[10m])) > 0) * 1000'
               - type: collectionTime
                 queries:
                   used: 'sum without(gc) (delta(jvm_gc_collection_seconds_sum{job="xl"}[10m]))/600*100'

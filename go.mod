@@ -6,6 +6,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/prometheus/common v0.9.1
-	github.com/turbonomic/turbo-go-sdk v0.0.0-20200507163116-7a61dabb1b3e
+	github.com/turbonomic/turbo-go-sdk v0.0.0-20200618192258-924d72cfc660
 	gopkg.in/yaml.v2 v2.2.8
 )

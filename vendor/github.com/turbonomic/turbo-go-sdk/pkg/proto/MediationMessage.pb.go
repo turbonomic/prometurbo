@@ -4,9 +4,9 @@
 package proto
 
 import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
+	"fmt"
+	"github.com/golang/protobuf/proto"
+	"math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

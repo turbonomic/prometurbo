@@ -219,6 +219,10 @@ data:
                 queries:
                   used: 'mysql_global_status_innodb_buffer_pool_bytes_data{job="xl"}/1024'
                   capacity: 'mysql_global_variables_innodb_buffer_pool_size{job="xl"}/1024'
+              - type: memory
+                queries:
+                  used: 'mysql_global_status_innodb_buffer_pool_bytes_data{job="xl"}/1024'
+                  capacity: 'mysql_global_variables_innodb_buffer_pool_size{job="xl"}/1024'
               - type: dbCacheHitRate
                 queries:
                   used: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads{job="xl"}[10m])/delta(mysql_global_status_innodb_buffer_pool_read_requests[10m]))*100'

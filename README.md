@@ -13,7 +13,8 @@ Currently, `Prometurbo` can get application metrics and attributes from Promethe
 - [Cassandra exporter](https://github.com/criteo/cassandra_exporter)
 - [WebDriver exporter](https://github.com/mattbostock/webdriver_exporter)
 - [MySQL exporter](https://github.com/prometheus/mysqld_exporter)
-- [JMX exporter](https://github.com/prometheus/jmx_exporter) 
+- [JMX exporter](https://github.com/prometheus/jmx_exporter)
+- [Node exporter](https://github.com/prometheus/node_exporter) 
 
 The applications to create, as well as the queries to run to get the metrics of those applications are defined in the `configmap-prometurbo.yaml` file. The configuration can be extended to support more exporters. If you deploy with helm or operator, define additional exporters through `extraPrometheusExporters` in the value yaml.
 

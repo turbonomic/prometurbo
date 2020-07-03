@@ -50,7 +50,6 @@ businessApplications:
       - mediation-actionscript
       - mediation-appdynamics
       - mediation-appinsights
-      - mediation-aws
       - mediation-awsbilling
       - mediation-awscost
       - mediation-azure

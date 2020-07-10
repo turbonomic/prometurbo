@@ -13,6 +13,7 @@ type DIFMetricVal struct {
 	Capacity    *float64       `json:"capacity,omitempty"`
 	Unit        *DIFMetricUnit `json:"unit,omitempty"`
 	Key         *string        `json:"key,omitempty"`
+	Resizable   *bool          `json:"resizable,omitempty"`
 	Description *string        `json:"description,omitempty"`
 	RawMetrics  interface{}    `json:"rawData,omitempty"`
 }
@@ -59,6 +60,9 @@ func (m *DIFMetricVal) String() string {
 	}
 	if m.Key != nil {
 		s += fmt.Sprintf("Key:%v ", *m.Key)
+	}
+	if m.Resizable != nil {
+		s += fmt.Sprintf("Resizable:%v", *m.Resizable)
 	}
 	return s
 }

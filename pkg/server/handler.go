@@ -140,7 +140,7 @@ func (s *Server) genPageFoot(r *http.Request) string {
 func (s *Server) faviconHandler(w http.ResponseWriter, r *http.Request) {
 	fpath := "/tmp/favicon.jpg"
 	if !util.FileExists(fpath) {
-		glog.Warningf("favicon file[%v] does not exist.", fpath)
+		glog.V(4).Infof("favicon file[%v] does not exist.", fpath)
 		return
 	}
 
@@ -155,6 +155,7 @@ func (s *Server) handleMetric(w http.ResponseWriter, r *http.Request) {
 		s.sendFailure(w, r)
 		return
 	}
+	glog.V(2).Infof("Discovered %v entities.", len(entityMetrics))
 	topologyEntities := s.topology.BuildTopologyEntities(entityMetrics)
 	s.sendEntityMetrics(topologyEntities, w, r)
 	return
@@ -162,7 +163,6 @@ func (s *Server) handleMetric(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) sendEntityMetrics(entities []*dif.DIFEntity, w http.ResponseWriter, r *http.Request) {
 	for _, entity := range entities {
-		glog.Infof("Adding entity %v", entity)
 		glog.V(4).Infof("Adding entity %v", spew.Sdump(entity))
 	}
 	// Create topology

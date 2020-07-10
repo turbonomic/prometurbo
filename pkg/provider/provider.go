@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/golang/glog"
@@ -82,38 +81,30 @@ func getMetricsForEntity(promClient *prometheus.RestClient, entityDef *entityDef
 						metricData, metricKind, metricQuery, entityType)
 					continue
 				}
-				id, attr, err := entityDef.reconcileAttributes(basicMetricData.Labels)
+				entityAttr, err := entityDef.reconcileAttributes(basicMetricData.Labels)
 				if err != nil {
 					glog.Errorf("Failed to reconcile attributes from labels %+v obtained from %v [%v] for entity %v: %v.",
 						basicMetricData.Labels, metricKind, metricQuery, entityType, err)
 					continue
 				}
-				if id == "" {
-					glog.Warningf("Failed to get identifier from labels %+v obtained from %v [%v] for entity %v.",
-						basicMetricData.Labels, metricKind, metricQuery, entityType)
-					continue
-				}
-				ip := processIP(attr)
-				if ip == "" {
-					glog.Warningf("Failed to parse IP address from labels %+v obtained from %v [%v] for entity %v.",
-						basicMetricData.Labels, metricKind, metricQuery, entityType)
-				}
-				difEntity, found := entityMetricsMap[id]
+				difEntity, found := entityMetricsMap[entityAttr.id]
 				if !found {
-					// Create new entity if it does not exist
-					difEntity = data.NewDIFEntity(id, entityType).Matching(ip)
-					if entityDef.hostedOnVM {
-						difEntity.HostedOnType(data.VM).HostedOnIP(ip)
+					difEntity = data.NewDIFEntity(entityAttr.id, entityType).
+						WithNamespace(entityAttr.namespace)
+					if entityAttr.ip != "" {
+						difEntity.Matching(entityAttr.ip)
 					}
-					processOwner(difEntity, attr)
-					entityMetricsMap[id] = difEntity
+					if entityDef.hostedOnVM {
+						difEntity.HostedOnType(data.VM).HostedOnIP(entityAttr.ip)
+					}
+					processOwner(difEntity, entityAttr)
+					entityMetricsMap[entityAttr.id] = difEntity
 				}
 				// Process metrics
-				key := processKey(attr)
 				if difMetricValKind, ok := metricKindToDIFMetricValKind[metricKind]; ok {
 					glog.V(4).Infof("Processing %v, %v, %v",
 						difEntity.Name, metricType, difMetricValKind)
-					difEntity.AddMetric(metricType, difMetricValKind, basicMetricData.GetValue(), key)
+					difEntity.AddMetric(metricType, difMetricValKind, basicMetricData.GetValue(), "")
 				}
 			}
 		}
@@ -124,32 +115,10 @@ func getMetricsForEntity(promClient *prometheus.RestClient, entityDef *entityDef
 	return entityMetrics
 }
 
-func processIP(attr map[string]string) (IP string) {
-	ip, found := attr["ip"]
-	if !found {
-		return
+func processOwner(entity *data.DIFEntity, entityAttr *entityAttribute) {
+	if entityAttr.service != "" {
+		ServicePrefix := "Service-"
+		svcID := ServicePrefix + entity.UID
+		entity.PartOfEntity("service", svcID, entityAttr.service)
 	}
-	return ip
-}
-
-func processOwner(entity *data.DIFEntity, attr map[string]string) {
-	for key, label := range attr {
-		if key == "service" {
-			ServicePrefix := "Service-"
-			svcID := ServicePrefix + entity.UID
-			entity.PartOfEntity("service", svcID, label)
-		}
-	}
-}
-
-func processKey(attr map[string]string) (key string) {
-	ns, found := attr["service_ns"]
-	if !found {
-		return
-	}
-	svcName, found := attr["service_name"]
-	if !found {
-		return
-	}
-	return fmt.Sprintf("%s/%s", ns, svcName)
 }

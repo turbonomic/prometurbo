@@ -81,21 +81,16 @@ func main() {
 		glog.Fatalf("Failed to construct exporters from configuration %s: %v.",
 			prometheusConfigFileName, err)
 	}
-	bizAppConfBySource, err := config.NewBusinessApplicationConfig(topologyConfigFileName)
+	bizApps, err := config.NewBusinessApplicationConfig(topologyConfigFileName)
 	if err != nil {
-		glog.Warningf("Failed to create topology configuration from %v: %v.",
+		glog.Fatalf("Failed to parse topology configuration from %v: %v.",
 			topologyConfigFileName, err)
-	} else {
-		glog.V(2).Infof("Business application topology configuration: %s",
-			spew.Sdump(bizAppConfBySource))
 	}
-	topologyConf := &topology.BusinessTopology{
-		BizAppConfBySource: bizAppConfBySource,
-	}
-
+	glog.V(2).Infof("Business application topology configuration: %s",
+		spew.Sdump(bizApps))
 	server.NewServer(port).
 		MetricProvider(provider.NewProvider(promServers, promExporters)).
-		Topology(topologyConf).
+		Topology(topology.NewBusinessTopology(bizApps)).
 		Run()
 
 	return

@@ -6,6 +6,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/glog"
 	"github.com/turbonomic/prometurbo/pkg/config"
+	"github.com/turbonomic/prometurbo/pkg/util"
 	"github.com/turbonomic/turbo-go-sdk/pkg/dataingestionframework/data"
 )
 
@@ -14,6 +15,13 @@ type entityDef struct {
 	hostedOnVM    bool
 	attributeDefs map[string]*attributeValueDef
 	metricDefs    []*metricDef
+}
+
+type entityAttribute struct {
+	id        string
+	ip        string
+	service   string
+	namespace string
 }
 
 func newEntityDef(entityConfig config.EntityConfig) (*entityDef, error) {
@@ -47,7 +55,7 @@ func newEntityDef(entityConfig config.EntityConfig) (*entityDef, error) {
 	}, nil
 }
 
-func (e *entityDef) reconcileAttributes(labels map[string]string) (string, map[string]string, error) {
+func (e *entityDef) reconcileAttributes(labels map[string]string) (*entityAttribute, error) {
 	var id string
 	var reconciledAttributes = map[string]string{}
 	for name, def := range e.attributeDefs {
@@ -55,22 +63,32 @@ func (e *entityDef) reconcileAttributes(labels map[string]string) (string, map[s
 		value, exist := labels[key]
 		if !exist {
 			if def.isIdentifier {
-				return "", reconciledAttributes, fmt.Errorf("required identifer label key %q does not exist", key)
+				return nil, fmt.Errorf("required identifer label key %q does not exist", key)
 			}
 			continue
 		}
-		glog.V(4).Infof("Reconcile label with key: %q, value: %q", key, value)
+		glog.V(4).Infof("Reconcile attribute %v with label: %q, value: %q", name, key, value)
 		matchIndex := def.valueMatches.FindStringSubmatchIndex(value)
 		if matchIndex == nil {
-			return "", reconciledAttributes, fmt.Errorf("label %q's value %q did not match expected pattern %q",
+			return nil, fmt.Errorf("label %q's value %q did not match expected pattern %q",
 				key, value, def.valueMatches.String())
 		}
 		expandedValue := def.valueMatches.ExpandString(nil, def.valueAs, value, matchIndex)
 		reconciledAttributes[name] = string(expandedValue)
 		if def.isIdentifier {
 			id = reconciledAttributes[name]
+			if id == "" {
+				return nil, fmt.Errorf("empty identifier from label key %q and value %q", key, value)
+			}
 		}
 	}
 	glog.V(4).Infof("Reconciled attributes: %s", spew.Sdump(reconciledAttributes))
-	return id, reconciledAttributes, nil
+	namespace := reconciledAttributes["namespace"]
+	entityAttr := &entityAttribute{
+		id:        util.GetName(id, namespace),
+		ip:        reconciledAttributes["ip"],
+		service:   reconciledAttributes["service"],
+		namespace: namespace,
+	}
+	return entityAttr, nil
 }

@@ -66,7 +66,7 @@ func (s *Server) Run() {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
-	glog.V(2).Infof("Begin to handle path: %v", path)
+	glog.V(4).Infof("Begin to handle path: %v", path)
 
 	if strings.EqualFold(path, "/favicon.ico") {
 		s.faviconHandler(w, r)

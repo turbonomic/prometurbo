@@ -7,14 +7,15 @@
 #   name: string                   # The name of the business application. Required.
 #   from: string                   # The discovering source (target URL) of the business application. Required.
 #   transactions: [ transaction ]  # A list of business transactions. Optional.
-#   services: [ string ]           # A list of services that the business application depends on. Required.
+#   services: [ string ]           # A list of mandatory services that the business application depends on. Required.
+#   optionalServices: [ string ]   # A list of optional services that the business application depends on. Optional.
 # transaction:
 #   name: string                   # The display name of the transaction. Optional.
 #   path: string                   # The request path of a business transaction. Required.
 #   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
 businessApplications:
   - name: Turbonomic
-    from: http://prometheus-server.turbonomic:9090
+    from: http://prometheus-server:9090
     transactions:
       - name: supplychains
         path: /supplychains
@@ -42,10 +43,14 @@ businessApplications:
       - api
       - auth
       - cost
-      - db
       - group
       - history
       - market
+      - plan-orchestrator
+      - repository
+      - topology-processor
+    optionalServices:
+      - db
       - mediation-aws
       - mediation-actionscript
       - mediation-appdynamics
@@ -57,9 +62,7 @@ businessApplications:
       - mediation-azureea
       - mediation-azuresp
       - mediation-azurevolumes
+      - mediation-gcp
+      - mediation-gcpcost
       - mediation-vcenter
       - mediation-vcenterbrowsing
-      - plan-orchestrator
-      - repository
-      - topology-processor
-

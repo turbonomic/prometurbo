@@ -14,10 +14,12 @@ type BusinessApplicationConf struct {
 
 // BusinessApplication defines a business application and its associated business transactions and services
 type BusinessApplication struct {
-	Name         string        `yaml:"name"`         // Name of the business application
-	From         string        `yaml:"from"`         // Discovering source, i.e., the target URL
-	Transactions []Transaction `yaml:"transactions"` // A list of optional business transactions
-	Services     []string      `yaml:"services"`     // A list of services that the business application depends on
+	Name             string        `yaml:"name"`             // Name of the business application
+	From             string        `yaml:"from"`             // Discovering source, i.e., the target URL
+	Transactions     []Transaction `yaml:"transactions"`     // A list of optional business transactions
+	Services         []string      `yaml:"services"`         // A list of required services for the business application
+	OptionalServices []string      `yaml:"optionalServices"` // A list of optional services for the business application
+	Namespace        string
 }
 
 // Transaction defines a business transaction
@@ -27,11 +29,7 @@ type Transaction struct {
 	DependOn []string `yaml:"dependOn"` // A list of services that the business transaction depends on
 }
 
-// A configuration map by source and name of business applications
-type BusinessAppConfBySource map[string]BusinessAppConfByName
-type BusinessAppConfByName map[string]*BusinessApplication
-
-func NewBusinessApplicationConfig(path string) (BusinessAppConfBySource, error) {
+func NewBusinessApplicationConfig(path string) ([]BusinessApplication, error) {
 	glog.Infof("Read business application configuration from %s", path)
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -40,35 +38,21 @@ func NewBusinessApplicationConfig(path string) (BusinessAppConfBySource, error) 
 	glog.Infof("%v", string(file))
 
 	var bizAppConf BusinessApplicationConf
-
-	if err := yaml.UnmarshalStrict(file, &bizAppConf); err != nil {
+	if err := yaml.Unmarshal(file, &bizAppConf); err != nil {
 		return nil, fmt.Errorf("failed to unmarshall file %v: %v", path, err)
 	}
 
 	if len(bizAppConf.BusinessApplications) < 1 {
 		glog.Info("No business application is configured.")
-		return nil, nil
 	}
 
-	var bizAppConfBySource = BusinessAppConfBySource{}
 	for _, bizApp := range bizAppConf.BusinessApplications {
 		if err := validate(bizApp); err != nil {
 			return nil, err
 		}
-		// Name and Source combination uniquely identifies a business application.
-		// There cannot be two configured business applications with the same name and source.
-		bizAppConfByName, ok := bizAppConfBySource[bizApp.From]
-		if !ok {
-			bizAppConfByName = make(map[string]*BusinessApplication)
-			bizAppConfBySource[bizApp.From] = bizAppConfByName
-		} else if _, found := bizAppConfByName[bizApp.Name]; found {
-			return nil, fmt.Errorf("business app %v has alread been defined for source %v",
-				bizApp.Name, bizApp.From)
-		}
-		bizAppCopy := bizApp
-		bizAppConfByName[bizApp.Name] = &bizAppCopy
 	}
-	return bizAppConfBySource, nil
+
+	return bizAppConf.BusinessApplications, nil
 }
 
 func validate(bizApp BusinessApplication) error {

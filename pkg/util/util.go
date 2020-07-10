@@ -91,3 +91,23 @@ func ParseIP(addr string, default_port int) (string, string, error) {
 	}
 	return items[0], fmt.Sprintf("%v", default_port), nil
 }
+
+func GetName(name, namespace string) string {
+	if name == "" {
+		return ""
+	}
+	if namespace == "" {
+		return name
+	}
+	return fmt.Sprintf("%s-%s", name, namespace)
+}
+
+func GetDisplay(name, namespace string) string {
+	if name == "" {
+		return ""
+	}
+	if namespace == "" {
+		return name
+	}
+	return fmt.Sprintf("%s [%s]", name, namespace)
+}

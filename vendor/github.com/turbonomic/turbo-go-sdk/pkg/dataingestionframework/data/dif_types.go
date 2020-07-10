@@ -14,6 +14,7 @@ type DIFEntity struct {
 	MatchingIdentifiers *DIFMatchingIdentifiers    `json:"matchIdentifiers"`
 	PartOf              []*DIFPartOf               `json:"partOf"`
 	Metrics             map[string][]*DIFMetricVal `json:"metrics"`
+	namespace           string
 	partOfSet           set.Set
 	hostTypeSet         set.Set
 }
@@ -48,6 +49,15 @@ func NewDIFEntity(uid, eType string) *DIFEntity {
 func (e *DIFEntity) WithName(name string) *DIFEntity {
 	e.Name = name
 	return e
+}
+
+func (e *DIFEntity) WithNamespace(namespace string) *DIFEntity {
+	e.namespace = namespace
+	return e
+}
+
+func (e *DIFEntity) GetNamespace() string {
+	return e.namespace
 }
 
 func (e *DIFEntity) PartOfEntity(entity, id, label string) *DIFEntity {

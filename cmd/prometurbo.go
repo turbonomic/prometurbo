@@ -10,16 +10,19 @@ import (
 	"github.com/turbonomic/prometurbo/pkg/provider"
 	"github.com/turbonomic/prometurbo/pkg/server"
 	"github.com/turbonomic/prometurbo/pkg/topology"
+	"github.com/turbonomic/prometurbo/pkg/worker"
 )
 
 const (
 	defaultPort                 = 8081
 	defaultPrometheusConfigPath = "/etc/prometurbo/prometheus.config"
 	defaultTopologyConfigPath   = "/etc/prometurbo/businessapp.config"
+	defaultWorkerCount          = 4
 )
 
 var (
 	port                     int
+	workerCount              int
 	prometheusConfigFileName string
 	topologyConfigFileName   string
 )
@@ -30,6 +33,8 @@ func parseFlags() {
 		defaultPrometheusConfigPath, "path to the metrics discovery config file")
 	flag.StringVar(&topologyConfigFileName, "topologyConfig",
 		defaultTopologyConfigPath, "path to the topology config file")
+	flag.IntVar(&workerCount, "workerCount", defaultWorkerCount, "the number of concurrent workers to"+
+		"discover metrics")
 	flag.Parse()
 }
 
@@ -88,8 +93,17 @@ func main() {
 	}
 	glog.V(2).Infof("Business application topology configuration: %s",
 		spew.Sdump(bizApps))
+	if workerCount < 1 {
+		workerCount = 1
+	}
+	glog.V(2).Infof("Number of concurrent workers to discover metrics: %v", workerCount)
+	dispatcher := worker.
+		NewDispatcher(workerCount).
+		WithCollector(worker.NewCollector(workerCount * 2))
 	server.NewServer(port).
-		MetricProvider(provider.NewProvider(promServers, promExporters)).
+		MetricProvider(provider.
+			NewProvider(promServers, promExporters).
+			WithDispatcher(dispatcher)).
 		Topology(topology.NewBusinessTopology(bizApps)).
 		Run()
 

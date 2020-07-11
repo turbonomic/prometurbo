@@ -55,11 +55,13 @@ func (s *Server) Topology(topology *topology.BusinessTopology) *Server {
 }
 
 func (s *Server) Run() {
+	// Start the metric provider to launch dispatcher to dispatch discovery tasks
+	s.provider.Start()
+	// Start the http server to process discovery request
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", s.port),
 		Handler: s,
 	}
-
 	glog.V(2).Infof("HTTP server listens on: %v:%v", s.ip, s.port)
 	panic(server.ListenAndServe())
 }

@@ -1,15 +1,16 @@
-FROM quay.io/operator-framework/helm-operator:v0.19.2
+FROM quay.io/operator-framework/helm-operator:v1.5.0
+MAINTAINER Meng Ding <meng.ding@turbonomic.com>
 
 # Required OpenShift Labels
 LABEL name="Prometurbo Operator" \
       vendor="Turbonomic" \
-      version="v7.22.0" \
+      version="8" \
       release="1" \
       summary="This is the prometurbo operator." \
       description="This operator will deploy an instance of prometurbo." \
 ### Required labels above - recommended below
       url="https://www.turbonomic.com" \
-      run='docker run -tdi --name ${NAME} turbonomic/prometurbo-operator:7.22' \
+      run='docker run -tdi --name ${NAME} turbonomic/prometurbo-operator:8.1' \
       io.k8s.description="Turbonomic Workload Automation Platform simultaneously optimizes performance, compliance, and cost in real-time. Workloads are precisely resourced, automatically, to perform while satisfying business constraints.  " \
       io.k8s.display-name="Prometurbo Operator" \
       io.openshift.expose-services="" \

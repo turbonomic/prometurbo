@@ -2,16 +2,16 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"charts.helm.k8s.io/v1alpha1","kind":"Prometurbo","metadata":{"name":"prometurbo-release"},"spec":{"serverMeta":{"turboServer":"https://Turbo_server_URL","version":7.21}}}]'
+    alm-examples: '[{"apiVersion":"charts.helm.k8s.io/v1alpha1","kind":"Prometurbo","metadata":{"name":"prometurbo-release"},"spec":{"serverMeta":{"turboServer":"https://Turbo_server_URL","version":8.1}}}]'
     capabilities: Basic Install
     categories: Monitoring
-    certified: "false"
-    containerImage: registry.connect.redhat.com/turbonomic/prometurbo-operator:7.21
-    createdAt: 2019-05-01T00:00:00.000Z
+    certified: 'false'
+    containerImage: turbonomic/prometurbo-operator:8.1
+    createdAt: 2019-05-01 00:00:00
     description: Turbonomic Workload Automation for Multicloud simultaneously optimizes performance, compliance, and cost in real-time. Workloads are precisely resourced, automatically, to perform while satisfying business constraints.
     repository: https://github.com/turbonomic/prometurbo/tree/master/deploy/prometurbo-operator
     support: Turbonomic, Inc.
-  name: prometurbo-operator.v7.21.0
+  name: prometurbo-operator.v8.1.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -69,7 +69,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: prometurbo-operator
-                image: registry.connect.redhat.com/turbonomic/prometurbo-operator:7.21
+                image: turbonomic/prometurbo-operator:8.1
                 imagePullPolicy: Always
                 name: prometurbo-operator
                 resources: {}
@@ -135,4 +135,5 @@ spec:
   maturity: alpha
   provider:
     name: Turbonomic, Inc.
-  version: 7.21.0
+  replaces: prometurbo-operator.v8.0.0
+  version: 8.1.0

@@ -1,4 +1,4 @@
-packageName: prometurbo
+packageName: prometurbo-certified
 channels:
   - name: stable
     currentCSV: prometurbo-operator.v8.1.0

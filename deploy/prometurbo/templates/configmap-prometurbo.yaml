@@ -17,16 +17,10 @@ data:
             metrics:
               - type: responseTime
                 queries:
-                  used: 'rate(istio_request_duration_milliseconds_sum{request_protocol="http",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
+                  used: 'sum by (instance,destination_service_namespace,destination_service_name,pod_name) (rate(istio_request_duration_milliseconds_sum{request_protocol=~".*",reporter="destination"}[10m])) / sum by (instance,destination_service_namespace,destination_service_name,pod_name) (rate(istio_request_duration_milliseconds_count{}[10m])) >= 0'
               - type: transaction
                 queries:
-                  used: 'rate(istio_requests_total{request_protocol="http",response_code="200",reporter="destination"}[1m]) > 0'
-              - type: responseTime
-                queries:
-                  used: 'rate(istio_request_duration_milliseconds_sum{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
-              - type: transaction
-                queries:
-                  used: 'rate(istio_requests_total{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m]) > 0'
+                  used: 'sum by (instance,destination_service_namespace,destination_service_name,pod_name) (rate(istio_requests_total{request_protocol=~".*",reporter="destination"}[10m])) > 0'
             attributes:
               ip:
                 label: instance
@@ -145,7 +139,7 @@ data:
                   capacity: 'java_lang_Memory_HeapMemoryUsage_max/1024'
               - type: collectionTime
                 queries:
-                  used: 'sum without (name) (delta(java_lang_GarbageCollector_CollectionTime)[10m])/600*100'
+                  used: 'sum without (name) (rate(java_lang_GarbageCollector_CollectionTime)[10m])*100'
               - type: responseTime
                 queries:
                   used: 'rate(Catalina_GlobalRequestProcessor_processingTime{name=~".*http-.*"}[3m])'
@@ -154,108 +148,6 @@ data:
                 label: instance
                 matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
                 isIdentifier: true
-      turbonomic:
-        entities:
-          # Transaction for api calls
-          - type: businessTransaction
-            metrics:
-              - type: transaction
-                queries:
-                  used: 'sum by (instance,job,service,namespace,uri) (rate(api_call_latency_in_seconds_count{job="xl"}[10m]))'
-              - type: responseTime
-                queries:
-                  used: 'avg by (instance,job,service,namespace,uri) ((delta(api_call_latency_in_seconds_sum{job="xl"}[10m])/delta(api_call_latency_in_seconds_count[10m])) > 0) * 1000'
-            attributes:
-              id:
-                label: uri
-                isIdentifier: true
-              namespace:
-                label: namespace
-          # Transaction for plan
-          - type: businessTransaction
-            metrics:
-              - type: responseTime
-                queries:
-                  used: 'avg by (instance,job,service,namespace,status) (delta(plan_run_time_seconds_sum{status="SUCCEEDED"}[10m])/delta(plan_run_time_seconds_count[10m]) > 0) * 1000'
-            attributes:
-              id:
-                label: service
-                matches: plan-orchestrator
-                as: /plan
-                isIdentifier: true
-              namespace:
-                label: namespace
-          - type: application
-            metrics:
-              # TODO: Some of the XL services may be more relevant on kafka messages vs grpc
-              # HTTP metrics
-              - type: transaction
-                queries:
-                  used: 'sum by (instance,service,namespace) (delta(api_call_counts{job="xl",failed="false"}[10m]))/600'
-              - type: responseTime
-                queries:
-                  used: 'avg by (instance,service,namespace) ((delta(api_call_latency_in_seconds_sum{job="xl"}[10m])/delta(api_call_latency_in_seconds_count[10m])) > 0) * 1000'
-              # GRPC metrics
-              - type: transaction
-                queries:
-                  used: 'sum by (instance,service,namespace) (delta(grpc_server_handled_total{job="xl",code="OK"}[10m]))/600'
-              - type: responseTime
-                queries:
-                  used: 'avg by (instance,service,namespace) ((delta(grpc_server_handled_latency_seconds_sum{job="xl"}[10m])/delta(grpc_server_handled_latency_seconds_count[10m])) > 0) * 1000'
-              - type: collectionTime
-                queries:
-                  used: 'sum without(gc) (delta(jvm_gc_collection_seconds_sum{job="xl"}[10m]))/600*100'
-              - type: heap
-                queries:
-                  used: 'jvm_memory_bytes_used{area="heap",job="xl"}/1024'
-                  capacity: 'jvm_memory_bytes_max{area="heap",job="xl"}/1024'
-            attributes:
-              ip:
-                label: instance
-                matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
-                isIdentifier: true
-              namespace:
-                label: namespace
-              service:
-                label: service
-              service_ns:
-                label: namespace
-              service_name:
-                label: service
-          - type: databaseServer
-            hostedOnVM: true
-            metrics:
-              - type: dbMem
-                queries:
-                  used: 'mysql_global_status_innodb_buffer_pool_bytes_data{job="xl"}/1024'
-                  capacity: 'mysql_global_variables_innodb_buffer_pool_size{job="xl"}/1024'
-              - type: memory
-                queries:
-                  used: 'mysql_global_status_innodb_buffer_pool_bytes_data{job="xl"}/1024'
-                  capacity: 'mysql_global_variables_innodb_buffer_pool_size{job="xl"}/1024'
-              - type: dbCacheHitRate
-                queries:
-                  used: '1/(1 + delta(mysql_global_status_innodb_buffer_pool_reads{job="xl"}[10m])/delta(mysql_global_status_innodb_buffer_pool_read_requests[10m]))*100'
-              - type: connection
-                queries:
-                  used: 'mysql_global_status_threads_connected{job="xl"}'
-                  capacity: 'mysql_global_variables_max_connections{job="xl"}'
-              - type: transaction
-                queries:
-                  used: 'sum(rate(mysql_global_status_commands_total{job="xl",command=~"(commit|rollback)"}[10m])) without (command)'
-            attributes:
-              ip:
-                label: host_ip
-                matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
-              namespace:
-                label: namespace
-              id:
-                label: host_ip
-                matches: (?P<hostIP>\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??)
-                as: DatabaseServer-$hostIP
-                isIdentifier: true
-              service:
-                label: service
 {{- if .Values.extraPrometheusExporters }}
 {{ tpl .Values.extraPrometheusExporters . | indent 6 }}
 {{- end }}

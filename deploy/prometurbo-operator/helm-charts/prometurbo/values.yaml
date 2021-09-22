@@ -5,9 +5,9 @@
 # Replace the image with desired version
 image:
   prometurboRepository: turbonomic/prometurbo
-  prometurboTag: 8.1.2
+  prometurboTag: 8.3.2
   turbodifRepository: turbonomic/turbodif
-  turbodifTag: 8.1.2
+  turbodifTag: 8.3.2
   pullPolicy: IfNotPresent
 
 #nameOverride: ""
@@ -15,7 +15,7 @@ image:
 
 # Turbonomic server version and address
 serverMeta:
-  version: 8.0
+  version: 8.3
   turboServer: https://Turbo_server_URL
 
 # Turbonomic server api user and password

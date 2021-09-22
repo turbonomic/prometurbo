@@ -21,7 +21,7 @@ spec:
 
   # Turbo server version and address
   serverMeta:
-    version: 8.0
+    version: 8.3
     turboServer: https://Turbo_server_URL
 
   # Turbo server api user and password stored in a secret or optionally specified as username and password

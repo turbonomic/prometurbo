@@ -38,3 +38,10 @@ spec:
   # The Target Type will appear as DataIngestionFramework-<targetTypeSuffix> on the UI
   # Do not specify Turbonomic as the targetTypeSuffix, it is reserved for internal use
   #targetTypeSuffix: Prometheus
+
+  # Command line arguments
+  args:
+    # Logging level 2 to 4
+    logginglevel: 2
+    # When set to true, ignore merging a commodity if a commodity of the same type already exists
+    #ignoreCommodityIfPresent: false

@@ -4,8 +4,17 @@ metadata:
   name: prometurbo-release
 spec:
   # Default values copied from <project_dir>/helm-charts/prometurbo/values.yaml
-
-  # Prometheus servers and metrics to scrape
+  args:
+    ignoreCommodityIfPresent: false
+    logginglevel: 2
+  businessApplications: null
+  extraPrometheusExporters: null
+  image:
+    prometurboRepository: turbonomic/prometurbo
+    prometurboTag: 8.4.4
+    pullPolicy: IfNotPresent
+    turbodifRepository: turbonomic/turbodif
+    turbodifTag: 8.4.4
   prometheusServers: |
     server1:
       # The URL of the prometheus server

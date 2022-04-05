@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: prometurbo-operator
+  name: turbo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometurbo-operator
+  labels:
+    control-plane: prometurbo-operator
+    app.kubernetes.io/name: prometurbo-operator
+    app.kubernetes.io/instance: prometurbo-operator
+    app.kubernetes.io/managed-by: operator-life
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: prometurbo-operator
+  template:
+    metadata:
+      labels:
+        control-plane: prometurbo-operator
+    spec:
+      serviceAccountName: prometurbo-operator
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - name: prometurbo-operator
+        image: turbonomic/prometurbo-operator:8.5
+        args:
+        - --leader-elect
+        - --leader-election-id=prometurbo-operator
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        # TODO(user): Configure the resources accordingly based on the project requirements.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 60Mi
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: "prometurbo-operator"
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+        - mountPath: /tmp
+          name: operator-tmpfs0
+      volumes:
+      - name: operator-tmpfs0
+        emptyDir: {}
+      terminationGracePeriodSeconds: 10

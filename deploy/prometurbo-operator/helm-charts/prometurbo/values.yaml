@@ -2,12 +2,14 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+replicaCount: 1
+
 # Replace the image with desired version
 image:
   prometurboRepository: turbonomic/prometurbo
-  prometurboTag: 8.4.4
+  prometurboTag: 8.5.0
   turbodifRepository: turbonomic/turbodif
-  turbodifTag: 8.4.4
+  turbodifTag: 8.5.0
   pullPolicy: IfNotPresent
 
 #nameOverride: ""
@@ -40,6 +42,8 @@ args:
   logginglevel: 2
   # When set to true, ignore merging a commodity if a commodity of the same type already exists
   ignoreCommodityIfPresent: false
+
+resources: {}
 
 # Prometheus servers and metrics to scrape
 prometheusServers: |

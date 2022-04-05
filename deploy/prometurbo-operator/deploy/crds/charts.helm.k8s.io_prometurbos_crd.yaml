@@ -12,8 +12,122 @@ spec:
   scope: Namespaced
   subresources:
     status: {}
-  version: v1alpha1
+  version: v1
   versions:
-  - name: v1alpha1
-    served: true
-    storage: true
+    # Each version can be enabled/disabled by Served flag.
+    # One and only one version must be marked as the storage version.
+    - name: v1
+      served: true
+      storage: true
+    - name: v1alpha1
+      served: true
+      storage: false
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values.
+            More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase.
+            More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          type: object
+          properties:
+            replicaCount:
+              description: Prometurbo replicaCount
+              type: integer
+            image:
+              type: object
+              description: Prometurbo image details for deployments outside of RH Operator Hub
+              properties:
+                prometurboRepository:
+                  description: Container repository. default is docker hub
+                  type: string
+                prometurboTag:
+                  description: Prometurbo container image tag
+                  type: string
+                turbodifRepository:
+                  description: Container repository. default is docker hub
+                  type: string
+                turbodifTag:
+                  description: Turbodif container image tag
+                  type: string
+                pullPolicy:
+                  description: Define pull policy, Always is default
+                  type: string
+                imagePullSecret:
+                  description: Define the secret used to authenticate to the container image registry
+                  type: string
+            serverMeta:
+              type: object
+              description: Configuration for Turbo Server
+              properties:
+                version:
+                  description: Turbo Server major version
+                  type: string
+                turboServer:
+                  description: URL for Turbo Server endpoint
+                  type: string
+            restAPIConfig:
+              type: object
+              description: Credentials to register probe with Turbo Server
+              properties:
+                turbonomicCredentialsSecretName:
+                  description: Name of k8s secret that contains the turbo credentials
+                  type: string
+                opsManagerUserName:
+                  description: Turbo admin user id
+                  type: string
+                opsManagerPassword:
+                  description: Turbo admin user password
+                  type: string
+            targetName:
+              description: Optional target name for registration
+              type: string
+            targetAddress:
+              description: Optional target address for registration
+              type: string
+            args:
+              type: object
+              description: Prometurbo command line arguments
+              properties:
+                logginglevel:
+                  description: Define logging level, default is info = 2
+                  type: integer
+                ignoreCommodityIfPresent:
+                  description: Ignore merging a commodity if a commodity of the same type already exists
+                  type: boolean
+            resources:
+              type: object
+              description: Prometurbo resource configuration
+              properties:
+                limits:
+                  type: object
+                  description: Define limits
+                  properties:
+                    memory:
+                      description: Define memory limits in Gi or Mi, include units
+                      type: string
+                    cpu:
+                      description: Define cpu limits in cores or millicores, include units
+                      type: string
+                requests:
+                  type: object
+                  description: Define requests
+                  properties:
+                    memory:
+                      description: Define memory requests in Gi or Mi, include units
+                      type: string
+                    cpu:
+                      description: Define cpu requests in cores or millicores, include units
+                      type: string

@@ -17,22 +17,10 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - pods
-  - services
-  - services/finalizers
-  - endpoints
-  - persistentvolumeclaims
-  - events
   - configmaps
   - secrets
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
+  - "*"
 # We need to create events on CRs about things happening during reconciliation
 - apiGroups:
   - ""
@@ -59,12 +47,5 @@ rules:
   - apps
   resources:
   - deployments
-  - replicasets
   verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
+- "*"

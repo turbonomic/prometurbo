@@ -8,37 +8,57 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "prometurbo.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
+      annotations:
+      {{- with .Values.annotations }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
       labels:
         app.kubernetes.io/name: {{ include "prometurbo.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+{{- if .Values.image.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.image.imagePullSecret }}
+{{- end }}
       containers:
         - name: {{ .Chart.Name }}
+{{- if and .Values.image.relatedprome (eq .Values.image.prometurboRepository "turbonomic/prometurbo") }}
+          image: {{ .Values.image.relatedprome }}
+{{- else }}
           image: {{ .Values.image.prometurboRepository }}:{{ .Values.image.prometurboTag }}
+{{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            - --v={{ .Values.args.logginglevel }}
+          - --v={{ .Values.args.logginglevel }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
           ports:
-            - containerPort: 8081
+          - containerPort: 8081
           volumeMounts:
             - name: prometurbo-config
               mountPath: /etc/prometurbo
               readOnly: true
         - name: turbodif
+{{- if and .Values.image.relatedturbo (eq .Values.image.turbodifRepository "turbonomic/turbodif") }}
+          image: {{ .Values.image.relatedturbo }}
+{{- else }}
           image: {{ .Values.image.turbodifRepository }}:{{ .Values.image.turbodifTag }}
+{{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            - --v={{ .Values.args.logginglevel }}
-  {{- if .Values.args.ignoreCommodityIfPresent }}
-            - --ignoreCommodityIfPresent=true
-  {{- end }}
+          - --v={{ .Values.args.logginglevel }}
+{{- if .Values.args.ignoreCommodityIfPresent }}
+          - --ignoreCommodityIfPresent=true
+{{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
           - name: turbodif-config
             mountPath: /etc/turbodif

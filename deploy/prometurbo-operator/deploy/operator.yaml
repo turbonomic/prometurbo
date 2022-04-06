@@ -13,19 +13,32 @@ spec:
         name: prometurbo-operator
     spec:
       serviceAccountName: prometurbo-operator
+      securityContext:
+        runAsNonRoot: true
       containers:
-        - name: prometurbo-operator
-          # Replace this with the built image name
-          image: turbonomic/prometurbo-operator:8.4
-          imagePullPolicy: Always
-          env:
-            - name: WATCH_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: OPERATOR_NAME
-              value: "prometurbo-operator"
+      - name: prometurbo-operator
+        image: turbonomic/prometurbo-operator:8.5
+        imagePullPolicy: Always
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: "prometurbo-operator"
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+        - mountPath: /tmp
+          name: operator-tmpfs0
+      volumes:
+      - name: operator-tmpfs0
+        emptyDir: {}
+      terminationGracePeriodSeconds: 10

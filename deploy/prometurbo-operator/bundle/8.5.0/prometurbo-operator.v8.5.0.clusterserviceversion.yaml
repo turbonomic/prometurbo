@@ -88,7 +88,7 @@ spec:
                 - '*'
               verbs:
                 - '*'
-        serviceAccountName: prometurbo-operator
+          serviceAccountName: prometurbo-operator
       deployments:
         - name: prometurbo-operator
           spec:
@@ -166,5 +166,4 @@ spec:
   maturity: alpha
   provider:
     name: Turbonomic, Inc.
-  replaces: prometurbo-operator.v8.1.0
   version: 8.5.0

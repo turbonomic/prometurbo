@@ -3,18 +3,7 @@ kind: Prometurbo
 metadata:
   name: prometurbo-release
 spec:
-  # Default values copied from <project_dir>/helm-charts/prometurbo/values.yaml
-  args:
-    ignoreCommodityIfPresent: false
-    logginglevel: 2
-  businessApplications: null
-  extraPrometheusExporters: null
-  image:
-    prometurboRepository: turbonomic/prometurbo
-    prometurboTag: 8.4.4
-    pullPolicy: IfNotPresent
-    turbodifRepository: turbonomic/turbodif
-    turbodifTag: 8.4.4
+  # Prometheus servers and metrics to scrape
   prometheusServers: |
     server1:
       # The URL of the prometheus server
@@ -30,7 +19,6 @@ spec:
 
   # Turbo server version and address
   serverMeta:
-    version: 8.3
     turboServer: https://Turbo_server_URL
 
   # Turbo server api user and password stored in a secret or optionally specified as username and password

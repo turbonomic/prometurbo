@@ -107,6 +107,9 @@ spec:
                 ignoreCommodityIfPresent:
                   description: Ignore merging a commodity if a commodity of the same type already exists
                   type: boolean
+            prometheusServers:
+              description: Prometheus servers and metrics to scrape
+              type: object
             resources:
               type: object
               description: Prometurbo resource configuration

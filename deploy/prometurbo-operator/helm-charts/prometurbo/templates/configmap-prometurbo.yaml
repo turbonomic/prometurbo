@@ -119,7 +119,7 @@ data:
                   used: 'sum by (instance, job) (irate(node_cpu_seconds_total{}[3m]))'
               - type: memory
                 queries:
-                  used: 'node_memory_MemTotal_bytes{} - node_memory_MemAvailable_bytes{}'
+                  used: '(node_memory_MemTotal_bytes{} - node_memory_MemAvailable_bytes{})/1024'
             attributes:
               ip:
                 label: instance

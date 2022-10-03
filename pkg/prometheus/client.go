@@ -140,10 +140,11 @@ func (c *RestClient) Query(query string) (*RawData, error) {
 }
 
 // GetEntityMetrics send a query to prometheus server, and return a list of MetricData
-//   Note: it only support 'vector query: the data in the response is a 'vector'
-//          not a 'matrix' (range query), 'string', or 'scalar'
-//   (1) the Request will generate a query;
-//   (2) the Request will parse the response into a list of MetricData
+//
+//	Note: it only support 'vector query: the data in the response is a 'vector'
+//	       not a 'matrix' (range query), 'string', or 'scalar'
+//	(1) the Request will generate a query;
+//	(2) the Request will parse the response into a list of MetricData
 func (c *RestClient) GetMetrics(request string) ([]MetricData, error) {
 	var result []MetricData
 

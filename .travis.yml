@@ -25,7 +25,8 @@ script:
 after_success:
   - |
     if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-       # Update docker
+      if [ -n "$TRAVIS_TAG" ] || [ "$TRAVIS_BRANCH" == "master" ]; then
+        # Update docker
         sudo rm -rf /var/lib/apt/lists/*
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
         sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
@@ -42,11 +43,12 @@ after_success:
         docker buildx create --use
         # Build and push the image
         cd build
-      if [ -n "$TRAVIS_TAG" ]; then
-          # Push a release image triggered by a git tag
-          docker buildx build --platform $PLATFORM_OS_ARCH_LIST --build-arg GIT_COMMIT=$TRAVIS_COMMIT --label "git-version=$TRAVIS_COMMIT" --push -t $DOCKER_IMAGE_NAME:$TRAVIS_TAG .
-      elif [ "$TRAVIS_BRANCH" == "master" ]; then
-          # Push the latest image built from master branch
-          docker buildx build --platform $PLATFORM_OS_ARCH_LIST --build-arg GIT_COMMIT=$TRAVIS_COMMIT --label "git-version=$TRAVIS_COMMIT" --push -t $DOCKER_IMAGE_NAME .
+        if [ -n "$TRAVIS_TAG" ]; then
+            # Push a release image triggered by a git tag
+            docker buildx build --platform $PLATFORM_OS_ARCH_LIST --build-arg GIT_COMMIT=$TRAVIS_COMMIT --label "git-version=$TRAVIS_COMMIT" --push -t $DOCKER_IMAGE_NAME:$TRAVIS_TAG .
+        else
+            # Push the latest image built from master branch
+            docker buildx build --platform $PLATFORM_OS_ARCH_LIST --build-arg GIT_COMMIT=$TRAVIS_COMMIT --label "git-version=$TRAVIS_COMMIT" --push -t $DOCKER_IMAGE_NAME .
+        fi
       fi
     fi

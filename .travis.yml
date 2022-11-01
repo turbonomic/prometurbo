@@ -3,6 +3,7 @@ language: go
 env:
   global:
     - DOCKER_IMAGE_NAME=$TRAVIS_REPO_SLUG
+    - PLATFORM_OS_ARCH_LIST="linux/amd64,linux/arm64,linux/ppc64le,linux/s390x"
 
 services:
   - docker
@@ -20,19 +21,34 @@ script:
   - make vet
   - make product
   - $HOME/gopath/bin/goveralls -v -race -service=travis-ci
-  - cd build
-  - docker build -t $DOCKER_IMAGE_NAME --build-arg GIT_COMMIT=$TRAVIS_COMMIT --label "git-version=$TRAVIS_COMMIT" .
 
 after_success:
   - |
     if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-      echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      if [ -n "$TRAVIS_TAG" ]; then
-          # Push a release image triggered by a git tag
-          docker tag $DOCKER_IMAGE_NAME $DOCKER_IMAGE_NAME:$TRAVIS_TAG
-          docker push $DOCKER_IMAGE_NAME:$TRAVIS_TAG
-      elif [ "$TRAVIS_BRANCH" == "master" ]; then
-          # Push the latest image built from master branch
-          docker push $DOCKER_IMAGE_NAME
+      if [ -n "$TRAVIS_TAG" ] || [ "$TRAVIS_BRANCH" == "master" ]; then
+        # Update docker
+        sudo rm -rf /var/lib/apt/lists/*
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
+        sudo apt-get update
+        sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+        docker version
+        # Install buildx plugin
+        mkdir -vp ~/.docker/cli-plugins/
+        curl --silent -L "https://github.com/docker/buildx/releases/download/v0.6.0/buildx-v0.6.0.linux-amd64" > ~/.docker/cli-plugins/docker-buildx
+        chmod a+x ~/.docker/cli-plugins/docker-buildx
+        # Login to docker
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        # Create and set a new buildx builder instance
+        docker buildx create --use
+        # Build and push the image
+        cd build
+        if [ -n "$TRAVIS_TAG" ]; then
+            # Push a release image triggered by a git tag
+            docker buildx build --platform $PLATFORM_OS_ARCH_LIST --build-arg GIT_COMMIT=$TRAVIS_COMMIT --label "git-version=$TRAVIS_COMMIT" --push -t $DOCKER_IMAGE_NAME:$TRAVIS_TAG .
+        else
+            # Push the latest image built from master branch
+            docker buildx build --platform $PLATFORM_OS_ARCH_LIST --build-arg GIT_COMMIT=$TRAVIS_COMMIT --label "git-version=$TRAVIS_COMMIT" --push -t $DOCKER_IMAGE_NAME .
+        fi
       fi
     fi

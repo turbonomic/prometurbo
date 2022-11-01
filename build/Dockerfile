@@ -1,6 +1,7 @@
 FROM registry.access.redhat.com/ubi8-minimal
 MAINTAINER Enlin Xu <enlin.xu@turbonomic.com>
 ARG GIT_COMMIT
+ARG TARGETPLATFORM
 ENV GIT_COMMIT ${GIT_COMMIT}
 
 ### Atomic/OpenShift Labels - https://github.com/projectatomic/ContainerApplicationGenericLabels
@@ -28,7 +29,7 @@ ENV APP_ROOT=/opt/turbonomic
 ENV PATH=$PATH:${APP_ROOT}/bin
 
 RUN mkdir -p ${APP_ROOT}/bin
-COPY prometurbo.linux ${APP_ROOT}/bin/prometurbo
+COPY ${TARGETPLATFORM}/prometurbo ${APP_ROOT}/bin/prometurbo
 RUN chmod -R ug+x ${APP_ROOT}/bin && sync && \
     chmod -R g=u ${APP_ROOT}
 

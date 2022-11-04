@@ -1,4 +1,4 @@
-FROM quay.io/operator-framework/helm-operator:v1.22
+FROM quay.io/operator-framework/helm-operator:v1.25
 MAINTAINER Meng Ding <meng.ding@turbonomic.com>
 
 # Required OpenShift Labels

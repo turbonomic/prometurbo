@@ -1,5 +1,5 @@
 FROM quay.io/operator-framework/helm-operator:v1.25
-MAINTAINER Meng Ding <meng.ding@turbonomic.com>
+MAINTAINER Turbonomic <turbodeploy@turbonomic.com>
 
 # Required OpenShift Labels
 LABEL name="Prometurbo Operator" \
@@ -10,11 +10,14 @@ LABEL name="Prometurbo Operator" \
       description="This operator will deploy an instance of prometurbo." \
 ### Required labels above - recommended below
       url="https://www.turbonomic.com" \
-      run='docker run -tdi --name ${NAME} turbonomic/prometurbo-operator:8.6.1' \
       io.k8s.description="Turbonomic Workload Automation Platform simultaneously optimizes performance, compliance, and cost in real-time. Workloads are precisely resourced, automatically, to perform while satisfying business constraints.  " \
       io.k8s.display-name="Prometurbo Operator" \
       io.openshift.expose-services="" \
       io.openshift.tags="turbonomic, Multicloud Container"
+
+USER root
+RUN microdnf update -y krb5-libs
+USER ${USER_UID}
 
 # Required Licenses
 COPY licenses /licenses

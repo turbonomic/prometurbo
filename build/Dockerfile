@@ -1,5 +1,5 @@
 FROM registry.access.redhat.com/ubi8-minimal
-MAINTAINER Enlin Xu <enlin.xu@turbonomic.com>
+MAINTAINER Turbonomic <turbodeploy@turbonomic.com>
 ARG GIT_COMMIT
 ARG TARGETPLATFORM
 ENV GIT_COMMIT ${GIT_COMMIT}
@@ -13,11 +13,12 @@ LABEL name="Prometurbo Container" \
       description="Prometurbo Container leverages Turbonomic control platform, to assure the performance of micro-services running in OpenShift, as well as the efficiency of underlying infrastructure." \
 ### Required labels above - recommended below
       url="https://www.turbonomic.com" \
-      run='docker run -tdi --name ${NAME} vmturbo/prometurbo:latest' \
       io.k8s.description="Prometurbo Container will monitor and control the entire stack, from OpenShift down to your underlying infrastructure. " \
       io.k8s.display-name="Prometurbo Container" \
       io.openshift.expose-services="" \
       io.openshift.tags="turbonomic, Multicloud Container"
+
+RUN microdnf update -y krb5-libs
 
 ### add licenses to this directory
 COPY licenses /licenses

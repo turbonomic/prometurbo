@@ -113,8 +113,8 @@ spec:
         app: prometurbo
     spec:
       containers:
-        # Replace the image with desired version:8.6.3 or snapshot version:8.7.3-SNAPSHOT from icr.io
-        - image: icr.io/cpopen/turbonomic/prometurbo:8.6.3
+        # Replace the image with desired version:8.7.3 or snapshot version:8.7.4-SNAPSHOT from icr.io
+        - image: icr.io/cpopen/turbonomic/prometurbo:8.7.3
           imagePullPolicy: IfNotPresent
           name: prometurbo
           args:
@@ -126,8 +126,8 @@ spec:
               mountPath: /etc/prometurbo
               readOnly: true
         - name: turbodif
-          # Replace the image with desired version:8.6.3 or snapshot version:8.7.3-SNAPSHOT from icr.io
-          image: icr.io/cpopen/turbonomic/turbodif:8.6.3
+          # Replace the image with desired version:8.7.3 or snapshot version:8.7.4-SNAPSHOT from icr.io
+          image: icr.io/cpopen/turbonomic/turbodif:8.7.3
           imagePullPolicy: IfNotPresent
           args:
             - --v=2

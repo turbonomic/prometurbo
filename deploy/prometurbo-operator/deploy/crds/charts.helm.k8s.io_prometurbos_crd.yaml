@@ -51,13 +51,13 @@ spec:
               description: Prometurbo image details for deployments outside of RH Operator Hub
               properties:
                 prometurboRepository:
-                  description: Container repository. default is docker hub
+                  description: Container repository. default is icr.io/cpopen/turbonomic/prometurbo
                   type: string
                 prometurboTag:
                   description: Prometurbo container image tag
                   type: string
                 turbodifRepository:
-                  description: Container repository. default is docker hub
+                  description: Container repository. default is icr.io/cpopen/turbonomic/turbodif
                   type: string
                 turbodifTag:
                   description: Turbodif container image tag

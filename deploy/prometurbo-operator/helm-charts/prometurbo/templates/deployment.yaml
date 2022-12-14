@@ -29,7 +29,7 @@ spec:
 {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-{{- if and .Values.image.relatedprome (eq .Values.image.prometurboRepository "turbonomic/prometurbo") }}
+{{- if and .Values.image.relatedprome (eq .Values.image.prometurboRepository "icr.io/cpopen/turbonomic/prometurbo") }}
           image: {{ .Values.image.relatedprome }}
 {{- else }}
           image: {{ .Values.image.prometurboRepository }}:{{ .Values.image.prometurboTag }}
@@ -46,7 +46,7 @@ spec:
               mountPath: /etc/prometurbo
               readOnly: true
         - name: turbodif
-{{- if and .Values.image.relatedturbo (eq .Values.image.turbodifRepository "turbonomic/turbodif") }}
+{{- if and .Values.image.relatedturbo (eq .Values.image.turbodifRepository "icr.io/cpopen/turbonomic/turbodif") }}
           image: {{ .Values.image.relatedturbo }}
 {{- else }}
           image: {{ .Values.image.turbodifRepository }}:{{ .Values.image.turbodifTag }}

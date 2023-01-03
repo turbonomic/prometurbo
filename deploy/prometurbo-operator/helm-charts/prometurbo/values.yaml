@@ -7,9 +7,9 @@ replicaCount: 1
 # Replace the image with desired version
 image:
   prometurboRepository: icr.io/cpopen/turbonomic/prometurbo
-  prometurboTag: 8.7.3
+  prometurboTag: 8.7.5
   turbodifRepository: icr.io/cpopen/turbonomic/turbodif
-  turbodifTag: 8.7.3
+  turbodifTag: 8.7.5
   pullPolicy: IfNotPresent
 
 #nameOverride: ""

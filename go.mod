@@ -1,6 +1,6 @@
 module github.com/turbonomic/prometurbo
 
-go 1.13
+go 1.19
 
 require (
 	github.com/davecgh/go-spew v1.1.1
@@ -10,3 +10,5 @@ require (
 	github.com/turbonomic/turbo-go-sdk v0.0.0-20200713143308-df596bab40fd
 	gopkg.in/yaml.v2 v2.2.8
 )
+
+require github.com/golang/protobuf v1.3.2 // indirect

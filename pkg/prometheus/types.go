@@ -25,13 +25,12 @@ func (m RawMetric) Parse() (MetricData, error) {
 	return metricData, nil
 }
 
-// MetricData : interface to transform the RawMetric to customer defined data structure
+// MetricData is the interface to transform the RawMetric to customer defined data structure
 type MetricData interface {
 	GetValue() float64
 }
 
-// -----------------------------------------------------------
-// an example implementation of Request and MetricData
+// BasicMetricData implements Request and MetricData
 type BasicMetricData struct {
 	Labels map[string]string
 	Value  float64

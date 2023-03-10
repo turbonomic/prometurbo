@@ -1,7 +1,8 @@
-package provider
+package configmap
 
 import (
 	"fmt"
+
 	"github.com/turbonomic/prometurbo/pkg/config"
 	"github.com/turbonomic/prometurbo/pkg/prometheus"
 )
@@ -13,7 +14,7 @@ type serverDef struct {
 	exporters  []string
 }
 
-func newServerDef(serverConfig config.ServerConfig) (*serverDef, error) {
+func serverDefFromConfigMap(serverConfig config.ServerConfig) (*serverDef, error) {
 	if len(serverConfig.URL) == 0 {
 		return nil, fmt.Errorf("no url defined")
 	}
@@ -32,10 +33,10 @@ func newServerDef(serverConfig config.ServerConfig) (*serverDef, error) {
 	}, nil
 }
 
-func ServersFromConfig(cfg *config.MetricsDiscoveryConfig) (map[string]*serverDef, error) {
+func serversFromConfigMap(cfg *config.MetricsDiscoveryConfig) (map[string]*serverDef, error) {
 	servers := make(map[string]*serverDef)
 	for name, serverConfig := range cfg.ServerConfigs {
-		server, err := newServerDef(serverConfig)
+		server, err := serverDefFromConfigMap(serverConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create serverDef for %v: %v",
 				name, err)

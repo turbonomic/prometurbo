@@ -1,22 +1,23 @@
-package provider
+package configmap
 
 import (
 	"fmt"
 
 	"github.com/turbonomic/prometurbo/pkg/config"
+	"github.com/turbonomic/prometurbo/pkg/provider"
 )
 
 type exporterDef struct {
-	entityDefs []*entityDef
+	entityDefs []*provider.EntityDef
 }
 
-func newExporterDef(exporterConfig config.ExporterConfig) (*exporterDef, error) {
+func exporterDefFromConfigMap(exporterConfig config.ExporterConfig) (*exporterDef, error) {
 	if len(exporterConfig.EntityConfigs) == 0 {
 		return nil, fmt.Errorf("no entityDefs defined")
 	}
-	var entities []*entityDef
+	var entities []*provider.EntityDef
 	for _, entityConfig := range exporterConfig.EntityConfigs {
-		entity, err := newEntityDef(entityConfig)
+		entity, err := entityDefFromConfigMap(entityConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create entityDefs: %v", err)
 		}
@@ -27,10 +28,10 @@ func newExporterDef(exporterConfig config.ExporterConfig) (*exporterDef, error) 
 	}, nil
 }
 
-func ExportersFromConfig(cfg *config.MetricsDiscoveryConfig) (map[string]*exporterDef, error) {
+func exportersFromConfigMap(cfg *config.MetricsDiscoveryConfig) (map[string]*exporterDef, error) {
 	exporters := make(map[string]*exporterDef)
 	for name, exporterConfig := range cfg.ExporterConfigs {
-		exporter, err := newExporterDef(exporterConfig)
+		exporter, err := exporterDefFromConfigMap(exporterConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create exporterDef for %v: %v",
 				name, err)

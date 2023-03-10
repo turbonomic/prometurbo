@@ -1,70 +1,66 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: prometurbo-operator
 rules:
-##
-## Base operator rules
-##
-# We need to get namespaces so the operator can read namespaces to ensure they exist
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
-  - get
-# We need to manage Helm release secrets
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - services
-  - services/finalizers
-  - endpoints
-  - persistentvolumeclaims
-  - events
-  - configmaps
-  - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-# We need to create events on CRs about things happening during reconciliation
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-##
-## Rules for charts.helm.k8s.io/v1, Kind: Prometurbo
-##
-- apiGroups:
-  - charts.helm.k8s.io
-  resources:
-  - '*'
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - replicasets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
+  - apiGroups:
+      - ""
+      - apps
+      - extensions
+    resources:
+      - nodes
+      - pods
+      - configmaps
+      - deployments
+      - replicasets
+      - replicationcontrollers
+      - serviceaccounts
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+      - apps
+      - extensions
+      - policy
+    resources:
+      - services
+      - secrets
+      - endpoints
+      - namespaces
+      - limitranges
+      - resourcequotas
+      - daemonsets
+      - persistentvolumes
+      - persistentvolumeclaims
+      - poddisruptionbudget
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - nodes/spec
+      - nodes/stats
+    verbs:
+      - get
+  - apiGroups:
+      - charts.helm.k8s.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - clusterrolebindings
+    verbs:
+      - '*'
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - get
+      - list
+      - update

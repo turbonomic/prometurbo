@@ -2,7 +2,7 @@ package customresource
 
 import (
 	"fmt"
-
+	"github.com/golang/glog"
 	"github.com/turbonomic/turbo-metrics/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -28,8 +28,16 @@ func clusterConfigFromCustomResource(specClusterConfig v1alpha1.ClusterConfigura
 			return nil, fmt.Errorf("failed to parse labelSelector %v: %v", specClusterConfig.QueryMappingSelector, err)
 		}
 		for _, qryMapping := range queryMappings {
-			if selector.Matches(labels.Set(qryMapping.labels)) {
+			if selector.Matches(labels.Set(qryMapping.qryMapping.Labels)) {
 				filteredQueryMappings = append(filteredQueryMappings, qryMapping)
+				continue
+			}
+			if id.ID != "" {
+				glog.V(2).Infof("Excluding %v/%v for cluster %v.",
+					qryMapping.qryMapping.GetNamespace(), qryMapping.qryMapping.GetName(), id.ID)
+			} else {
+				glog.V(2).Infof("Excluding %v/%v.",
+					qryMapping.qryMapping.GetNamespace(), qryMapping.qryMapping.GetName())
 			}
 		}
 	} else {

@@ -8,7 +8,7 @@ import (
 )
 
 type queryMapping struct {
-	labels     map[string]string
+	qryMapping *v1alpha1.PrometheusQueryMapping
 	entityDefs []*provider.EntityDef
 }
 
@@ -25,7 +25,7 @@ func queryMappingFromCustomResource(prometheusQueryMapping v1alpha1.PrometheusQu
 		entityDefs = append(entityDefs, entityDef)
 	}
 	return &queryMapping{
-		labels:     prometheusQueryMapping.Labels,
+		qryMapping: &prometheusQueryMapping,
 		entityDefs: entityDefs,
 	}
 }

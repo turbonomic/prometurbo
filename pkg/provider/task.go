@@ -82,7 +82,11 @@ func (t *Task) getMetricsForEntity() []*data.DIFEntity {
 					difEntity = data.NewDIFEntity(entityAttr.ID, entityType).
 						WithNamespace(entityAttr.Namespace)
 					if entityAttr.IP != "" {
-						difEntity.Matching(entityAttr.IP)
+						if t.k8sSvcId != "" {
+							difEntity.Matching(fmt.Sprintf("%s-%s", entityAttr.IP, t.k8sSvcId))
+						} else {
+							difEntity.Matching(entityAttr.IP)
+						}
 					}
 					if entityDef.HostedOnVM {
 						difEntity.HostedOnType(data.VM).HostedOnIP(entityAttr.IP)

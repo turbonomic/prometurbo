@@ -12,6 +12,15 @@ image:
   turbodifTag: 8.7.5
   pullPolicy: IfNotPresent
 
+# Specify the name of the serviceaccount
+serviceAccountName: "prometurbo"
+
+# Specify the name of the clusterrole
+roleName: "prometurbo"
+
+# Specify the name of clusterrolebinding
+roleBinding: "prometurbo-binding"
+
 #nameOverride: ""
 #fullnameOverride: ""
 
@@ -45,24 +54,6 @@ args:
 
 resources: {}
 
-# Prometheus servers and metrics to scrape
-prometheusServers: |
-  server1:
-    # The URL of the prometheus server
-    url: http://Prometheus_Server_URL
-    # The list of supported exporters for the above prometheus server
-    exporters:
-      - cassandra
-      - istio
-      - jmx-tomcat
-      - node
-      - redis
-      - webdriver
-
-# Configure extra prometheus exporters here
-# Must be a string so you have to add a | after extraPrometheusExporters:
-extraPrometheusExporters:
-
 # Configure business applications here
 # [Schema]
 # businessApplications: [ businessApplication ]
@@ -75,6 +66,4 @@ extraPrometheusExporters:
 #   name: string                   # The display name of the transaction. Optional.
 #   path: string                   # The request path of a business transaction. Required.
 #   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
-#
-# Must be a string so you have to add a | after businessApplications:
 businessApplications:

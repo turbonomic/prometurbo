@@ -1,0 +1,19 @@
+kind: ClusterRoleBinding
+# For OpenShift 3.4-3.7 use apiVersion: v1
+# For kubernetes 1.9 use rbac.authorization.k8s.io/v1
+# For kubernetes 1.8 use rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  # Use this yaml to create a binding that will assign prometurbo ClusterRole to your prometurbo ServiceAccount
+  # Provide a value for the binding name, and update namespace of the ServiceAccount if needed
+  name: prometurbo-binding
+subjects:
+  - kind: ServiceAccount
+    name: prometurbo
+    namespace: turbo
+roleRef:
+  # User creating this resource must have permissions to add this policy to the SA
+  kind: ClusterRole
+  name: prometurbo
+  # For OpenShift v3.4 remove apiGroup line
+  apiGroup: rbac.authorization.k8s.io

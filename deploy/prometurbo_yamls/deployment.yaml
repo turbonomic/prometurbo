@@ -14,6 +14,8 @@ spec:
       labels:
         app: prometurbo
     spec:
+      # Update serviceAccount if needed
+      serviceAccountName: prometurbo
       containers:
         # Replace the image with desired version:8.7.5 or snapshot version:8.7.5-SNAPSHOT from icr.i
         - image: icr.io/cpopen/turbonomic/prometurbo:8.7.5

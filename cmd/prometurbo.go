@@ -53,15 +53,6 @@ func init() {
 	utilruntime.Must(v1.AddToScheme(customScheme))
 	// Add registered custom types to the custom scheme
 	utilruntime.Must(v1alpha1.AddToScheme(customScheme))
-}
-
-func main() {
-	// Ignore errors
-	_ = flag.Set("logtostderr", "false")
-	_ = flag.Set("alsologtostderr", "true")
-	_ = flag.Set("log_dir", "/var/log")
-	defer glog.Flush()
-
 	// Config pretty print for debugging
 	spew.Config = spew.ConfigState{
 		Indent:                  "  ",
@@ -74,14 +65,41 @@ func main() {
 		SortKeys:                true,
 		SpewKeys:                false,
 	}
+}
+
+func main() {
+	// Ignore errors
+	_ = flag.Set("logtostderr", "false")
+	_ = flag.Set("alsologtostderr", "true")
+	_ = flag.Set("log_dir", "/var/log")
+	defer glog.Flush()
 
 	// Parse command line flags
 	parseFlags()
 
 	glog.Infof("Running prometurbo GIT_COMMIT: %s", os.Getenv("GIT_COMMIT"))
 
-	var metricProvider provider.MetricProvider
+	if workerCount < 1 {
+		glog.Warningf("The specified number of concurrent workers %v is invalid. Set it 1.", workerCount)
+		workerCount = 1
+	} else {
+		glog.V(2).Infof("Number of concurrent workers to discover metrics: %v", workerCount)
+	}
+
+	server.NewServer(port).
+		MetricProvider(getMetricProvider()).
+		Topology(topology.NewBusinessTopology(getBizAppsConfig())).
+		Dispatcher(worker.NewDispatcher(workerCount).
+			WithCollector(worker.NewCollector(workerCount * 2))).
+		Run()
+
+	return
+}
+
+func getMetricProvider() (metricProvider provider.MetricProvider) {
 	if configmap.HasMetricProvider(prometheusConfigFileName) {
+		// This is ONLY used for turbo-on-turbo use case, where we still use configMap to define
+		// prometheus query mappings.
 		configMapMetricProvider, err := configmap.GetMetricProvider(prometheusConfigFileName)
 		if err != nil {
 			glog.Fatalf("Failed to get metric provider from configMap: %v.", err)
@@ -95,26 +113,6 @@ func main() {
 		}
 		metricProvider = customResourceMetricProvider
 	}
-	bizApps, err := config.NewBusinessApplicationConfigMap(topologyConfigFileName)
-	if err != nil {
-		glog.Fatalf("Failed to parse topology configuration from %v: %v.",
-			topologyConfigFileName, err)
-	}
-	glog.V(2).Infof("Business application topology configuration: %s",
-		spew.Sdump(bizApps))
-	if workerCount < 1 {
-		workerCount = 1
-	}
-	glog.V(2).Infof("Number of concurrent workers to discover metrics: %v", workerCount)
-	dispatcher := worker.
-		NewDispatcher(workerCount).
-		WithCollector(worker.NewCollector(workerCount * 2))
-	server.NewServer(port).
-		MetricProvider(metricProvider).
-		Topology(topology.NewBusinessTopology(bizApps)).
-		Dispatcher(dispatcher).
-		Run()
-
 	return
 }
 
@@ -131,4 +129,15 @@ func createKubeClientOrDie() client.Client {
 		glog.Fatalf("Failed to create controller runtime client: %v.", err)
 	}
 	return kubeClient
+}
+
+func getBizAppsConfig() []config.BusinessApplication {
+	bizApps, err := config.NewBusinessApplicationConfigMap(topologyConfigFileName)
+	if err != nil {
+		glog.Errorf("Failed to parse topology configuration from %v: %v.",
+			topologyConfigFileName, err)
+	}
+	glog.V(2).Infof("Business application topology configuration: %s",
+		spew.Sdump(bizApps))
+	return bizApps
 }

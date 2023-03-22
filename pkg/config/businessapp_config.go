@@ -29,7 +29,7 @@ type Transaction struct {
 	DependOn []string `yaml:"dependOn"` // A list of services that the business transaction depends on
 }
 
-func NewBusinessApplicationConfig(path string) ([]BusinessApplication, error) {
+func NewBusinessApplicationConfigMap(path string) ([]BusinessApplication, error) {
 	glog.Infof("Read business application configuration from %s", path)
 	file, err := ioutil.ReadFile(path)
 	if err != nil {

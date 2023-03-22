@@ -1,9 +1,10 @@
 package worker
 
 import (
+	"sync"
+
 	"github.com/golang/glog"
 	"github.com/turbonomic/turbo-go-sdk/pkg/dataingestionframework/data"
-	"sync"
 )
 
 type Collector struct {

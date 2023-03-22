@@ -10,8 +10,9 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/glog"
-	"github.com/turbonomic/prometurbo/pkg/util"
 	dif "github.com/turbonomic/turbo-go-sdk/pkg/dataingestionframework/data"
+
+	"github.com/turbonomic/prometurbo/pkg/util"
 )
 
 var (
@@ -149,12 +150,18 @@ func (s *Server) faviconHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleMetric(w http.ResponseWriter, r *http.Request) {
-	entityMetrics, err := s.provider.GetEntityMetrics()
-	if err != nil {
-		glog.Errorf("Failed to get entityMetrics: %v", err)
-		s.sendFailure(w, r)
-		return
-	}
+	// Assemble the query tasks
+	tasks := s.provider.GetTasks()
+	total := len(tasks)
+	glog.V(2).Infof("Total discovery tasks to dispatch %v.", total)
+	// Dispatch query tasks in a separate goroutine to avoid deadlock
+	go func() {
+		for _, task := range tasks {
+			s.dispatcher.Dispatch(task)
+		}
+	}()
+	// Collect the result
+	entityMetrics := s.dispatcher.CollectResult(total)
 	glog.V(2).Infof("Discovered %v entities.", len(entityMetrics))
 	topologyEntities := s.topology.BuildTopologyEntities(entityMetrics)
 	s.sendEntityMetrics(topologyEntities, w, r)

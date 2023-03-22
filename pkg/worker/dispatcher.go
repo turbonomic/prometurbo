@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+
 	"github.com/golang/glog"
 	"github.com/turbonomic/turbo-go-sdk/pkg/dataingestionframework/data"
 )
@@ -58,7 +59,7 @@ func (d *Dispatcher) Dispatch(t ITask) {
 	taskChannel <- t
 }
 
-// Collect results from this round of discovery
+// CollectResult collects results from this round of discovery
 func (d *Dispatcher) CollectResult(taskCount int) []*data.DIFEntity {
 	return d.collector.collect(taskCount)
 }

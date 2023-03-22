@@ -2,14 +2,15 @@ package topology
 
 import (
 	"fmt"
-	set "github.com/deckarep/golang-set"
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
+	set "github.com/deckarep/golang-set"
 	"github.com/golang/glog"
+	"github.com/turbonomic/turbo-go-sdk/pkg/dataingestionframework/data"
+
 	"github.com/turbonomic/prometurbo/pkg/config"
 	"github.com/turbonomic/prometurbo/pkg/util"
-	"github.com/turbonomic/turbo-go-sdk/pkg/dataingestionframework/data"
 )
 
 type businessAppConfBySource map[string]businessAppConfByName

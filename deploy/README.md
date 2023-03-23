@@ -1,5 +1,7 @@
 
-Prometurbo can be deployed in Kubernetes with the following steps:
+## Deploy Prometurbo
+
+It is recommended to deploy Prometurbo via operator. The following is an example of deploying Prometurbo, then create an **Istio** [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping), and a [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig) to be consumed by Prometurbo.
 
 ## Setup prometheus exporters
 

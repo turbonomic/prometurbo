@@ -95,7 +95,7 @@ prometurbo-operator-6ffc566f4c-lwbcn       1/1     Running   0          5d23h
 prometurbo-release-744947bb94-kqc2b        2/2     Running   0          5d20h
 ```
 
-* Verify that proper `ClusterRole` is created for `prometurbo`. For example, given the above YAML, a `prometurbo-xl-ember` `ClusterRole` should be created, with proper rules to access the `prometheusquerymappings` and `prometheusserverconfigs` resources:
+* Verify that proper `ClusterRole` is created for Prometurbo. For example, given the above YAML, a `prometurbo-xl-ember` `ClusterRole` should be created, with proper rules to access the `prometheusquerymappings` and `prometheusserverconfigs` resources:
 
   ![image](https://user-images.githubusercontent.com/10012486/228339349-bd87df9e-1274-4652-835f-99fb438f0b7c.png)
  

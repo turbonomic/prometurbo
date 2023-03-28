@@ -34,7 +34,7 @@ It is recommended to deploy Prometurbo via operator. The following is an example
   prometurbo-operator.vx.x.x-xxxxxxxx | `ClusterRole`	| Created	| `rbac.authorization.k8s.io/v1`
   prometurbo-operator.vx.x.x-xxxxxxxx | `ClusterRoleBinding`	| Created	| `rbac.authorization.k8s.io/v1`
   
-  Note that `ClusterRole` is created for `prometurbo-operator` such that it can have the permission to create necessary `ClusterRole`s for Prometurbo instances.
+  Note that `ClusterRole` is created for `prometurbo-operator` such that it can have the permission to create the necessary `ClusterRole` for Prometurbo instances.
 
 ## Create a Prometurbo instance
 

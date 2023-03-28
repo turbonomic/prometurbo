@@ -1,9 +1,9 @@
 
-## Deploy Prometurbo
+# Deploy Prometurbo
 
-It is recommended to deploy Prometurbo via operator. The following is an example of deploying Prometurbo through Openshift OperatorHub, and then create a [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping) and a [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig) to be consumed by Prometurbo.
+It is recommended to deploy Prometurbo via operator. The following is an example of installing Prometurbo Operator through OpenShift OperatorHub, creating a Prometurbo instance, and then creating [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping) and [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig) to be consumed by Prometurbo.
 
-### Install Prometurbo Operator through Openshift OperatorHub
+## Install Prometurbo Operator through OperatorHub in OpenShift
 
 * Create a project (namespace) for your `prometurbo` deployment. For example, the following YAML file creates a `turbo` namespace: 
 
@@ -14,7 +14,7 @@ It is recommended to deploy Prometurbo via operator. The following is an example
     name: turbo 
   ```
 
-* In the Openshift admin console, navigate to **Operators**, **OperatorHub**, select the project created above, search for `Prometurbo Operator`, and select the **Certified Prometurbo Operator**:
+* Navigate to the **OperatorHub** section in the OpenShift console, select the project created above, search for `Prometurbo` in the search bar, and select the **Certified Prometurbo Operator**:
 
   ![image](https://user-images.githubusercontent.com/10012486/228285170-fe0c14da-b47f-4007-89e6-849078102563.png)
 
@@ -35,8 +35,10 @@ It is recommended to deploy Prometurbo via operator. The following is an example
   prometurbo-operator.vx.x.x-xxxxxxxx | `ClusterRoleBinding`	| Created	| `rbac.authorization.k8s.io/v1`
   
   Note that `ClusterRole` is created for `prometurbo-operator` such that it can have the permission to create necessary `ClusterRole`s for `prometurbo` instances.
-  
-### Deploy a Prometurbo instance
+
+## Create a Prometurbo instance
+
+* Once the operator is installed, navigate to the "Installed Operators" section in the OpenShift console. Select the Prometurbo operator and click **Create Instance**. Follow the prompts to configure the instance.
 
 * The following table lists the configuration parameters for `prometurbo`:
 
@@ -93,16 +95,22 @@ prometurbo-operator-6ffc566f4c-lwbcn       1/1     Running   0          5d23h
 prometurbo-release-744947bb94-kqc2b        2/2     Running   0          5d20h
 ```
 
-### Install Custom Resource Definition
+* Verify that proper `ClusterRole` is created for `prometurbo`. For example, given the above YAML, a `prometurbo-xl-ember` `ClusterRole` should be created, with proper rules to access the `prometheusquerymappings` and `prometheusserverconfigs` resources:
 
+  ![image](https://user-images.githubusercontent.com/10012486/228339349-bd87df9e-1274-4652-835f-99fb438f0b7c.png)
+ 
+
+## Enable `turbo-metrics`
+
+* Install Custom Resource Definitions 
 ```
 $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/config/crd/bases/metrics.turbonomic.io_prometheusquerymappings.yaml
 $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/config/crd/bases/metrics.turbonomic.io_prometheusserverconfigs.yaml
 ```
 
-### Deploy PrometheusQueryMapping and PromethesServerConfig Resources
+* Create PrometheusQueryMapping and PromethesServerConfig resources. These custom resources allow you to defien configurations for Prometurbo to consume:
 
-* The following is a sample of [`PrometheusQueryMapping`](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_istio.yaml) resource for metrics exposed by `istio` exporter:
+  * Create a PrometheusQueryMapping resource to specify how Prometurbo should map Prometheus queries to Turbonomic entities. The following is a sample of [`PrometheusQueryMapping`](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_istio.yaml) for metrics exposed by `istio` exporter:
 
   ```yaml
   apiVersion: metrics.turbonomic.io/v1alpha1
@@ -142,7 +150,7 @@ $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/c
             label: destination_service_name
   ```
 
-* The following is an example of a [PrometheusServerConfig](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_prometheusserverconfig_emptycluster.yaml) resource:
+* Create a PrometheusServerConfig resource to sepcify configuration options for the Prometheus server. The following is an example of a [PrometheusServerConfig](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_prometheusserverconfig_singlecluster.yaml) resource which specifies the location of the Prometheus server, and a label selector to exclude `jmx-tomcat` PrometheusQueryMapping resource:
 
   ```yaml
   apiVersion: metrics.turbonomic.io/v1alpha1
@@ -151,9 +159,16 @@ $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/c
     name: prometheusserverconfig-emptycluster
   spec:
     address: http://prometheus.istio-system:9090
+    clusters:
+      - queryMappingSelector:
+          matchExpressions:
+            - key: mapping
+              operator: NotIn
+              values:
+                - jmx-tomcat
   ```
 
-* Verify that the resources are being discovered in `prometurbo` logs. For example:
+* Prometurbo should now be ready to consume metrics from Prometheus server. Check `prometurbo` logs to verify. For example:
 
   ```console
   I0328 18:42:04.003329 1 provider.go:60] Discovered 4 PrometheusQueryMapping resources.
@@ -166,3 +181,5 @@ $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/c
   I0328 18:42:04.007950 1 serverconfig.go:36] There are 3 PrometheusQueryMapping resources in namespace turbo
   I0328 18:42:04.008048 1 clusterconfig.go:39] Excluding turbo/jmx-tomcat.
   ```
+
+

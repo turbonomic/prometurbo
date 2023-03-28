@@ -2,7 +2,7 @@
 
 Get metrics from [Prometheus](https://prometheus.io) for applications, and expose these applications and metrics in JSON
 format via REST API. The [`data ingestion framework probe`](https://github.com/turbonomic/data-ingestion-framework) (
-i.e., DIF Probe) will access the REST API, convert the JSON output to Turbonomic DTO to be consumed by Turbonomic
+i.e. DIF Probe) will access the REST API, convert the JSON output to Turbonomic DTO to be consumed by Turbonomic
 server. This enables Turbonomic to collect and analyze Prometheus metrics and make intelligent decisions about
 application scaling, placement and optimization.
 
@@ -11,9 +11,9 @@ application scaling, placement and optimization.
 To configure the Prometheus server and map query results into applications and metrics, you need to create the following
 custom resources in the Kubernetes cluster:
 
-* [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping)
+* [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping):
   allows users to define mappings between Turbonomic entities (such as **ApplicationComponents**, **Services**, or **VirtualMachines**) and Prometheus metrics exposed by different prometheus exporters.
-* [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig)
+* [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig):
   specifies the address of the Prometheus server, as well as optional label selectors to filter
   out [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping)
   resources applicable to that server. This allows users to configure multiple Prometheus servers and use different

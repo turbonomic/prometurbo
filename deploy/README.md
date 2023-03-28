@@ -62,7 +62,7 @@ It is recommended to deploy Prometurbo via operator. The following is an example
    `args.logginglevel`          | Logging level of `prometurbo`.         | `2`
    `args.ignoreCommodityIfPresent` |  Specify whether to ignore merging commodity when a commodity of the same type already exists in the server. | `false` 
 
-* The following is a sample `prometurbo` resource YAML file:
+* The following is a sample Prometurbo resource YAML file:
 
   ```yaml
   apiVersion: charts.helm.k8s.io/v1

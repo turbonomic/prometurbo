@@ -14,7 +14,7 @@ It is recommended to deploy Prometurbo via operator. The following is an example
     name: turbo 
   ```
 
-* On the Openshift admin console, navigate to **Operators**, **OperatorHub**, select the project created above, search for `Prometurbo Operator`, and select the Certified Prometurbo Operator:
+* In the Openshift admin console, navigate to **Operators**, **OperatorHub**, select the project created above, search for `Prometurbo Operator`, and select the Certified Prometurbo Operator:
 
   ![image](https://user-images.githubusercontent.com/10012486/228285170-fe0c14da-b47f-4007-89e6-849078102563.png)
 

@@ -38,7 +38,7 @@ It is recommended to deploy Prometurbo via operator. The following is an example
 
 ## Create a Prometurbo instance
 
-* Once the operator is installed, navigate to the "Installed Operators" section in the OpenShift console. Select the Prometurbo operator and click **Create Instance**. Follow the prompts to configure the instance.
+* Once the operator is installed, navigate to the **Installed Operators** section in the OpenShift console. Select the Prometurbo operator and click **Create Instance**. Follow the prompts to configure the instance.
 
 * The following table lists the configuration parameters for `prometurbo`:
 

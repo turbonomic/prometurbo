@@ -5,7 +5,7 @@ It is recommended to deploy Prometurbo via operator. The following is an example
 
 ## Install Prometurbo Operator through OperatorHub in OpenShift
 
-* Create a project (namespace) for your `prometurbo` deployment. For example, the following YAML file creates a `turbo` namespace: 
+* Create a project (namespace) for your Prometurbo deployment. For example, the following YAML file creates a `turbo` namespace: 
 
   ```yaml
   apiVersion: v1
@@ -14,7 +14,7 @@ It is recommended to deploy Prometurbo via operator. The following is an example
     name: turbo 
   ```
 
-* Navigate to the **OperatorHub** section in the OpenShift console, select the project created above, search for `Prometurbo` in the search bar, and select the **Certified Prometurbo Operator**:
+* Navigate to the **OperatorHub** section in the OpenShift console, select the project created above, search for Prometurbo in the search bar, and select the **Certified Prometurbo Operator**:
 
   ![image](https://user-images.githubusercontent.com/10012486/228285170-fe0c14da-b47f-4007-89e6-849078102563.png)
 
@@ -34,7 +34,7 @@ It is recommended to deploy Prometurbo via operator. The following is an example
   prometurbo-operator.vx.x.x-xxxxxxxx | `ClusterRole`	| Created	| `rbac.authorization.k8s.io/v1`
   prometurbo-operator.vx.x.x-xxxxxxxx | `ClusterRoleBinding`	| Created	| `rbac.authorization.k8s.io/v1`
   
-  Note that `ClusterRole` is created for `prometurbo-operator` such that it can have the permission to create necessary `ClusterRole`s for `prometurbo` instances.
+  Note that `ClusterRole` is created for `prometurbo-operator` such that it can have the permission to create necessary `ClusterRole`s for Prometurbo instances.
 
 ## Create a Prometurbo instance
 

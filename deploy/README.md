@@ -1,7 +1,7 @@
 
 ## Deploy Prometurbo
 
-It is recommended to deploy Prometurbo via operator. The following is an example of deploying Prometurbo through Openshift Operator Hub, create a [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping), and a [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig) to be consumed by Prometurbo.
+It is recommended to deploy Prometurbo via operator. The following is an example of deploying Prometurbo through Openshift OperatorHub, create a [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping), and a [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig) to be consumed by Prometurbo.
 
 ### Install Prometurbo Operator through Openshift OperatorHub
 
@@ -100,4 +100,69 @@ $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/c
 $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/config/crd/bases/metrics.turbonomic.io_prometheusserverconfigs.yaml
 ```
 
+### Deploy PrometheusQueryMapping and PromethesServerConfig Resources
 
+* The following is a sample of [`PrometheusQueryMapping`](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_istio.yaml) resource for metrics exposed by `istio` exporter:
+
+  ```yaml
+  apiVersion: metrics.turbonomic.io/v1alpha1
+  kind: PrometheusQueryMapping
+  metadata:
+    labels:
+      mapping: istio
+    name: istio
+  spec:
+    entities:
+      - type: application
+        metrics:
+          - type: responseTime
+            queries:
+              - type: used
+                promql: 'rate(istio_request_duration_milliseconds_sum{request_protocol="http",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
+          - type: transaction
+            queries:
+              - type: used
+                promql: 'rate(istio_requests_total{request_protocol="http",response_code="200",reporter="destination"}[1m]) > 0'
+          - type: responseTime
+            queries:
+              - type: used
+                promql: 'rate(istio_request_duration_milliseconds_sum{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
+          - type: transaction
+            queries:
+              - type: used
+                promql: 'rate(istio_requests_total{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m]) > 0'
+        attributes:
+          - name: ip
+            label: instance
+            matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
+            isIdentifier: true
+          - name: namespace
+            label: destination_service_namespace
+          - name: service
+            label: destination_service_name
+  ```
+
+* The following is an example of a [PrometheusServerConfig](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_prometheusserverconfig_emptycluster.yaml) resource:
+
+  ```yaml
+  apiVersion: metrics.turbonomic.io/v1alpha1
+  kind: PrometheusServerConfig
+  metadata:
+    name: prometheusserverconfig-emptycluster
+  spec:
+    address: http://prometheus.istio-system:9090
+  ```
+
+* Verify that the resources are being discovered in `prometurbo` logs. For example:
+
+  ```console
+  I0328 18:42:04.003329 1 provider.go:60] Discovered 4 PrometheusQueryMapping resources.
+  I0328 18:42:04.007689 1 provider.go:71] Discovered 2 PrometheusServerConfig resources.
+  I0328 18:42:04.007903 1 serverconfig.go:19] Loading PrometheusServerConfig turbo-community/prometheusserverconfig-emptycluster.
+  I0328 18:42:04.007927 1 client.go:68] Creating client for Prometheus server: http://prometheus.istio-system:9090
+  I0328 18:42:04.007935 1 serverconfig.go:36] There are 1 PrometheusQueryMapping resources in namespace turbo-community
+  I0328 18:42:04.007943 1 serverconfig.go:19] Loading PrometheusServerConfig turbo/prometheusserverconfig-singlecluster.
+  I0328 18:42:04.007947 1 client.go:68] Creating client for Prometheus server: http://prometheus.istio-system:9090
+  I0328 18:42:04.007950 1 serverconfig.go:36] There are 3 PrometheusQueryMapping resources in namespace turbo
+  I0328 18:42:04.008048 1 clusterconfig.go:39] Excluding turbo/jmx-tomcat.
+  ```

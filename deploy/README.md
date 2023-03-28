@@ -168,7 +168,7 @@ $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/c
                 - jmx-tomcat
   ```
 
-* Prometurbo should now be ready to consume metrics from Prometheus server. Check `prometurbo` logs to verify. For example:
+  * Prometurbo should now be ready to consume metrics from Prometheus server. Check `prometurbo` logs to verify. For example:
 
   ```console
   I0328 18:42:04.003329 1 provider.go:60] Discovered 4 PrometheusQueryMapping resources.

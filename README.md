@@ -12,8 +12,7 @@ To configure the Prometheus server and map query results into applications and m
 custom resources in the Kubernetes cluster:
 
 * [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping)
-  allows users to define mappings between Turbonomic entities (such as **ApplicationComponents**, **Services**, or *
-  *VirtualMachines**) and Prometheus metrics exposed by different prometheus exporters.
+  allows users to define mappings between Turbonomic entities (such as **ApplicationComponents**, **Services**, or **VirtualMachines**) and Prometheus metrics exposed by different prometheus exporters.
 * [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig)
   specifies the address of the Prometheus server, as well as optional label selectors to filter
   out [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping)

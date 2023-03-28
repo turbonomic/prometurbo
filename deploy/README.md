@@ -108,7 +108,7 @@ $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/c
 $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/config/crd/bases/metrics.turbonomic.io_prometheusserverconfigs.yaml
 ```
 
-* Create PrometheusQueryMapping and PromethesServerConfig resources. These custom resources allow you to defien configurations for Prometurbo to consume:
+* Create PrometheusQueryMapping and PromethesServerConfig resources. These custom resources allow you to define configurations for Prometurbo to consume:
 
   * Create a PrometheusQueryMapping resource to specify how Prometurbo should map Prometheus queries to Turbonomic entities. The following is a sample of [`PrometheusQueryMapping`](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_istio.yaml) for metrics exposed by `istio` exporter:
 

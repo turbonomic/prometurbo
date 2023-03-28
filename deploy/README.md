@@ -1,7 +1,7 @@
 
 ## Deploy Prometurbo
 
-It is recommended to deploy Prometurbo via operator. The following is an example of deploying Prometurbo through Openshift OperatorHub, create a [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping), and a [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig) to be consumed by Prometurbo.
+It is recommended to deploy Prometurbo via operator. The following is an example of deploying Prometurbo through Openshift OperatorHub, and then create a [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping) and a [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig) to be consumed by Prometurbo.
 
 ### Install Prometurbo Operator through Openshift OperatorHub
 

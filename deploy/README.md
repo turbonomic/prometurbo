@@ -150,7 +150,7 @@ $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/c
               label: destination_service_name
     ```
 
-  * Create a PrometheusServerConfig resource to sepcify configuration options for the Prometheus server. The following is an example of a [PrometheusServerConfig](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_prometheusserverconfig_singlecluster.yaml) resource which specifies the location of the Prometheus server, and a label selector to exclude `jmx-tomcat` PrometheusQueryMapping resource:
+  * Create a PrometheusServerConfig resource to specify configuration options for the Prometheus server. The following is an example of a [PrometheusServerConfig](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_prometheusserverconfig_singlecluster.yaml) resource which specifies the location of the Prometheus server, and a label selector to exclude `jmx-tomcat` PrometheusQueryMapping resource:
 
     ```yaml
     apiVersion: metrics.turbonomic.io/v1alpha1

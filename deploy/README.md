@@ -112,63 +112,63 @@ $ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/c
 
   * Create a PrometheusQueryMapping resource to specify how Prometurbo should map Prometheus queries to Turbonomic entities. The following is a sample of [`PrometheusQueryMapping`](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_istio.yaml) for metrics exposed by `istio` exporter:
 
-  ```yaml
-  apiVersion: metrics.turbonomic.io/v1alpha1
-  kind: PrometheusQueryMapping
-  metadata:
-    labels:
-      mapping: istio
-    name: istio
-  spec:
-    entities:
-      - type: application
-        metrics:
-          - type: responseTime
-            queries:
-              - type: used
-                promql: 'rate(istio_request_duration_milliseconds_sum{request_protocol="http",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
-          - type: transaction
-            queries:
-              - type: used
-                promql: 'rate(istio_requests_total{request_protocol="http",response_code="200",reporter="destination"}[1m]) > 0'
-          - type: responseTime
-            queries:
-              - type: used
-                promql: 'rate(istio_request_duration_milliseconds_sum{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
-          - type: transaction
-            queries:
-              - type: used
-                promql: 'rate(istio_requests_total{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m]) > 0'
-        attributes:
-          - name: ip
-            label: instance
-            matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
-            isIdentifier: true
-          - name: namespace
-            label: destination_service_namespace
-          - name: service
-            label: destination_service_name
-  ```
+    ```yaml
+    apiVersion: metrics.turbonomic.io/v1alpha1
+    kind: PrometheusQueryMapping
+    metadata:
+      labels:
+        mapping: istio
+      name: istio
+    spec:
+      entities:
+        - type: application
+          metrics:
+            - type: responseTime
+              queries:
+                - type: used
+                  promql: 'rate(istio_request_duration_milliseconds_sum{request_protocol="http",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
+            - type: transaction
+              queries:
+                - type: used
+                  promql: 'rate(istio_requests_total{request_protocol="http",response_code="200",reporter="destination"}[1m]) > 0'
+            - type: responseTime
+              queries:
+                - type: used
+                  promql: 'rate(istio_request_duration_milliseconds_sum{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
+            - type: transaction
+              queries:
+                - type: used
+                  promql: 'rate(istio_requests_total{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m]) > 0'
+          attributes:
+            - name: ip
+              label: instance
+              matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
+              isIdentifier: true
+            - name: namespace
+              label: destination_service_namespace
+            - name: service
+              label: destination_service_name
+    ```
 
-* Create a PrometheusServerConfig resource to sepcify configuration options for the Prometheus server. The following is an example of a [PrometheusServerConfig](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_prometheusserverconfig_singlecluster.yaml) resource which specifies the location of the Prometheus server, and a label selector to exclude `jmx-tomcat` PrometheusQueryMapping resource:
+  * Create a PrometheusServerConfig resource to sepcify configuration options for the Prometheus server. The following is an example of a [PrometheusServerConfig](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_prometheusserverconfig_singlecluster.yaml) resource which specifies the location of the Prometheus server, and a label selector to exclude `jmx-tomcat` PrometheusQueryMapping resource:
 
-  ```yaml
-  apiVersion: metrics.turbonomic.io/v1alpha1
-  kind: PrometheusServerConfig
-  metadata:
-    name: prometheusserverconfig-emptycluster
-  spec:
-    address: http://prometheus.istio-system:9090
-    clusters:
-      - queryMappingSelector:
-          matchExpressions:
-            - key: mapping
-              operator: NotIn
-              values:
-                - jmx-tomcat
-  ```
+    ```yaml
+    apiVersion: metrics.turbonomic.io/v1alpha1
+    kind: PrometheusServerConfig
+    metadata:
+      name: prometheusserverconfig-emptycluster
+    spec:
+      address: http://prometheus.istio-system:9090
+      clusters:
+        - queryMappingSelector:
+            matchExpressions:
+              - key: mapping
+                operator: NotIn
+                values:
+                  - jmx-tomcat
+    ```
 
-  * Prometurbo should now be ready to consume metrics from Prometheus server. Check `prometurbo` logs to verify. For example:
+* Prometurbo should now be ready to consume metrics from Prometheus server. Check `prometurbo` logs to verify. For example:
 
   ```console
   I0328 18:42:04.003329 1 provider.go:60] Discovered 4 PrometheusQueryMapping resources.

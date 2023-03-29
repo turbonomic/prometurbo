@@ -1,151 +1,185 @@
 
-Prometurbo can be deployed in Kubernetes with the following steps:
+# Deploy Prometurbo
 
-## Setup prometheus exporters
+It is recommended to deploy Prometurbo via operator. The following are the steps to install Prometurbo Operator through OpenShift OperatorHub, create a Prometurbo instance, and then create [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping) and [PrometheusServerConfig](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusServerConfig) custom resources to be consumed by Prometurbo.
 
-The following is an example on how to set up and configure an Istio prometheus exporter in an Istio 1.4 environment:
+## Install Prometurbo Operator through OperatorHub in OpenShift
 
-Creating some Istio resources to collect  http-related metrics of the Pods and Services. 
+* Create a project (namespace) for your Prometurbo deployment. For example, the following YAML file creates a `turbo` namespace: 
 
-The definition of these Istio metrics, handlers and rule are defined in [`scripts/istio/ip.turbo.metric.istio-1.4.yaml`](../scripts/istio/ip.turbo.metric.istio-1.4.yaml), and can be deployed with:
+  ```yaml
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: turbo 
+  ```
 
-```bash
-istioctl create -f scripts/istio/ip.turbo.metric.istio-1.4.yaml
+* Navigate to the **OperatorHub** section in the OpenShift console, select the project created above, search for Prometurbo in the search bar, and select the **Certified Prometurbo Operator**:
+
+  ![image](https://user-images.githubusercontent.com/10012486/228285170-fe0c14da-b47f-4007-89e6-849078102563.png)
+
+* Make sure the `stable` channel is selected, and install the operator:
+
+  ![image](https://user-images.githubusercontent.com/10012486/228285768-295ee411-6e95-4cae-b5e3-5f3e7523018f.png)
+
+  ![image](https://user-images.githubusercontent.com/10012486/228285895-f024cc8f-7a1f-45f5-aa86-0e7048b8eb68.png)
+
+* After the install, the following resources are created:
+
+  **Name**	| **Kind**	| **Status** |	**API version**
+  ---      | ---      | ---        | ---
+  prometurbo-operator.vx.x.x | `ClusterServiceVersion`	| Created	| `operators.coreos.com/v1alpha1`
+  prometurbos.charts.helm.k8s.io | `CustomResourceDefinition`	| Present	| `apiextensions.k8s.io/v1`
+  prometurbo-operator | `ServiceAccount`	| Present	| `core/v1`
+  prometurbo-operator.vx.x.x-xxxxxxxx | `ClusterRole`	| Created	| `rbac.authorization.k8s.io/v1`
+  prometurbo-operator.vx.x.x-xxxxxxxx | `ClusterRoleBinding`	| Created	| `rbac.authorization.k8s.io/v1`
+  
+  Note that `ClusterRole` is created for `prometurbo-operator` such that it can have the permission to create the necessary `ClusterRole` for Prometurbo instances.
+
+## Create a Prometurbo instance
+
+* Once the operator is installed, navigate to the **Installed Operators** section in the OpenShift console. Select the Prometurbo operator and click **Create Instance**. Follow the prompts to configure the instance.
+
+* The following table lists the configuration parameters for `prometurbo`:
+
+   **Parameter**                | **Description**                       | **Default Value** 
+    ----------------------------|---------------------------------------|--------------
+   `image.prometurboRepository` | The `prometurbo` container image repository. | `icr.io/cpopen/turbonomic/prometurbo`
+   `image.prometurboTag`        | The `prometurbo` container image tag. | release version, such as `8.8.4`
+   `image.turbodifRepository`   | The `turbodif` container image repository. | `icr.io/cpopen/turbonomic/turbodif`
+   `image.turbodifTag`          | The `turbodif` container image tag. | release version, such as `8.8.4`
+   `image.pullPolicy`           | Specify either `IfNotPresent`, or `Always`. | `IfNotPresent`
+   `targetName`                 | A unique name to identify this target. | `Prometheus`
+   `targetTypeSuffix`           | A unique suffix to the `DataIngestionFramework` target type. The resulting target type becomes **DataIngestionFramework-`targetTypeSuffix`** on the UI. Do not specify `Turbonomic` as it is reserved for internal use. | `Prometheus`
+   `serviceAccountName`         | The name of the `serviceAccount` used by `prometurbo` pod. | `prometurbo`
+   `roleName`                   | The name of the `clusterrole` bound to the above service account. | `prometurbo`
+   `roleBinding`                | The name of the `clusterrolebinding` that binds the above service account to the above cluster role. | `prometurbo-binding`
+   `restAPIConfig.turbonomicCredentialsSecretName` | The name of the secret that contains Turbonomic server username and password. Required if not using cleartext username and password, and not taking the default secret name. If the secrect does not exist, `prometurbo` falls back to cleartext username and password. | `turbonomic-credentials` 
+   `restAPIConfig.opsManagerUserName` | The username to login to the Turbonomic server. Required if not using secret. |
+   `restAPIConfig.opsManagerPassword` | The password to login to the Turbonomic server. Required if not using secret. |
+   `serverMeta.version`         | Turbonomic server version.             | release version, such as `8.8.4`
+   `serverMeta.turboServer`     | Turbonomic server URL.                 |
+   `args.logginglevel`          | Logging level of `prometurbo`.         | `2`
+   `args.ignoreCommodityIfPresent` |  Specify whether to ignore merging commodity when a commodity of the same type already exists in the server. | `false` 
+
+* The following is a sample Prometurbo resource YAML file:
+
+  ```yaml
+  apiVersion: charts.helm.k8s.io/v1
+  kind: Prometurbo
+  metadata:
+    name: prometurbo-release
+    namespace: turbo
+  spec:
+    image:
+      prometurboTag: 8.8.4
+      turbodifTag: 8.8.4
+      pullPolicy: Always
+    restAPIConfig:
+      opsManagerPassword: administrator
+      opsManagerUserName: administrator
+    serviceAccountName: prometurbo-xl-ember
+    roleBinding: prometurbo-binding-xl-ember
+    roleName: prometurbo-xl-ember
+    serverMeta:
+      turboServer: 'https://9.46.114.249'
+      version: 8.8.4
+    targetName: OCP411-FYRE-IBM
+  ```
+
+* Verify the install by making sure that `prometurbo` pods are up and running:
+
+```console
+$ oc -n turbo get po | grep prometurbo
+prometurbo-operator-6ffc566f4c-lwbcn       1/1     Running   0          5d23h
+prometurbo-release-744947bb94-kqc2b        2/2     Running   0          5d20h
 ```
+
+* Verify that proper `ClusterRole` is created for Prometurbo. For example, given the above YAML, a `prometurbo-xl-ember` `ClusterRole` should be created, with proper rules to access the `prometheusquerymappings` and `prometheusserverconfigs` resources:
+
+  ![image](https://user-images.githubusercontent.com/10012486/228339349-bd87df9e-1274-4652-835f-99fb438f0b7c.png)
  
- With these resources, `Response time` and `Transactions` of Applications can be monitored through Istio.
- 
 
-## Create a namespace
+## Enable `turbo-metrics`
 
-Use an existing namespace, or create one where to deploy prometurbo. The yaml examples will use `turbo`.
-
-```yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: turbo 
+* Install Custom Resource Definitions 
+```
+$ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/config/crd/bases/metrics.turbonomic.io_prometheusquerymappings.yaml
+$ oc create -f https://raw.githubusercontent.com/turbonomic/turbo-metrics/main/config/crd/bases/metrics.turbonomic.io_prometheusserverconfigs.yaml
 ```
 
-## Create a service account, and add the role of cluster-admin
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: turbo-user
-  namespace: turbo
-```
+* Create PrometheusQueryMapping and PromethesServerConfig resources. These custom resources allow you to define configurations for Prometurbo to consume:
 
-## Create a configMap for Prometurbo
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometurbo-config
-data:
-  prometheus.config: |-
-    # A map of prometheus servers and metrics to scrape
-    servers:
-      # The unique name of the prometheus server
-      server1:
-        # The URL of the prometheus server
-        url: http://Prometheus_Server_URL
-        # The list of configured exporters to discover entities and metrics
-        exporters:
-          - cassandra
-          - istio
-          - jmx-tomcat
-          - node
-          - redis
-          - webdriver
-    # A map of exporter configurations to discover entities and related metrics
-    exporters:
-      istio:
-        entities:
-...
-...
-```
+  * Create a PrometheusQueryMapping resource to specify how Prometurbo should map Prometheus queries to Turbonomic entities. The following is a sample of [`PrometheusQueryMapping`](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_istio.yaml) for metrics exposed by `istio` exporter:
 
-## Create a configMap for Turbodif
-The <TURBONOMIC_SERVER_VERSION> is the release version of Turbonomic release, e.g. 7.22.0
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: turbodif-config
-data:
-  turbodif-config.json: |-
-    {
-        "communicationConfig": {
-            "serverMeta": {
-                "version": "<TURBONOMIC_SERVER_VERSION>",
-                "turboServer": "https://<TURBO-SERVER-ADDRESS>:<PORT>"
-            },
-            "restAPIConfig": {
-                "opsManagerUserName": "administrator",
-                "opsManagerPassword": "<TURBO-SERVER-PASSWORD>"
-            }
-        },
-        "targetConfig": {
-            "targetName": "Prometheus",
-            "targetAddress": "http://127.0.0.1:8081/metrics"
-        },
-        "targetTypeSuffix": "Prometheus" <-- Adjust this value as necessary to change the DIFProbe type name.
-    }
-```
-
-## Create a deployment for prometurbo
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: prometurbo
-  labels:
-    app: prometurbo
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: prometurbo
-  template:
+    ```yaml
+    apiVersion: metrics.turbonomic.io/v1alpha1
+    kind: PrometheusQueryMapping
     metadata:
       labels:
-        app: prometurbo
+        mapping: istio
+      name: istio
     spec:
-      containers:
-        # Replace the image with desired version:8.7.5 or snapshot version:8.7.5-SNAPSHOT from icr.io
-        - image: icr.io/cpopen/turbonomic/prometurbo:8.7.5
-          imagePullPolicy: IfNotPresent
-          name: prometurbo
-          args:
-            - --v=2
-          ports:
-            - containerPort: 8081
-          volumeMounts:
-            - name: prometurbo-config
-              mountPath: /etc/prometurbo
-              readOnly: true
-        - name: turbodif
-          # Replace the image with desired version:8.7.5 or snapshot version:8.7.5-SNAPSHOT from icr.io
-          image: icr.io/cpopen/turbonomic/turbodif:8.7.5
-          imagePullPolicy: IfNotPresent
-          args:
-            - --v=2
-          volumeMounts:
-          - name: turbodif-config
-            mountPath: /etc/turbodif
-            readOnly: true
-          - name: varlog
-            mountPath: /var/log
-      volumes:
-        - name: prometurbo-config
-          configMap:
-            name: prometurbo-config
-        - name: turbodif-config
-          configMap:
-            name: turbodif-config
-        - name: varlog
-          emptyDir: {}
-      restartPolicy: Always
+      entities:
+        - type: application
+          metrics:
+            - type: responseTime
+              queries:
+                - type: used
+                  promql: 'rate(istio_request_duration_milliseconds_sum{request_protocol="http",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
+            - type: transaction
+              queries:
+                - type: used
+                  promql: 'rate(istio_requests_total{request_protocol="http",response_code="200",reporter="destination"}[1m]) > 0'
+            - type: responseTime
+              queries:
+                - type: used
+                  promql: 'rate(istio_request_duration_milliseconds_sum{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m])/rate(istio_request_duration_milliseconds_count{}[1m]) >= 0'
+            - type: transaction
+              queries:
+                - type: used
+                  promql: 'rate(istio_requests_total{request_protocol="grpc",grpc_response_status="0",response_code="200",reporter="destination"}[1m]) > 0'
+          attributes:
+            - name: ip
+              label: instance
+              matches: \d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})??
+              isIdentifier: true
+            - name: namespace
+              label: destination_service_namespace
+            - name: service
+              label: destination_service_name
+    ```
 
-```
+  * Create a PrometheusServerConfig resource to specify configuration options for the Prometheus server. The following is an example of a [PrometheusServerConfig](https://github.com/turbonomic/turbo-metrics/blob/main/config/samples/metrics_v1alpha1_prometheusserverconfig_singlecluster.yaml) resource which specifies the location of the Prometheus server, and a label selector to exclude `jmx-tomcat` PrometheusQueryMapping resource:
+
+    ```yaml
+    apiVersion: metrics.turbonomic.io/v1alpha1
+    kind: PrometheusServerConfig
+    metadata:
+      name: prometheusserverconfig-emptycluster
+    spec:
+      address: http://prometheus.istio-system:9090
+      clusters:
+        - queryMappingSelector:
+            matchExpressions:
+              - key: mapping
+                operator: NotIn
+                values:
+                  - jmx-tomcat
+    ```
+
+* Prometurbo should now be ready to consume metrics from Prometheus server. Check `prometurbo` logs to verify. For example:
+
+  ```console
+  I0328 18:42:04.003329 1 provider.go:60] Discovered 4 PrometheusQueryMapping resources.
+  I0328 18:42:04.007689 1 provider.go:71] Discovered 2 PrometheusServerConfig resources.
+  I0328 18:42:04.007903 1 serverconfig.go:19] Loading PrometheusServerConfig turbo-community/prometheusserverconfig-emptycluster.
+  I0328 18:42:04.007927 1 client.go:68] Creating client for Prometheus server: http://prometheus.istio-system:9090
+  I0328 18:42:04.007935 1 serverconfig.go:36] There are 1 PrometheusQueryMapping resources in namespace turbo-community
+  I0328 18:42:04.007943 1 serverconfig.go:19] Loading PrometheusServerConfig turbo/prometheusserverconfig-singlecluster.
+  I0328 18:42:04.007947 1 client.go:68] Creating client for Prometheus server: http://prometheus.istio-system:9090
+  I0328 18:42:04.007950 1 serverconfig.go:36] There are 3 PrometheusQueryMapping resources in namespace turbo
+  I0328 18:42:04.008048 1 clusterconfig.go:39] Excluding turbo/jmx-tomcat.
+  ```
+
+

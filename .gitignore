@@ -1,6 +1,5 @@
 .idea
 *.iml
 .DS_Store
-build/prometurbo.linux
-prometurbo
+build/prometurbo*
 .vscode/

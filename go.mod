@@ -1,6 +1,6 @@
 module github.com/turbonomic/prometurbo
 
-go 1.19
+go 1.20 //Make sure you sync the change to the file Dockerfile.multi-archs after you update the version here
 
 require (
 	github.com/davecgh/go-spew v1.1.1

@@ -52,3 +52,12 @@ vet:
 
 clean:
 	@rm -rf ${OUTPUT_DIR}/linux ${bin}
+
+PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+REPO_NAME ?= icr.io/cpopen/turbonomic
+.PHONY: docker-buildx
+docker-buildx:
+	docker buildx create --name prometurbo-builder
+	- docker buildx use prometurbo-builder
+	- docker buildx build --platform=$(PLATFORMS) --push --tag $(REPO_NAME)/$(PROJECT):$(VERSION) -f build/Dockerfile.multi-archs --build-arg version=$(VERSION) .
+	docker buildx rm prometurbo-builder

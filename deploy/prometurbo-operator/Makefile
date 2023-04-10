@@ -181,3 +181,13 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+# Build the image for multi-platforms
+PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+REPO_NAME ?= icr.io/cpopen
+.PHONY: docker-buildx
+docker-buildx:
+	docker buildx create --name prometurbo-operator-builder
+	- docker buildx use prometurbo-operator-builder
+	- docker buildx build --platform=$(PLATFORMS) --push --tag $(REPO_NAME)/prometurbo-operator:$(VERSION) --build-arg VERSION=$(VERSION) .
+	docker buildx rm prometurbo-operator-builder

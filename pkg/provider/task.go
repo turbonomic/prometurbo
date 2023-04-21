@@ -79,16 +79,16 @@ func (t *Task) getMetricsForEntity() []*data.DIFEntity {
 				}
 				difEntity, found := entityMetricsMap[entityAttr.ID]
 				if !found {
-					difEntity = data.NewDIFEntity(entityAttr.ID, entityType).
-						WithNamespace(entityAttr.Namespace)
-					if entityAttr.IP != "" {
-						if t.k8sSvcId != "" {
-							difEntity.Matching(fmt.Sprintf("%s-%s", entityAttr.IP, t.k8sSvcId))
-						} else {
-							difEntity.Matching(entityAttr.IP)
-						}
+					hostedOnVM := entityDef.HostedOnVM
+					entityId := t.getEntityId(hostedOnVM, entityAttr)
+					difEntity = data.NewDIFEntity(entityId, entityType).
+						WithName(entityAttr.ID).WithNamespace(entityAttr.Namespace)
+					// Setting matching attributes
+					matchingAttr := t.getMatchingAttribute(hostedOnVM, entityAttr)
+					if matchingAttr != "" {
+						difEntity.Matching(matchingAttr)
 					}
-					if entityDef.HostedOnVM {
+					if hostedOnVM {
 						difEntity.HostedOnType(data.VM).HostedOnIP(entityAttr.IP)
 					}
 					processOwner(difEntity, entityAttr)
@@ -107,6 +107,42 @@ func (t *Task) getMetricsForEntity() []*data.DIFEntity {
 		entityMetrics = append(entityMetrics, metric)
 	}
 	return entityMetrics
+}
+
+func (t *Task) getEntityId(hostedOnVM bool, entityAttr *EntityAttribute) (entityId string) {
+	entityId = entityAttr.ID
+	if hostedOnVM {
+		return
+	}
+	// For containerized applications, append clusterId to the entityId if possible to make it unique
+	if t.clusterId != nil && t.clusterId.ID != "" {
+		entityId = entityId + "-" + t.clusterId.ID
+	} else if t.k8sSvcId != "" {
+		entityId = entityId + "-" + t.k8sSvcId
+	}
+	return
+}
+
+func (t *Task) getMatchingAttribute(hostedOnVM bool, entityAttr *EntityAttribute) (matchingAttr string) {
+	if entityAttr.IP == "" {
+		// No IP is found
+		return
+	}
+	matchingAttr = entityAttr.IP
+	if hostedOnVM {
+		// Use IP directly when app is hosted on VM
+		return
+	}
+	// For containerized applications, we must append kubernetes clusterId to the IP address
+	// to avoid potential collision of IPs from different clusters during server side stitching
+	if t.clusterId != nil && t.clusterId.ID != "" {
+		// This is a multi-cluster configuration
+		matchingAttr = matchingAttr + "-" + t.clusterId.ID
+	} else if t.k8sSvcId != "" {
+		// This is a single-cluster configuration
+		matchingAttr = matchingAttr + "-" + t.k8sSvcId
+	}
+	return
 }
 
 func processOwner(entity *data.DIFEntity, entityAttr *EntityAttribute) {

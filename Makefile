@@ -37,7 +37,8 @@ debug: clean
 	go build -ldflags $(LDFLAGS) -gcflags "-N -l" -o ${bin}.debug ./cmd
 
 docker: product
-	cd build; DOCKER_BUILDKIT=1 docker build -t turbonomic/prometurbo --build-arg $(GIT_COMMIT) .
+	cd build; DOCKER_BUILDKIT=1 docker build -t turbonomic/prometurbo --build-arg $(GIT_COMMIT) --load .
+
 
 test: clean
 	@go test -v -race ./pkg/...

@@ -111,6 +111,7 @@ func (t *Task) getMetricsForEntity() []*data.DIFEntity {
 
 func (t *Task) getEntityId(hostedOnVM bool, entityAttr *EntityAttribute) (entityId string) {
 	entityId = entityAttr.ID
+	// Use ID directly when app is hosted on VM
 	if hostedOnVM {
 		return
 	}

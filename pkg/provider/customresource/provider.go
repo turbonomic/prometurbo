@@ -3,8 +3,6 @@ package customresource
 import (
 	"context"
 	"fmt"
-	"regexp"
-
 	"github.com/golang/glog"
 	"github.com/turbonomic/turbo-metrics/api/v1alpha1"
 	"k8s.io/api/core/v1"
@@ -118,12 +116,5 @@ func getKubernetesServiceID(kubeClient client.Client) (string, error) {
 		return "", fmt.Errorf("failed to get default kubernetes service %s/%s: %v",
 			defaultNamespace, defaultServiceName, err)
 	}
-	svcUID := string(svc.GetUID())
-	regex := regexp.MustCompile("^[0-9a-fA-F]{8}")
-	match := regex.FindStringSubmatch(svcUID)
-	if len(match) != 1 {
-		return "", fmt.Errorf("failed to parse UUID %v of the default kubernetes service %s/%s",
-			svcUID, defaultNamespace, defaultServiceName)
-	}
-	return match[0], nil
+	return string(svc.GetUID()), nil
 }

@@ -85,8 +85,9 @@ func buildSvcByNamespace(entities []*data.DIFEntity) serviceByNamespace {
 		// Only create service entities from application and databaseServer
 		ServicePrefix := "Service-"
 		svcID := ServicePrefix + entity.UID
+		svcName := ServicePrefix + entity.Name
 		namespace := entity.GetNamespace()
-		svc := data.NewDIFEntity(svcID, "service").WithNamespace(namespace)
+		svc := data.NewDIFEntity(svcID, "service").WithName(svcName).WithNamespace(namespace)
 		for meType, meList := range entity.Metrics {
 			svc.AddMetrics(meType, meList)
 		}

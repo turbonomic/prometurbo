@@ -9,7 +9,7 @@ application scaling, placement and optimization.
 <img width="800" alt="appmetric" src="https://user-images.githubusercontent.com/10012486/80402653-34bfb780-888c-11ea-82f8-f102452047ff.png">
 
 To configure the Prometheus server and map query results into applications and metrics, you need to create the following
-custom resources in the Kubernetes cluster:
+custom resources in the Kubernetes cluster (from Prometurbo **8.8.4**):
 
 * [PrometheusQueryMapping](https://pkg.go.dev/github.com/turbonomic/turbo-metrics@v0.0.0-20230222215340-3cdff28ffdaf/api/v1alpha1#PrometheusQueryMapping):
   allows users to define mappings between Turbonomic entities (such as **ApplicationComponents**, **Services**, or **VirtualMachines**) and Prometheus metrics exposed by different prometheus exporters.

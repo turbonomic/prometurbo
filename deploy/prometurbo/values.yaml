@@ -36,6 +36,10 @@ restAPIConfig:
   opsManagerUserName: Turbo_username
   opsManagerPassword: Turbo_password
 
+sdkProtocolConfig:
+  registrationTimeoutSec: 300
+  restartOnRegistrationTimeout: false
+
 # Specify a unique target name
 targetName: Prometheus
 # Specify metric endpoint from Prometurbo

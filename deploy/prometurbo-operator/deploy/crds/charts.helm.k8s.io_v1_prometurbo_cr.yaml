@@ -14,6 +14,12 @@ spec:
     #opsManagerUserName: Turbo_username
     #opsManagerPassword: Turbo_password
 
+  # Configurations to register probe with Turbo Server
+  #sdkProtocolConfig:
+    #  registrationTimeoutSec: 300
+    #  restartOnRegistrationTimeout: false
+
+
   # Specify a unique target name, defaults to Prometheus
   #targetName: Prometheus
 

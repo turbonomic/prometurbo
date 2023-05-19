@@ -3,8 +3,18 @@ kind: Prometurbo
 metadata:
   name: prometurbo-release
 spec:
+  # Specify the name of the serviceaccount
+  #serviceAccountName: "turbo-user"
+
+  # Specify the name of the clusterrole
+  #roleName: "prometurbo"
+
+  # Specify the name of clusterrolebinding
+  #roleBinding: "prometurbo"
+
   # Turbo server version and address
   serverMeta:
+    #version: "8.1"
     turboServer: https://Turbo_server_URL
 
   # Turbo server api user and password stored in a secret or optionally specified as username and password

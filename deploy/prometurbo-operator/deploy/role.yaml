@@ -15,6 +15,7 @@ rules:
       - replicasets
       - replicationcontrollers
       - serviceaccounts
+      - events
     verbs:
       - '*'
   - apiGroups:

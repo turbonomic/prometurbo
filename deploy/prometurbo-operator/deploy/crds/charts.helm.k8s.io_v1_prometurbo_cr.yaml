@@ -10,7 +10,7 @@ spec:
   #roleName: "prometurbo"
 
   # Specify the name of clusterrolebinding
-  #roleBinding: "prometurbo"
+  #roleBinding: "prometurbo-binding"
 
   # Turbo server version and address
   serverMeta:
@@ -28,7 +28,6 @@ spec:
   #sdkProtocolConfig:
     #  registrationTimeoutSec: 300
     #  restartOnRegistrationTimeout: false
-
 
   # Specify a unique target name, defaults to Prometheus
   #targetName: Prometheus

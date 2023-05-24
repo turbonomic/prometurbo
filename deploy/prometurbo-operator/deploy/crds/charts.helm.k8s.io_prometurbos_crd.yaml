@@ -128,6 +128,16 @@ spec:
                   opsManagerPassword:
                     description: Turbo admin user password
                     type: string
+              sdkProtocolConfig:
+                description: Configurations to register probe with Turbo Server
+                type: object
+                properties:
+                  registrationTimeoutSec:
+                    description: Time in seconds to wait for registration response from the Turbo Server
+                    type: integer
+                  restartOnRegistrationTimeout:
+                    description: Restart probe container on registration timeout
+                    type: boolean
               targetName:
                 description: Optional target name for registration
                 type: string

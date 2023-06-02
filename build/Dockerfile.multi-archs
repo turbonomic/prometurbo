@@ -1,5 +1,5 @@
 # Building base image
-FROM --platform=$BUILDPLATFORM golang:1.20.3 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.20.4 AS builder
 ARG VERSION TARGETOS TARGETARCH
 ENV PROMETURBO_VERSION $VERSION
 WORKDIR /workspace

@@ -41,7 +41,7 @@ sdkProtocolConfig:
   restartOnRegistrationTimeout: false
 
 # Specify a unique target name
-targetName: Prometheus
+targetName: Cluster_name
 # Specify metric endpoint from Prometurbo
 targetAddress: http://127.0.0.1:8081/metrics
 

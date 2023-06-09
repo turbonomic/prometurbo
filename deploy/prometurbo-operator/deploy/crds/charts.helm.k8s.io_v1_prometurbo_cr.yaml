@@ -30,7 +30,7 @@ spec:
     #  restartOnRegistrationTimeout: false
 
   # Specify a unique target name, defaults to Prometheus
-  #targetName: Prometheus
+  targetName: Cluster_name
 
   # Specify a unique target type suffix, defaults to Prometheus
   # The Target Type will appear as DataIngestionFramework-<targetTypeSuffix> on the UI

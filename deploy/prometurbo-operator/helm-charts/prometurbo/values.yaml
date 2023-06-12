@@ -41,15 +41,15 @@ sdkProtocolConfig:
   registrationTimeoutSec: 300
   restartOnRegistrationTimeout: false
 
-# Specify a unique target name
-targetName: Prometheus
+# Specify a UNIQUE target name
+targetName: Cluster_name
 # Specify metric endpoint from Prometurbo
 targetAddress: http://127.0.0.1:8081/metrics
 
-# Specify a unique suffix to the DataIngestionFramework target type
+# Specify a UNIQUE suffix to the DataIngestionFramework target type
 # The Target Type will appear as DataIngestionFramework-<targetTypeSuffix> on the UI
 # Do not specify Turbonomic as the targetTypeSuffix, it is reserved for internal use
-targetTypeSuffix: Prometheus
+targetTypeSuffix: Cluster_name
 
 args:
   # logging level

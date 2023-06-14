@@ -17,7 +17,7 @@ spec:
         runAsNonRoot: true
       containers:
       - name: prometurbo-operator
-        image: icr.io/cpopen/prometurbo-operator:8.8.3
+        image: icr.io/cpopen/prometurbo-operator:8.9.1
         imagePullPolicy: Always
         env:
         - name: WATCH_NAMESPACE

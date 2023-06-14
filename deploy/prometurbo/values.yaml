@@ -7,9 +7,9 @@ replicaCount: 1
 # Replace the image with desired version:8.7.5 or snapshot version:8.7.5-SNAPSHOT from icr.io
 image:
   prometurboRepository: icr.io/cpopen/turbonomic/prometurbo
-  prometurboTag: 8.7.5
+  prometurboTag: 8.9.1
   turbodifRepository: icr.io/cpopen/turbonomic/turbodif
-  turbodifTag: 8.7.5
+  turbodifTag: 8.9.1
   pullPolicy: IfNotPresent
 
 # Specify the name of the serviceaccount

@@ -9,7 +9,7 @@ services:
   - docker
 
 go:
-  - 1.20.4
+  - 1.20.5
 
 go_import_path: github.com/turbonomic/prometurbo
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import ruamel.yaml
+import sys
 
 ## Utility function to update the cluster permission roles into target csv file
 def insert_fields(cluster_permission_role_yaml, certified_operator_cluster_service_version_yaml):
@@ -12,7 +13,7 @@ def insert_fields(cluster_permission_role_yaml, certified_operator_cluster_servi
     print("cluster permissions role inserted successfully.")
 
 
-CLUSTER_PERMISSION_ROLE_YAML_FILE_PATH = 'deploy/prometurbo-operator-cluster-role.yaml'
-CERTIFIED_OPERATOR_CLUSTER_SERVICE_VERSION_YAML_FILE_PATH = 'prometurbo-certified-operator-bundle/manifest/prometurbo-certified.clusterserviceversion.yaml'
+CLUSTER_PERMISSION_ROLE_YAML_FILE_PATH = sys.argv[1]
+CERTIFIED_OPERATOR_CLUSTER_SERVICE_VERSION_YAML_FILE_PATH = sys.argv[2]
 
 insert_fields(CLUSTER_PERMISSION_ROLE_YAML_FILE_PATH, CERTIFIED_OPERATOR_CLUSTER_SERVICE_VERSION_YAML_FILE_PATH)

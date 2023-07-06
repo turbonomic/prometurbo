@@ -1,3 +1,8 @@
+# Set shell
+SHELL := /usr/bin/env bash
+##### Developer Edit #####
+OPERATOR_NAME ?= prometurbo
+REGISTRY ?= icr.io/cpopen
 # VERSION defines the project version for the bundle.
 # Update this value when you upgrade the version of your project.
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
@@ -7,6 +12,10 @@ DEFAULT_VERSION=8.8.0
 VERSION=$(or $(PROMETURBO_VERSION), $(DEFAULT_VERSION))
 GIT_COMMIT=$(shell git rev-parse HEAD)
 
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -97,7 +106,7 @@ OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH := $(shell uname -m | sed 's/x86_64/amd64/')
 
 .PHONY: kustomize
-KUSTOMIZE = $(shell pwd)/bin/kustomize
+KUSTOMIZE = $(LOCALBIN)/kustomize
 kustomize: ## Download kustomize locally if necessary.
 ifeq (,$(wildcard $(KUSTOMIZE)))
 ifeq (,$(shell which kustomize 2>/dev/null))
@@ -113,7 +122,7 @@ endif
 endif
 
 .PHONY: helm-operator
-HELM_OPERATOR = $(shell pwd)/bin/helm-operator
+HELM_OPERATOR = $(LOCALBIN)/helm-operator
 helm-operator: ## Download helm-operator locally if necessary, preferring the $(pwd)/bin path over global if both exist.
 ifeq (,$(wildcard $(HELM_OPERATOR)))
 ifeq (,$(shell which helm-operator 2>/dev/null))
@@ -142,6 +151,122 @@ bundle-build: ## Build the bundle image.
 .PHONY: bundle-push
 bundle-push: ## Push the bundle image.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
+
+YQ ?= $(LOCALBIN)/yq
+YQ_TOOLS_VERSION ?= v4.30.4
+
+.PHONY: yq
+yq: $(YQ) ## Download yq locally if necessary.
+$(YQ): $(LOCALBIN)
+	test -s $(LOCALBIN)/yq || GOBIN=$(LOCALBIN) go install github.com/mikefarah/yq/v4@$(YQ_TOOLS_VERSION)
+
+
+.PHONY: python
+PYTHON = $(LOCALBIN)/python3
+python: $(PYTHON)  ## Install Python locally if necessary. Darwin OS is specific to mac users if running locally
+$(PYTHON):
+	@if ! command -v python3 >/dev/null 2>&1; then \
+		mkdir -p $(LOCALBIN); \
+		if [ `uname -s` = "Darwin" ]; then \
+			brew install python@3; \
+		else \
+			sudo apt update && sudo apt install python3; \
+		fi \
+	fi
+	ln -sf `command -v python3` $(PYTHON)
+
+
+
+
+OPERATOR_VERSION_BETA ?= $(if $(OPERATOR_BETA_RELEASE_MINOR_VERSION),beta.$(OPERATOR_BETA_RELEASE_MINOR_VERSION),beta.1)
+OPERATOR_OLM_INCLUSIVE_RANGE_VERSION ?= 8.7.5
+OPERATOR_OLM_INCLUSIVE_BETA_VERSION ?= beta.1
+OPERATOR_RELEASE_FILTER ?= beta
+OPERATOR_CERTIFIED ?= prometurbo-certified
+OPERATOR_BUNDLE_DIR ?= certified-operator-bundle
+OPERATOR_BUNDLE_TEMPLATE_DIR ?= bundle-template
+OPERATOR_CRD_FILE_PATH ?= deploy/crds/charts.helm.k8s.io_prometurbos_crd.yaml
+CLUSTER_PERMISSION_ROLE_YAML_FILE_PATH ?= deploy/prometurbo-operator-cluster-role.yaml
+CERTIFIED_OPERATOR_CLUSTER_SERVICE_VERSION_YAML_FILE_PATH ?= $(OPERATOR_BUNDLE_DIR)/manifest/prometurbo-certified.clusterserviceversion.yaml
+
+
+.PHONY: build-certified-operator-bundle
+build-certified-operator-bundle:yq python verify-operator-release-channel verify_image_digest_version create_certified_operator_bundle_directory update_image_digest_in_operator_bundle update_operator_version_in_operator_bundle update_olm_skipRange_in_operator_bundle update_cluster_permissions_in_operator_bundle update_release_channel_in_operator_bundle
+## verify operator release channel, to allow only valid releases
+verify-operator-release-channel:
+    ifneq ($(filter $(OPERATOR_RELEASE_CHANNEL),stable beta),$(OPERATOR_RELEASE_CHANNEL))
+        $(error Invalid operator release channel parameter - $(OPERATOR_RELEASE_CHANNEL). valid release channels are either "stable" or "beta only".)
+    endif
+
+## verify if the version field value is present in the image to proceed, if empty exit the execution
+verify_image_digest_version:
+	@echo "Verify Image Digest version field value"
+	docker pull $(REGISTRY)/$(OPERATOR_NAME)-operator:$(OPERATOR_RELEASE_VERSION)
+	version=$$(docker inspect $(REGISTRY)/$(OPERATOR_NAME)-operator:$(OPERATOR_RELEASE_VERSION) | grep '"version":' | awk '{print $$2}' | tr -d '",'); \
+	if [ -z "$$version" ]; then \
+		echo "Error: Image digest version field is empty, cannot procced with $(OPERATOR_CERTIFIED)-operator bundle release."; \
+		exit 1; \
+	elif [ "$$version" != "$(OPERATOR_RELEASE_VERSION)" ]; then \
+		echo "Error: Image digest version field: ($$version) does not match operator release version: ($(OPERATOR_RELEASE_VERSION))."; \
+		exit 1; \
+	else \
+		echo "Image digest validation successful, proceeding with next steps."; \
+	fi
+
+## create certified operator bundle dir and copy the base files to update the clusterserviceversion and metadata contents as required for releasing
+create_certified_operator_bundle_directory:
+	@echo "Creating certified operator bundle files for $(OPERATOR_CERTIFIED) clusterserviceversion..."
+	mkdir -p $(OPERATOR_BUNDLE_DIR)/manifest/
+	cp $(OPERATOR_CRD_FILE_PATH) $(OPERATOR_BUNDLE_DIR)/manifest/prometurbos.charts.helm.k8s.io.crd.yaml
+	cp $(OPERATOR_BUNDLE_TEMPLATE_DIR)/template/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml $(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
+	mkdir -p $(OPERATOR_BUNDLE_DIR)/metadata/
+	cp $(OPERATOR_BUNDLE_TEMPLATE_DIR)/template/annotations.yaml $(OPERATOR_BUNDLE_DIR)/metadata/annotations.yaml
+	@echo "$(OPERATOR_CERTIFIED)-operator bundle directory created successfully."
+
+## update image digest key
+update_image_digest_in_operator_bundle:
+	@echo "Updating image digest in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
+	digest=$$(docker inspect --format='{{index .RepoDigests 0}}' $(REGISTRY)/$(OPERATOR_NAME)-operator:$(OPERATOR_RELEASE_VERSION) | awk -F@ '{print $$2}'); \
+	if [ -z "$$digest" ]; then \
+		echo "Error: Image digest is empty, cannot proceed with $(OPERATOR_CERTIFIED)-operator bundle release."; \
+		exit 1; \
+	else \
+	    $(YQ) eval -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= sub("sha256:.*", "'$$digest'") | .spec.relatedImages[0].image |= sub("sha256:.*", "'$$digest'")' \
+		    $(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml; \
+	    echo "$(OPERATOR_CERTIFIED)-clusterserviceversion image digest updated."; \
+	fi
+
+## update release version
+update_operator_version_in_operator_bundle:
+	@echo "Updating release versions in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
+	$(eval OPERATOR_RELEASE_CHANNEL_VERSION := $(if $(filter $(OPERATOR_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_VERSION_BETA),$(OPERATOR_RELEASE_VERSION)))
+	$(YQ) eval -i '.metadata.name |= sub("prometurbo-operator.v.*", "prometurbo-operator.v$(OPERATOR_RELEASE_CHANNEL_VERSION)") | .spec.version = "$(OPERATOR_RELEASE_CHANNEL_VERSION)"' \
+		$(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
+	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion release versions updated successfully."
+
+## update skipRange based on inclusive and exclusive release versions set
+update_olm_skipRange_in_operator_bundle:
+	@echo "Updating olm.skipRange in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
+	$(YQ) eval -i '.metadata.annotations."olm.skipRange" |= sub(">=[^<]+", ">=$(if $(filter $(OPERATOR_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_OLM_INCLUSIVE_RANGE_VERSION)-$(OPERATOR_OLM_INCLUSIVE_BETA_VERSION),$(OPERATOR_OLM_INCLUSIVE_RANGE_VERSION))") \
+	| .metadata.annotations."olm.skipRange" |= sub("<[^<]+", " <$(if $(filter $(OPERATOR_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_VERSION_BETA),$(OPERATOR_RELEASE_VERSION))")' \
+	   $(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
+	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion olm.skipRange updated successfully."
+
+## update cluster permissions roles
+update_cluster_permissions_in_operator_bundle:
+	@echo "Updating cluster permissions roles in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
+	$(PYTHON) $(OPERATOR_BUNDLE_TEMPLATE_DIR)/cluster_permissions_automation.py \
+	$(CLUSTER_PERMISSION_ROLE_YAML_FILE_PATH) \
+	$(CERTIFIED_OPERATOR_CLUSTER_SERVICE_VERSION_YAML_FILE_PATH)
+	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion cluster permissions roles updated successfully."
+
+## update release channel
+update_release_channel_in_operator_bundle:
+	@echo "Updating release channel in  $(OPERATOR_CERTIFIED)-annotations..."
+	$(YQ) eval -i '.annotations."operators.operatorframework.io.bundle.channels.v1" = "$(OPERATOR_RELEASE_CHANNEL)"' \
+		$(OPERATOR_BUNDLE_DIR)/metadata/annotations.yaml
+	@echo "$(OPERATOR_CERTIFIED)-annotations release channel updated successfully."
+
 
 .PHONY: opm
 OPM = ./bin/opm

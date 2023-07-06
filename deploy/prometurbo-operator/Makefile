@@ -197,6 +197,7 @@ verify-operator-release-channel:
     ifneq ($(filter $(OPERATOR_RELEASE_CHANNEL),stable beta),$(OPERATOR_RELEASE_CHANNEL))
         $(error Invalid operator release channel parameter - $(OPERATOR_RELEASE_CHANNEL). valid release channels are either "stable" or "beta only".)
     endif
+
 ## verify if the version field value is present in the image to proceed, if empty exit the execution
 verify_image_digest_version:
 	@echo "Verify Image Digest version field value"
@@ -205,9 +206,13 @@ verify_image_digest_version:
 	if [ -z "$$version" ]; then \
 		echo "Error: Image digest version field is empty, cannot procced with $(OPERATOR_CERTIFIED)-operator bundle release."; \
 		exit 1; \
+	elif [ "$$version" != "$(OPERATOR_RELEASE_VERSION)" ]; then \
+		echo "Error: Image digest version field: ($$version) does not match operator release version: ($(OPERATOR_RELEASE_VERSION))."; \
+		exit 1; \
 	else \
 		echo "Image digest version field is not empty, proceeding with next steps."; \
 	fi
+
 ## create certified operator bundle dir and copy the base files to update the clusterserviceversion and metadata contents as required for releasing
 create_certified_operator_bundle_directory:
 	@echo "Creating certified operator bundle files for $(OPERATOR_CERTIFIED) clusterserviceversion..."
@@ -217,13 +222,20 @@ create_certified_operator_bundle_directory:
 	mkdir -p $(OPERATOR_BUNDLE_DIR)/metadata/
 	cp $(OPERATOR_BUNDLE_TEMPLATE_DIR)/template/annotations.yaml $(OPERATOR_BUNDLE_DIR)/metadata/annotations.yaml
 	@echo "$(OPERATOR_CERTIFIED)-operator bundle directory created successfully."
+
 ## update image digest key
 update_image_digest_in_operator_bundle:
 	@echo "Updating image digest in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
 	digest=$$(docker inspect --format='{{index .RepoDigests 0}}' $(REGISTRY)/$(OPERATOR_NAME)-operator:$(OPERATOR_RELEASE_VERSION) | awk -F@ '{print $$2}'); \
-	$(YQ) eval -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= sub("sha256:.*", "'$$digest'") | .spec.relatedImages[0].image |= sub("sha256:.*", "'$$digest'")' \
-		$(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
-	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion image digest updated."
+	if [ -z "$$digest" ]; then \
+		echo "Error: Image digest is empty, cannot proceed with $(OPERATOR_CERTIFIED)-operator bundle release."; \
+		exit 1; \
+	else \
+	    $(YQ) eval -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= sub("sha256:.*", "'$$digest'") | .spec.relatedImages[0].image |= sub("sha256:.*", "'$$digest'")' \
+		    $(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml; \
+	    echo "$(OPERATOR_CERTIFIED)-clusterserviceversion image digest updated."; \
+	fi
+
 ## update release version
 update_operator_version_in_operator_bundle:
 	@echo "Updating release versions in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
@@ -231,6 +243,7 @@ update_operator_version_in_operator_bundle:
 	$(YQ) eval -i '.metadata.name |= sub("prometurbo-operator.v.*", "prometurbo-operator.v$(OPERATOR_RELEASE_CHANNEL_VERSION)") | .spec.version = "$(OPERATOR_RELEASE_CHANNEL_VERSION)"' \
 		$(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
 	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion release versions updated successfully."
+
 ## update skipRange based on inclusive and exclusive release versions set
 update_olm_skipRange_in_operator_bundle:
 	@echo "Updating olm.skipRange in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
@@ -238,6 +251,7 @@ update_olm_skipRange_in_operator_bundle:
 	| .metadata.annotations."olm.skipRange" |= sub("<[^<]+", " <$(if $(filter $(OPERATOR_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_VERSION_BETA),$(OPERATOR_RELEASE_VERSION))")' \
 	   $(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
 	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion olm.skipRange updated successfully."
+
 ## update cluster permissions roles
 update_cluster_permissions_in_operator_bundle:
 	@echo "Updating cluster permissions roles in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
@@ -245,12 +259,14 @@ update_cluster_permissions_in_operator_bundle:
 	$(CLUSTER_PERMISSION_ROLE_YAML_FILE_PATH) \
 	$(CERTIFIED_OPERATOR_CLUSTER_SERVICE_VERSION_YAML_FILE_PATH)
 	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion cluster permissions roles updated successfully."
+
 ## update release channel
 update_release_channel_in_operator_bundle:
 	@echo "Updating release channel in  $(OPERATOR_CERTIFIED)-annotations..."
 	$(YQ) eval -i '.annotations."operators.operatorframework.io.bundle.channels.v1" = "$(OPERATOR_RELEASE_CHANNEL)"' \
 		$(OPERATOR_BUNDLE_DIR)/metadata/annotations.yaml
 	@echo "$(OPERATOR_CERTIFIED)-annotations release channel updated successfully."
+
 
 .PHONY: opm
 OPM = ./bin/opm

@@ -210,7 +210,7 @@ verify_image_digest_version:
 		echo "Error: Image digest version field: ($$version) does not match operator release version: ($(OPERATOR_RELEASE_VERSION))."; \
 		exit 1; \
 	else \
-		echo "Image digest version field is not empty, proceeding with next steps."; \
+		echo "Image digest validation successful, proceeding with next steps."; \
 	fi
 
 ## create certified operator bundle dir and copy the base files to update the clusterserviceversion and metadata contents as required for releasing

@@ -21,3 +21,9 @@ data:
       },
       "targetTypeSuffix": ""
     }
+  turbo-autoreload.config: |-
+    {
+        "logging": {
+           "level": 2
+        }
+    }

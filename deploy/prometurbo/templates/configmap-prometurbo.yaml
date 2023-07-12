@@ -22,4 +22,9 @@ data:
 {{- if .Values.businessApplications }}
 {{ toYaml .Values.businessApplications | indent 6 }}
 {{- end }}
-
+  turbo-autoreload.config: |-
+    {
+      "logging": {
+        "level": {{ .Values.logging.level }}
+      }
+    }

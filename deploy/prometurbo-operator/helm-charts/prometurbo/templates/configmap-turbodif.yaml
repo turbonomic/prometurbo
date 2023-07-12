@@ -31,3 +31,9 @@ data:
       }
       {{- end }}
     }
+  turbo-autoreload.config: |-
+    {
+      "logging": {
+        "level": {{ .Values.logging.level }}
+      }
+    }

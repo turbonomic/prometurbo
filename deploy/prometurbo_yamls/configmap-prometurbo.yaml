@@ -19,3 +19,9 @@ data:
     #   path: string                   # The request path of a business transaction. Required.
     #   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
     businessApplications:
+  turbo-autoreload.config: |-
+    {
+        "logging": {
+           "level": 2
+        }
+    }

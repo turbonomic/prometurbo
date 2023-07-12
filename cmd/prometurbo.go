@@ -3,16 +3,20 @@ package main
 import (
 	"flag"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/fsnotify/fsnotify"
 	"github.com/golang/glog"
 	"github.com/turbonomic/turbo-metrics/api/v1alpha1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/spf13/viper"
 	"github.com/turbonomic/prometurbo/pkg/config"
 	"github.com/turbonomic/prometurbo/pkg/provider"
 	"github.com/turbonomic/prometurbo/pkg/provider/configmap"
@@ -77,6 +81,9 @@ func main() {
 	// Parse command line flags
 	parseFlags()
 
+	// Watch the configmap and detect the change on it
+	go WatchConfigMap()
+
 	glog.Infof("Running prometurbo GIT_COMMIT: %s", os.Getenv("GIT_COMMIT"))
 
 	if workerCount < 1 {
@@ -140,4 +147,47 @@ func getBizAppsConfig() []config.BusinessApplication {
 	glog.V(2).Infof("Business application topology configuration: %s",
 		spew.Sdump(bizApps))
 	return bizApps
+}
+
+func WatchConfigMap() {
+	//Check if the /etc/prometurbo/turbo-autoreload.config exists
+	autoReloadConfigFilePath := "/etc/prometurbo"
+	autoReloadConfigFileName := "turbo-autoreload.config"
+
+	viper.AddConfigPath(autoReloadConfigFilePath)
+	viper.SetConfigType("json")
+	viper.SetConfigName(autoReloadConfigFileName)
+	for {
+		verr := viper.ReadInConfig()
+		if verr == nil {
+			break
+		} else {
+			glog.V(4).Infof("Can't read the autoreload config file %s/%s due to the error: %v, will retry in 3 seconds", autoReloadConfigFilePath, autoReloadConfigFileName, verr)
+			time.Sleep(30 * time.Second)
+		}
+	}
+
+	glog.V(1).Infof("Start watching the autoreload config file %s/%s", autoReloadConfigFilePath, autoReloadConfigFileName)
+	updateConfig := func() {
+		newLoggingLevel := viper.GetString("logging.level")
+		currentLoggingLevel := flag.Lookup("v").Value.String()
+		if newLoggingLevel != currentLoggingLevel {
+			if newLogVInt, err := strconv.Atoi(newLoggingLevel); err != nil || newLogVInt < 0 {
+				glog.Errorf("Invalid log verbosity %v in the autoreload config file", newLoggingLevel)
+			} else {
+				err := flag.Lookup("v").Value.Set(newLoggingLevel)
+				if err != nil {
+					glog.Errorf("Can't apply the new logging level setting due to the error:%v", err)
+				} else {
+					glog.V(1).Infof("Logging level is changed from %v to %v", currentLoggingLevel, newLoggingLevel)
+				}
+			}
+		}
+	}
+	updateConfig() //update the logging level during startup
+	viper.OnConfigChange(func(in fsnotify.Event) {
+		updateConfig()
+	})
+
+	viper.WatchConfig()
 }

@@ -51,6 +51,10 @@ targetAddress: http://127.0.0.1:8081/metrics
 # Do not specify Turbonomic as the targetTypeSuffix, it is reserved for internal use
 targetTypeSuffix: Prometheus
 
+# Logging level. Changing this value does not require restart of Prometurbo but takes about 1 minute to take effect
+logging:
+  level: 2
+
 args:
   # logging level
   logginglevel: 2

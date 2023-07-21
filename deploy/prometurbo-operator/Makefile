@@ -317,3 +317,7 @@ docker-buildx:
 	- docker buildx use prometurbo-operator-builder
 	- docker buildx build --platform=$(PLATFORMS) --label "git-commit=$(GIT_COMMIT)" --label "git-version=$(VERSION)" --provenance=false --push --tag $(REPO_NAME)/prometurbo-operator:$(VERSION) --build-arg VERSION=$(VERSION) .
 	docker buildx rm prometurbo-operator-builder
+
+.PHONY: test
+test:
+	bash ./test.sh

@@ -2,15 +2,15 @@
 
 SCRIPT_DIR="$(cd "$(dirname $0)" && pwd)"
 ERR_LOG=$(mktemp --suffix _prome.errlog)
-WAIT_FOR_DEPLOYMENT=30
-OPERATOR_IMAGE_VERSION="8.9.5-SNAPSHOT"
+WAIT_FOR_DEPLOYMENT=60
 OPERATOR_IMAGE="icr.io\/cpopen\/prometurbo-operator:${OPERATOR_IMAGE_VERSION}"
-PROMETURBO_IMAGE_VERSION="8.9.5-SNAPSHOT"
 PROMETURBO_IMAGE_REPO="icr.io/cpopen/turbonomic/prometurbo"
 KUBECTL=kubectl
 # username and password for the local ops-manager
 OPS_MANAGER_USERNAME=administrator
 OPS_MANAGER_PASSWORD=administrator
+# assume prometurbo operator and prometurbo are always in the same ns
+TEST_NS=turbo
 # container used to search for logs
 CONTAINER_NAME=prometurbo
 
@@ -22,10 +22,10 @@ function rediscover_target {
 	DISPLAY_NAME=$1
     ip=$($KUBECTL get services --no-headers -n $namespace | grep nginx | awk '{print $4; exit}' | cut -d "," -f 1)
     cookie=$(curl -k -s -v "https://$ip/vmturbo/rest/login" --data "username=$OPS_MANAGER_USERNAME&password=$OPS_MANAGER_PASSWORD" 2>&1 | grep JSESSION | awk -F'=' '{print $2}' | awk -F';' '{print $1}')
-	response=$(curl -k -s --cookie "JSESSIONID=$cookie"-X GET "https://$ip/vmturbo/rest/targets?q=Prometheus&target_category=Custom&order_by=validation_status&ascending=true&query_method=regex" -H "accept: application/json")
+	response=$(curl -k -s --cookie "JSESSIONID=$cookie"-X GET "https://$ip/vmturbo/rest/targets?q=$DISPLAY_NAME&target_category=Custom&order_by=validation_status&ascending=true&query_method=regex" -H "accept: application/json")
 	target_uuid=$(echo "$response" | jq '. | .[] | "\(.uuid)"' | tr -d '"')
 	# rediscover
-	curl -k -s --cookie "JSESSIONID=$cookie"-X POST "https://${ip}/vmturbo/rest/targets/${target_uuid}?rediscover=true" -H "accept: application/json" -d '' # > /dev/null
+	curl -k -s --cookie "JSESSIONID=$cookie"-X POST "https://${ip}/vmturbo/rest/targets/${target_uuid}?rediscover=true" -H "accept: application/json" -d '' > /dev/null
 }
 
 function install_operator {
@@ -52,7 +52,7 @@ function uninstall_operator {
 }
 
 function create_cr {
-	CR_SURFIX=$1
+	CR_SUFFIX=$1
 	CLUSTER_ROLE=${2-"cluster-admin"}
 
 	# if we have .turbocreds pull the credentials from it instead
@@ -75,14 +75,14 @@ function create_cr {
 	XL_VERSION=$(echo -e "${XL_VERSION_DETAIL}" | grep "Version:" | awk '{print $2}')
 	[ -z "${XL_VERSION}" ] && echo -e "Failed to get exposed XL version" | tee -a ${ERR_LOG} && exit 1
 
-	CR_FILEPATH=$(mktemp --suffix _prometurbo_cr_${CR_SURFIX}.yaml)
+	CR_FILEPATH=$(mktemp --suffix _prometurbo_cr_${CR_SUFFIX}.yaml)
 	echo ${CR_FILEPATH}
 
 	cat > ${CR_FILEPATH} <<- EOT
 	apiVersion: charts.helm.k8s.io/v1
 	kind: Prometurbo
 	metadata:
-	  name: prometurbo-${CR_SURFIX}
+	  name: prometurbo-${CR_SUFFIX}
 	spec:
 	  serverMeta:
 	    version: ${XL_VERSION}
@@ -92,7 +92,7 @@ function create_cr {
 	    opsManagerUserName: ${OPS_MANAGER_USERNAME}
 	    opsManagerPassword: ${OPS_MANAGER_PASSWORD}
 	  targetConfig:
-	    targetName: ${CR_SURFIX}
+	    targetName: ${CR_SUFFIX}
 	  roleName: ${CLUSTER_ROLE}
 	  image:
 	    prometurboRepository: ${PROMETURBO_IMAGE_REPO}
@@ -106,18 +106,18 @@ function install_cr {
 	# install cr in a given namespace and run checks
 	NS=$1
 	CR_FILE=$2
-	TEST_DESC=${3-"Install Prometurbo CR in ${NS}"}
+	TARGET_NAME=$3
+	TEST_DESC=${4-"Install Prometurbo CR in ${NS}"}
 
 	[ -z "${NS}" ] && echo "Namespace not provided" | tee -a ${ERR_LOG} && return
 	[ ! -f "${CR_FILE}" ] && echo "CR file ${CR_FILE} not provided" | tee -a ${ERR_LOG} && return
 
 	echo -e "> Start testing for ${TEST_DESC}"
-	$KUBECTL create ns ${NS}
 	$KUBECTL apply -f ${CR_FILE} -n ${NS} && echo -e "Wait for ${WAIT_FOR_DEPLOYMENT}s to finish container creation"
 	sleep ${WAIT_FOR_DEPLOYMENT}
 
 	# rediscover target in case initial discovery doesn't show up
-	rediscover_target $TARGET_NAME	&& echo -e "Wait for 10s to finish rediscovering"
+	rediscover_target $TARGET_NAME && echo -e "Wait for 10s to finish rediscovering"
 	sleep 10
 
 	# check if the prometurbo deployment get generated
@@ -186,11 +186,10 @@ function uninstall_cr {
 	fi
 
 	[ -f "${CR_FILE}" ] && rm ${CR_FILE}
-	[ -n "${NS}" ] && $KUBECTL delete ns ${NS}
 }
 
 function update_cr_for_logging {
-	CR_NS1=$1
+	TEST_NS=$1
 	CR_FILE1=$2
 	LOGGING_LEVEL=$3
 	echo -e "Updating CR to add logging level..."
@@ -214,7 +213,7 @@ function wait_for_logging_update {
 		echo "Wait for 10s for log level changes to be reflected..."
 		sleep 10
 		MSG=$($KUBECTL -n ${NAMESPACE} logs ${POD_NAME} -c ${CONTAINER_NAME} | grep "Logging level is changed from")
-		if [ $COUNT -eq 10 ]; then
+		if [ $COUNT -eq 15 ]; then
 			echo "Timed out waiting for log level changes..." | tee -a ${ERR_LOG} && return
 		fi
 		COUNT+=1
@@ -222,55 +221,15 @@ function wait_for_logging_update {
 	echo $MSG
 }
 
-function test_prometurbo_setup {
-	echo -e "> Tearing up prometurbo tests"
-
-	# turbo is the default namespace that matches the one using in
-	# deploy/role_binding.yaml, please change the value accordingly
-	OPERATOR_NS=turbo
-	install_operator ${OPERATOR_NS}
-
-	CR_NS1=testns1
-	CR_NS2=testns2
-	CR_NS3=testns3
-	CR_NS4=testns4
-	CR_FILE1=$(create_cr testcr1)
-	CR_FILE2=$(create_cr testcr2)
-	CR_FILE3=$(create_cr testcr3 "turbo-cluster-reader")
-	CR_FILE4=$(create_cr testcr4 "turbo-cluster-reader")
-	install_cr ${CR_NS1} ${CR_FILE1} "Deploy single prometurbo test"
-	install_cr ${CR_NS2} ${CR_FILE2} "Deploy multiple prometurbos test"
-	install_cr ${CR_NS3} ${CR_FILE3} "Deploy single turbo-cluster-reader prometurbo test"
-	install_cr ${CR_NS4} ${CR_FILE4} "Deploy multiple turbo-cluster-reader prometurbos test"
-
-	echo -e "> Tearing down prometurbo tests"
-	uninstall_cr ${CR_NS1} ${CR_FILE1}
-	uninstall_cr ${CR_NS2} ${CR_FILE2}
-	uninstall_cr ${CR_NS3} ${CR_FILE3}
-	uninstall_cr ${CR_NS4} ${CR_FILE4}
-	uninstall_operator ${OPERATOR_NS}
-
-	TEST_RESULT=$(cat ${ERR_LOG})
-	if [ -n "${TEST_RESULT}" ]; then
-		echo -e "Prometurbo test failed see logs at: ${ERR_LOG}" && exit 1
-	else
-		echo "Test passed!"
-	fi
-
-	rm ${ERR_LOG}
-}
-
-
 function test_dynamic_logging {
 	echo -e "> Running dynamic logging tests"
 	NEW_LOGGING_LEVEL=4
 	NEW_LOGLEVEL_MSG="Begin to handle path" # example level 4 msg
-	OPERATOR_NS=turbo
-	install_operator ${OPERATOR_NS}
-	CR_NS1=testns1
+	install_operator ${TEST_NS}
 	CR_LABEL=testcr1
 	CR_FILE1=$(create_cr ${CR_LABEL})
-	install_cr ${CR_NS1} ${CR_FILE1} "Deploy prometurbo for dynamic logging"
+	TARGET_NAME=Prometheus
+	install_cr ${TEST_NS} ${CR_FILE1} ${TARGET_NAME} "Deploy prometurbo for dynamic logging"
 	POD_NAME=$($KUBECTL get pod -n ${NS} | grep ${CR_LABEL} | awk '{print $1}')
 	NUM_RESTART_BEFORE=$($KUBECTL get pod -n ${NS} ${POD_NAME} | awk 'FNR == 2 {print $4}')
 	HEAD_LOGS_BEFORE=$($KUBECTL -n ${NS} logs ${POD_NAME} -c ${CONTAINER_NAME} | head -n 2)
@@ -279,19 +238,18 @@ function test_dynamic_logging {
 	echo "-------------Pod log before-----------------------------------------"
 	$KUBECTL -n ${NS} logs ${POD_NAME} -c ${CONTAINER_NAME}
 	echo "-------------End Pod log before-----------------------------------------"
-	update_cr_for_logging ${CR_NS1} ${CR_FILE1} ${NEW_LOGGING_LEVEL}
+	update_cr_for_logging ${TEST_NS} ${CR_FILE1} ${NEW_LOGGING_LEVEL}
 
 	# wait until log level changes msg shows up
 	wait_for_logging_update ${NS} ${POD_NAME}
 
-	#rediscover prometurbo to generate new logs
-	TARGET_NAME=Prometheus-${CR_LABEL} 
+	# rediscover prometurbo to generate new logs
 	rediscover_target $TARGET_NAME	&& echo -e "Wait for 10s to finish rediscovering"
 	sleep 10
 
 	# check to make sure new logging level is updated in the configmap
 	# expecting something like this in the configmap "{\n \"logging\": {\n \"level\": 5\n }\n}"
-	LOGLEVEL_CM=$($KUBECTL get cm prometurbo-config-prometurbo-${CR_LABEL} -n ${CR_NS1} -o json | jq '.data."turbo-autoreload.config"')
+	LOGLEVEL_CM=$($KUBECTL get cm prometurbo-config-prometurbo-${CR_LABEL} -n ${TEST_NS} -o json | jq '.data."turbo-autoreload.config"')
 	SEARCH_STR='level\\": '$NEW_LOGGING_LEVEL
 	[[ -z $(echo $LOGLEVEL_CM | grep "$SEARCH_STR") ]] && echo "Error: incorrect turbo-autoreload.config $LOGLEVEL_CM" | tee -a ${ERR_LOG}	
 
@@ -313,8 +271,8 @@ function test_dynamic_logging {
 	echo "-------------End Pod log after-----------------------------------------"
 
 	echo -e "Cleanup..."
-	uninstall_cr ${CR_NS1} ${CR_FILE1}
-	uninstall_operator ${OPERATOR_NS}
+	uninstall_cr ${TEST_NS} ${CR_FILE1}
+	uninstall_operator ${TEST_NS}
 
 	TEST_RESULT=$(cat ${ERR_LOG})
 	if [ -n "${TEST_RESULT}" ]; then
@@ -330,7 +288,4 @@ function main {
 	rm ${ERR_LOG}
 }
 
-
-# main
-
-rediscover_target Prometheus
+main

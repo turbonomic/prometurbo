@@ -320,4 +320,4 @@ docker-buildx:
 
 .PHONY: test
 test:
-	bash ./test.sh
+	OPERATOR_IMAGE_VERSION=${VERSION} PROMETURBO_IMAGE_VERSION=${VERSION} bash ./test.sh

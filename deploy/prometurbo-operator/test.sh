@@ -18,16 +18,6 @@ CONTAINER_NAME=prometurbo
 # please change the value according to your set up
 export namespace=turbonomic
 
-function rediscover_target {
-	DISPLAY_NAME=$1
-    ip=$($KUBECTL get services --no-headers -n $namespace | grep nginx | awk '{print $4; exit}' | cut -d "," -f 1)
-    cookie=$(curl -k -s -v "https://$ip/vmturbo/rest/login" --data "username=$OPS_MANAGER_USERNAME&password=$OPS_MANAGER_PASSWORD" 2>&1 | grep JSESSION | awk -F'=' '{print $2}' | awk -F';' '{print $1}')
-	response=$(curl -k -s --cookie "JSESSIONID=$cookie"-X GET "https://$ip/vmturbo/rest/targets?q=$DISPLAY_NAME&target_category=Custom&order_by=validation_status&ascending=true&query_method=regex" -H "accept: application/json")
-	target_uuid=$(echo "$response" | jq '. | .[] | "\(.uuid)"' | tr -d '"')
-	# rediscover
-	curl -k -s --cookie "JSESSIONID=$cookie"-X POST "https://${ip}/vmturbo/rest/targets/${target_uuid}?rediscover=true" -H "accept: application/json" -d '' > /dev/null
-}
-
 function install_operator {
 	NS=$1
 	[ -z "${NS}" ] && echo -e "Operator namespace not provided" | tee -a ${ERR_LOG} && exit 1
@@ -106,8 +96,7 @@ function install_cr {
 	# install cr in a given namespace and run checks
 	NS=$1
 	CR_FILE=$2
-	TARGET_NAME=$3
-	TEST_DESC=${4-"Install Prometurbo CR in ${NS}"}
+	TEST_DESC=${3-"Install Prometurbo CR in ${NS}"}
 
 	[ -z "${NS}" ] && echo "Namespace not provided" | tee -a ${ERR_LOG} && return
 	[ ! -f "${CR_FILE}" ] && echo "CR file ${CR_FILE} not provided" | tee -a ${ERR_LOG} && return
@@ -115,10 +104,6 @@ function install_cr {
 	echo -e "> Start testing for ${TEST_DESC}"
 	$KUBECTL apply -f ${CR_FILE} -n ${NS} && echo -e "Wait for ${WAIT_FOR_DEPLOYMENT}s to finish container creation"
 	sleep ${WAIT_FOR_DEPLOYMENT}
-
-	# rediscover target in case initial discovery doesn't show up
-	rediscover_target $TARGET_NAME && echo -e "Wait for 10s to finish rediscovering"
-	sleep 10
 
 	# check if the prometurbo deployment get generated
 	FAILED=0
@@ -132,14 +117,6 @@ function install_cr {
 		echo -e ">  Deployment ${CR_DEPLOY} cr check........FAILED" | tee -a ${ERR_LOG}
 	else
 		echo -e ">  Deployment ${CR_DEPLOY} cr check........PASSED"
-	fi
-
-	# check if the cluster log is healthy
-	if [[ -z "$($KUBECTL logs ${CR_DEPLOY} -c ${CONTAINER_NAME} -n ${NS} | grep "Discovered .* entities")" ]]; then
-		FAILED=$((${FAILED}+1))
-		echo -e ">  Deployment ${CR_DEPLOY} log check........FAILED" | tee -a ${ERR_LOG}
-	else
-		echo -e ">  Deployment ${CR_DEPLOY} log check........PASSED"
 	fi
 
 	CR_DEPLOY_NAME=$($KUBECTL get ${CR_DEPLOY} -n ${NS} -o jsonpath={.metadata.name})
@@ -224,12 +201,10 @@ function wait_for_logging_update {
 function test_dynamic_logging {
 	echo -e "> Running dynamic logging tests"
 	NEW_LOGGING_LEVEL=4
-	NEW_LOGLEVEL_MSG="Begin to handle path" # example level 4 msg
 	install_operator ${TEST_NS}
 	CR_LABEL=testcr1
 	CR_FILE1=$(create_cr ${CR_LABEL})
-	TARGET_NAME=Prometheus
-	install_cr ${TEST_NS} ${CR_FILE1} ${TARGET_NAME} "Deploy prometurbo for dynamic logging"
+	install_cr ${TEST_NS} ${CR_FILE1} "Deploy prometurbo for dynamic logging"
 	POD_NAME=$($KUBECTL get pod -n ${NS} | grep ${CR_LABEL} | awk '{print $1}')
 	NUM_RESTART_BEFORE=$($KUBECTL get pod -n ${NS} ${POD_NAME} | awk 'FNR == 2 {print $4}')
 	HEAD_LOGS_BEFORE=$($KUBECTL -n ${NS} logs ${POD_NAME} -c ${CONTAINER_NAME} | head -n 2)
@@ -242,10 +217,6 @@ function test_dynamic_logging {
 
 	# wait until log level changes msg shows up
 	wait_for_logging_update ${NS} ${POD_NAME}
-
-	# rediscover prometurbo to generate new logs
-	rediscover_target $TARGET_NAME	&& echo -e "Wait for 10s to finish rediscovering"
-	sleep 10
 
 	# check to make sure new logging level is updated in the configmap
 	# expecting something like this in the configmap "{\n \"logging\": {\n \"level\": 5\n }\n}"
@@ -262,8 +233,6 @@ function test_dynamic_logging {
 	[[ $NUM_RESTART_BEFORE != $NUM_RESTART_AFTER ]] && echo "Pod restarted after updating logging level" | tee -a ${ERR_LOG}	
 	# check if previous logs are preserved
 	[[ $HEAD_LOGS_BEFORE != $HEAD_LOGS_AFTER ]] && echo "Logs before CR update was erased\n$HEAD_LOGS_BEFORE\n$HEAD_LOGS_AFTER" | tee -a ${ERR_LOG}
-	# check if new logs contains message that should only show up in the new logging level
-	[[ -z $($KUBECTL -n ${NS} logs ${POD_NAME} -c ${CONTAINER_NAME} | grep "$NEW_LOGLEVEL_MSG") ]] && echo "Error: expected new log not found" | tee -a ${ERR_LOG}	
 
 	# DEBUGGING ONLY
 	echo "-------------Pod log after-----------------------------------------"

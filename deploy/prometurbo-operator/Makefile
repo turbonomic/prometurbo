@@ -213,7 +213,7 @@ verify-operator-release-channel:
 verify-stable-operator-release-version:
 	if [ "$(OPERATOR_RELEASE_CHANNEL)" = "stable" ]; then \
         echo "Checking if the stable release version $(OPERATOR_RELEASE_VERSION) exists..."; \
-         if [ -n "$$(curl -H "Authorization: Bearer $(ACCESS_TOKEN)" -s "$(GITHUB_REPO_URL)" | jq -r 'map(select(.type == "dir")) | .[].name | match("$(OPERATOR_RELEASE_VERSION)") | try .string')" ]; then \
+         if [ -n "$$(curl -H "Authorization: Bearer $(ACCESS_TOKEN)" -s "$(GITHUB_REPO_URL)" | jq -r 'map(select(.type == "dir" and .name == "$(OPERATOR_RELEASE_VERSION)")) | .[].name')" ]; then \
             echo "Error: The operator release version already exists for stable channel: $(OPERATOR_RELEASE_VERSION)."; \
             exit 1; \
         fi; \

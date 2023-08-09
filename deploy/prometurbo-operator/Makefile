@@ -176,38 +176,59 @@ $(PYTHON):
 	ln -sf `command -v python3` $(PYTHON)
 
 
-
-
-OPERATOR_VERSION_BETA ?= $(if $(OPERATOR_BETA_RELEASE_MINOR_VERSION),beta.$(OPERATOR_BETA_RELEASE_MINOR_VERSION),beta.1)
 OPERATOR_OLM_INCLUSIVE_RANGE_VERSION ?= 8.7.5
 OPERATOR_OLM_INCLUSIVE_BETA_VERSION ?= beta.1
-OPERATOR_RELEASE_FILTER ?= beta
+OPERATOR_BETA_RELEASE_FILTER ?= beta
+OPERATOR_BETA_RELEASE_VERSION_SNAPSHOT ?= SNAPSHOT
 OPERATOR_CERTIFIED ?= prometurbo-certified
 OPERATOR_BUNDLE_DIR ?= certified-operator-bundle
 OPERATOR_BUNDLE_TEMPLATE_DIR ?= bundle-template
 OPERATOR_CRD_FILE_PATH ?= deploy/crds/charts.helm.k8s.io_prometurbos_crd.yaml
 CLUSTER_PERMISSION_ROLE_YAML_FILE_PATH ?= deploy/prometurbo-operator-cluster-role.yaml
 CERTIFIED_OPERATOR_CLUSTER_SERVICE_VERSION_YAML_FILE_PATH ?= $(OPERATOR_BUNDLE_DIR)/manifest/prometurbo-certified.clusterserviceversion.yaml
-
-
+GITHUB_REPO_URL := https://api.github.com/repos/turbodeploy/certified-operators/contents/operators/prometurbo-certified
+ifndef ACCESS_TOKEN
+$(error ACCESS_TOKEN is missing. It is required to verify the release versions from Git. Please provide the ACCESS_TOKEN to proceed with the release of the certified operator bundle.)
+endif
+OPERATOR_VERSION_BETA := $(shell \
+	OPERATOR_BETA_RELEASE_MINOR_VERSION=$$(curl -H "Authorization: Bearer $(ACCESS_TOKEN)" -s "$(GITHUB_REPO_URL)" | \
+	jq -r 'map(select(.type == "dir")) | .[].name | match("$(OPERATOR_RELEASE_VERSION)-beta\\.[0-9]+") | try .string catch "0"' | \
+	awk -F'.' 'BEGIN{max=0} {n=substr($$0, index($$0, "beta.")+5)+0; if (n>max) max=n} END{print max}'); \
+	if [ -z "$$OPERATOR_BETA_RELEASE_MINOR_VERSION" ]; then \
+		OPERATOR_BETA_RELEASE_MINOR_VERSION=1; \
+	else \
+		OPERATOR_BETA_RELEASE_MINOR_VERSION=$$(($$OPERATOR_BETA_RELEASE_MINOR_VERSION + 1)); \
+	fi; \
+	OPERATOR_VERSION_BETA=beta.$$OPERATOR_BETA_RELEASE_MINOR_VERSION; \
+	echo "$$OPERATOR_VERSION_BETA" \
+)
 .PHONY: build-certified-operator-bundle
-build-certified-operator-bundle:yq python verify-operator-release-channel verify_image_digest_version create_certified_operator_bundle_directory update_image_digest_in_operator_bundle update_operator_version_in_operator_bundle update_olm_skipRange_in_operator_bundle update_cluster_permissions_in_operator_bundle update_release_channel_in_operator_bundle
+build-certified-operator-bundle:yq python verify-operator-release-channel verify-stable-operator-release-version verify_image_digest_version create_certified_operator_bundle_directory update_image_digest_in_operator_bundle update_operator_version_in_operator_bundle update_olm_skipRange_in_operator_bundle update_cluster_permissions_in_operator_bundle update_release_channel_in_operator_bundle
 ## verify operator release channel, to allow only valid releases
 verify-operator-release-channel:
     ifneq ($(filter $(OPERATOR_RELEASE_CHANNEL),stable beta),$(OPERATOR_RELEASE_CHANNEL))
         $(error Invalid operator release channel parameter - $(OPERATOR_RELEASE_CHANNEL). valid release channels are either "stable" or "beta only".)
     endif
-
+## verify operator release version on stable channel, to avoid multiple releases of same version
+verify-stable-operator-release-version:
+	if [ "$(OPERATOR_RELEASE_CHANNEL)" = "stable" ]; then \
+        echo "Checking if the stable release version $(OPERATOR_RELEASE_VERSION) exists..."; \
+         if [ -n "$$(curl -H "Authorization: Bearer $(ACCESS_TOKEN)" -s "$(GITHUB_REPO_URL)" | jq -r 'map(select(.type == "dir" and .name == "$(OPERATOR_RELEASE_VERSION)")) | .[].name')" ]; then \
+            echo "Error: The operator release version already exists for stable channel: $(OPERATOR_RELEASE_VERSION)."; \
+            exit 1; \
+        fi; \
+    fi
 ## verify if the version field value is present in the image to proceed, if empty exit the execution
 verify_image_digest_version:
 	@echo "Verify Image Digest version field value"
-	docker pull $(REGISTRY)/$(OPERATOR_NAME)-operator:$(OPERATOR_RELEASE_VERSION)
-	version=$$(docker inspect $(REGISTRY)/$(OPERATOR_NAME)-operator:$(OPERATOR_RELEASE_VERSION) | grep '"version":' | awk '{print $$2}' | tr -d '",'); \
+	$(eval OPERATOR_IMAGE_RELEASE_VERSION := $(if $(filter $(OPERATOR_BETA_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_BETA_RELEASE_VERSION_SNAPSHOT),$(OPERATOR_RELEASE_VERSION)))
+	docker pull $(REGISTRY)/$(OPERATOR_NAME)-operator:$(OPERATOR_IMAGE_RELEASE_VERSION)
+	version=$$(docker inspect $(REGISTRY)/$(OPERATOR_NAME)-operator:$(OPERATOR_IMAGE_RELEASE_VERSION) | grep '"version":' | awk '{print $$2}' | tr -d '",'); \
 	if [ -z "$$version" ]; then \
 		echo "Error: Image digest version field is empty, cannot procced with $(OPERATOR_CERTIFIED)-operator bundle release."; \
 		exit 1; \
-	elif [ "$$version" != "$(OPERATOR_RELEASE_VERSION)" ]; then \
-		echo "Error: Image digest version field: ($$version) does not match operator release version: ($(OPERATOR_RELEASE_VERSION))."; \
+	elif [ "$$version" != "$(OPERATOR_IMAGE_RELEASE_VERSION)" ]; then \
+		echo "Error: Image digest version field: ($$version) does not match operator release version: ($(OPERATOR_IMAGE_RELEASE_VERSION))."; \
 		exit 1; \
 	else \
 		echo "Image digest validation successful, proceeding with next steps."; \
@@ -226,7 +247,8 @@ create_certified_operator_bundle_directory:
 ## update image digest key
 update_image_digest_in_operator_bundle:
 	@echo "Updating image digest in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
-	digest=$$(docker inspect --format='{{index .RepoDigests 0}}' $(REGISTRY)/$(OPERATOR_NAME)-operator:$(OPERATOR_RELEASE_VERSION) | awk -F@ '{print $$2}'); \
+	$(eval OPERATOR_IMAGE_RELEASE_VERSION := $(if $(filter $(OPERATOR_BETA_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_BETA_RELEASE_VERSION_SNAPSHOT),$(OPERATOR_RELEASE_VERSION)))
+	digest=$$(docker inspect --format='{{index .RepoDigests 0}}' $(REGISTRY)/$(OPERATOR_NAME)-operator:$(OPERATOR_IMAGE_RELEASE_VERSION) | awk -F@ '{print $$2}'); \
 	if [ -z "$$digest" ]; then \
 		echo "Error: Image digest is empty, cannot proceed with $(OPERATOR_CERTIFIED)-operator bundle release."; \
 		exit 1; \
@@ -239,7 +261,7 @@ update_image_digest_in_operator_bundle:
 ## update release version
 update_operator_version_in_operator_bundle:
 	@echo "Updating release versions in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
-	$(eval OPERATOR_RELEASE_CHANNEL_VERSION := $(if $(filter $(OPERATOR_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_VERSION_BETA),$(OPERATOR_RELEASE_VERSION)))
+	$(eval OPERATOR_RELEASE_CHANNEL_VERSION := $(if $(filter $(OPERATOR_BETA_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_VERSION_BETA),$(OPERATOR_RELEASE_VERSION)))
 	$(YQ) eval -i '.metadata.name |= sub("prometurbo-operator.v.*", "prometurbo-operator.v$(OPERATOR_RELEASE_CHANNEL_VERSION)") | .spec.version = "$(OPERATOR_RELEASE_CHANNEL_VERSION)"' \
 		$(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
 	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion release versions updated successfully."
@@ -247,8 +269,8 @@ update_operator_version_in_operator_bundle:
 ## update skipRange based on inclusive and exclusive release versions set
 update_olm_skipRange_in_operator_bundle:
 	@echo "Updating olm.skipRange in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
-	$(YQ) eval -i '.metadata.annotations."olm.skipRange" |= sub(">=[^<]+", ">=$(if $(filter $(OPERATOR_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_OLM_INCLUSIVE_RANGE_VERSION)-$(OPERATOR_OLM_INCLUSIVE_BETA_VERSION),$(OPERATOR_OLM_INCLUSIVE_RANGE_VERSION))") \
-	| .metadata.annotations."olm.skipRange" |= sub("<[^<]+", " <$(if $(filter $(OPERATOR_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_VERSION_BETA),$(OPERATOR_RELEASE_VERSION))")' \
+	$(YQ) eval -i '.metadata.annotations."olm.skipRange" |= sub(">=[^<]+", ">=$(if $(filter $(OPERATOR_BETA_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_OLM_INCLUSIVE_RANGE_VERSION)-$(OPERATOR_OLM_INCLUSIVE_BETA_VERSION),$(OPERATOR_OLM_INCLUSIVE_RANGE_VERSION))") \
+	| .metadata.annotations."olm.skipRange" |= sub("<[^<]+", " <$(if $(filter $(OPERATOR_BETA_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_VERSION_BETA),$(OPERATOR_RELEASE_VERSION))")' \
 	   $(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
 	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion olm.skipRange updated successfully."
 

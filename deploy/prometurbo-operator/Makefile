@@ -187,11 +187,8 @@ OPERATOR_CRD_FILE_PATH ?= deploy/crds/charts.helm.k8s.io_prometurbos_crd.yaml
 CLUSTER_PERMISSION_ROLE_YAML_FILE_PATH ?= deploy/prometurbo-operator-cluster-role.yaml
 CERTIFIED_OPERATOR_CLUSTER_SERVICE_VERSION_YAML_FILE_PATH ?= $(OPERATOR_BUNDLE_DIR)/manifest/prometurbo-certified.clusterserviceversion.yaml
 GITHUB_REPO_URL := https://api.github.com/repos/turbodeploy/certified-operators/contents/operators/prometurbo-certified
-ifndef ACCESS_TOKEN
-$(error ACCESS_TOKEN is missing. It is required to verify the release versions from Git. Please provide the ACCESS_TOKEN to proceed with the release of the certified operator bundle.)
-endif
 OPERATOR_VERSION_BETA := $(shell \
-	OPERATOR_BETA_RELEASE_MINOR_VERSION=$$(curl -H "Authorization: Bearer $(ACCESS_TOKEN)" -s "$(GITHUB_REPO_URL)" | \
+	OPERATOR_BETA_RELEASE_MINOR_VERSION=$$(curl -s "$(GITHUB_REPO_URL)" | \
 	jq -r 'map(select(.type == "dir")) | .[].name | match("$(OPERATOR_RELEASE_VERSION)-beta\\.[0-9]+") | try .string catch "0"' | \
 	awk -F'.' 'BEGIN{max=0} {n=substr($$0, index($$0, "beta.")+5)+0; if (n>max) max=n} END{print max}'); \
 	if [ -z "$$OPERATOR_BETA_RELEASE_MINOR_VERSION" ]; then \
@@ -213,7 +210,7 @@ verify-operator-release-channel:
 verify-stable-operator-release-version:
 	if [ "$(OPERATOR_RELEASE_CHANNEL)" = "stable" ]; then \
         echo "Checking if the stable release version $(OPERATOR_RELEASE_VERSION) exists..."; \
-         if [ -n "$$(curl -H "Authorization: Bearer $(ACCESS_TOKEN)" -s "$(GITHUB_REPO_URL)" | jq -r 'map(select(.type == "dir" and .name == "$(OPERATOR_RELEASE_VERSION)")) | .[].name')" ]; then \
+         if [ -n "$$(curl -s "$(GITHUB_REPO_URL)" | jq -r 'map(select(.type == "dir" and .name == "$(OPERATOR_RELEASE_VERSION)")) | .[].name')" ]; then \
             echo "Error: The operator release version already exists for stable channel: $(OPERATOR_RELEASE_VERSION)."; \
             exit 1; \
         fi; \

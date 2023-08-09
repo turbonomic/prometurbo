@@ -1,6 +1,16 @@
 #!/usr/bin/env python
-import ruamel.yaml
 import sys
+import subprocess
+def install_ruamel_yaml():
+  version = "0.17.32"
+  subprocess.check_call([sys.executable, '-m', 'pip', 'install', f'ruamel.yaml=={version}'])
+
+# Check if ruamel.yaml is installed. If not, install it.
+try:
+    import ruamel.yaml
+except ImportError:
+    install_ruamel_yaml()
+    import ruamel.yaml
 
 ## Utility function to update the cluster permission roles into target csv file
 def insert_fields(cluster_permission_role_yaml, certified_operator_cluster_service_version_yaml):

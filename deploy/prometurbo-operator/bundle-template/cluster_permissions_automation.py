@@ -2,7 +2,7 @@
 import sys
 import subprocess
 def install_ruamel_yaml():
-  version = "0.17.32"
+  version = "0.16.12"
   subprocess.check_call([sys.executable, '-m', 'pip', 'install', f'ruamel.yaml=={version}'])
 
 # Check if ruamel.yaml is installed. If not, install it.

@@ -186,7 +186,7 @@ OPERATOR_BUNDLE_TEMPLATE_DIR ?= bundle-template
 OPERATOR_CRD_FILE_PATH ?= deploy/crds/charts.helm.k8s.io_prometurbos_crd.yaml
 CLUSTER_PERMISSION_ROLE_YAML_FILE_PATH ?= deploy/prometurbo-operator-cluster-role.yaml
 CERTIFIED_OPERATOR_CLUSTER_SERVICE_VERSION_YAML_FILE_PATH ?= $(OPERATOR_BUNDLE_DIR)/manifest/prometurbo-certified.clusterserviceversion.yaml
-GITHUB_REPO_URL := https://api.github.com/repos/turbodeploy/certified-operators/contents/operators/prometurbo-certified
+GITHUB_REPO_URL := https://api.github.com/repos/turbonomic/certified-operators/contents/operators/prometurbo-certified
 OPERATOR_VERSION_BETA := $(shell \
 	OPERATOR_BETA_RELEASE_MINOR_VERSION=$$(curl -s "$(GITHUB_REPO_URL)" | \
 	jq -r 'map(select(.type == "dir")) | .[].name | match("$(OPERATOR_RELEASE_VERSION)-beta\\.[0-9]+") | try .string catch "0"' | \
@@ -260,15 +260,16 @@ update_operator_version_in_operator_bundle:
 	@echo "Updating release versions in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
 	$(eval OPERATOR_RELEASE_CHANNEL_VERSION := $(if $(filter $(OPERATOR_BETA_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_VERSION_BETA),$(OPERATOR_RELEASE_VERSION)))
 	$(YQ) eval -i '.metadata.name |= sub("prometurbo-operator.v.*", "prometurbo-operator.v$(OPERATOR_RELEASE_CHANNEL_VERSION)") | .spec.version = "$(OPERATOR_RELEASE_CHANNEL_VERSION)"' \
-		$(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
+	$(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
 	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion release versions updated successfully."
 
 ## update skipRange based on inclusive and exclusive release versions set
 update_olm_skipRange_in_operator_bundle:
 	@echo "Updating olm.skipRange in $(OPERATOR_CERTIFIED)-clusterserviceversion..."
-	$(YQ) eval -i '.metadata.annotations."olm.skipRange" |= sub(">=[^<]+", ">=$(if $(filter $(OPERATOR_BETA_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_OLM_INCLUSIVE_RANGE_VERSION)-$(OPERATOR_OLM_INCLUSIVE_BETA_VERSION),$(OPERATOR_OLM_INCLUSIVE_RANGE_VERSION))") \
-	| .metadata.annotations."olm.skipRange" |= sub("<[^<]+", " <$(if $(filter $(OPERATOR_BETA_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_VERSION_BETA),$(OPERATOR_RELEASE_VERSION))")' \
-	   $(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
+	$(eval OLMRANGE_LOWER_BOUND := $(if $(filter $(OPERATOR_BETA_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_OLM_INCLUSIVE_RANGE_VERSION)-$(OPERATOR_OLM_INCLUSIVE_BETA_VERSION),$(OPERATOR_OLM_INCLUSIVE_RANGE_VERSION)))
+	$(eval OLMRANGE_UPPER_BOUND := $(if $(filter $(OPERATOR_BETA_RELEASE_FILTER),$(OPERATOR_RELEASE_CHANNEL)),$(OPERATOR_RELEASE_VERSION)-$(OPERATOR_VERSION_BETA),$(OPERATOR_RELEASE_VERSION)))
+	$(YQ) eval -i '.metadata.annotations."olm.skipRange" |= sub(">=[^<]+", ">=$(OLMRANGE_LOWER_BOUND)") | .metadata.annotations."olm.skipRange" |= sub("<[^<]+", " <$(OLMRANGE_UPPER_BOUND)")' \
+	$(OPERATOR_BUNDLE_DIR)/manifest/$(OPERATOR_CERTIFIED).clusterserviceversion.yaml
 	@echo "$(OPERATOR_CERTIFIED)-clusterserviceversion olm.skipRange updated successfully."
 
 ## update cluster permissions roles
@@ -283,7 +284,7 @@ update_cluster_permissions_in_operator_bundle:
 update_release_channel_in_operator_bundle:
 	@echo "Updating release channel in  $(OPERATOR_CERTIFIED)-annotations..."
 	$(YQ) eval -i '.annotations."operators.operatorframework.io.bundle.channels.v1" = "$(OPERATOR_RELEASE_CHANNEL)"' \
-		$(OPERATOR_BUNDLE_DIR)/metadata/annotations.yaml
+	$(OPERATOR_BUNDLE_DIR)/metadata/annotations.yaml
 	@echo "$(OPERATOR_CERTIFIED)-annotations release channel updated successfully."
 
 

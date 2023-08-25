@@ -1,5 +1,5 @@
 # Building base image
-FROM --platform=$BUILDPLATFORM golang:1.20.5 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.20.7 AS builder
 ARG VERSION TARGETOS TARGETARCH
 ENV PROMETURBO_VERSION $VERSION
 WORKDIR /workspace
@@ -7,7 +7,6 @@ ADD . ./
 RUN make multi-archs
 
 FROM registry.access.redhat.com/ubi8-minimal
-MAINTAINER Turbonomic <turbodeploy@turbonomic.com>
 ARG GIT_COMMIT
 ARG TARGETPLATFORM
 ENV GIT_COMMIT ${GIT_COMMIT}

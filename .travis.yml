@@ -13,14 +13,10 @@ go:
 
 go_import_path: github.com/turbonomic/prometurbo
 
-before_install:
-  - go install -v github.com/mattn/goveralls@HEAD
-
 script:
   - make fmtcheck
   - make vet
   - make product
-  - $HOME/gopath/bin/goveralls -v -race -service=travis-ci
 
 after_success:
   - |

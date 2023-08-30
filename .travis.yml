@@ -17,6 +17,7 @@ script:
   - make fmtcheck
   - make vet
   - make product
+  - make test
 
 after_success:
   - |

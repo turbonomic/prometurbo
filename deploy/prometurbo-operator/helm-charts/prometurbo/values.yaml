@@ -1,0 +1,78 @@
+# Default values for prometurbo.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+# Replace the image with desired version
+image:
+  prometurboRepository: icr.io/cpopen/turbonomic/prometurbo
+  prometurboTag: VERSION
+  turbodifRepository: icr.io/cpopen/turbonomic/turbodif
+  turbodifTag: VERSION
+  pullPolicy: IfNotPresent
+
+# Specify the name of the serviceaccount
+serviceAccountName: "prometurbo"
+
+# Specify the name of the clusterrole
+roleName: "prometurbo"
+
+# Specify the name of clusterrolebinding
+roleBinding: "prometurbo-binding"
+
+#nameOverride: ""
+#fullnameOverride: ""
+
+# Turbonomic server version and address
+serverMeta:
+  version: VERSION
+  turboServer: https://Turbo_server_URL
+
+# Turbonomic server api user and password
+# The opsManagerUserName requires Turbo administrator role
+restAPIConfig:
+  turbonomicCredentialsSecretName: "turbonomic-credentials"
+  opsManagerUserName: Turbo_username
+  opsManagerPassword: Turbo_password
+
+# Turbo server registration process configuration
+sdkProtocolConfig:
+  registrationTimeoutSec: 300
+  restartOnRegistrationTimeout: false
+
+# Specify a unique target name
+targetName: Prometheus
+# Specify metric endpoint from Prometurbo
+targetAddress: http://127.0.0.1:8081/metrics
+
+# Specify a unique suffix to the DataIngestionFramework target type
+# The Target Type will appear as DataIngestionFramework-<targetTypeSuffix> on the UI
+# Do not specify Turbonomic as the targetTypeSuffix, it is reserved for internal use
+targetTypeSuffix: Prometheus
+
+# Logging level. Changing this value does not require restart of Prometurbo but takes about 1 minute to take effect
+logging:
+  level: 2
+
+args:
+  # logging level
+  logginglevel: 2
+  # When set to true, ignore merging a commodity if a commodity of the same type already exists
+  ignoreCommodityIfPresent: false
+
+resources: {}
+
+# Configure business applications here
+# [Schema]
+# businessApplications: [ businessApplication ]
+# businessApplication:
+#   name: string                   # The name of the business application. Required.
+#   from: string                   # The discovering source (target URL) of the business application. Required.
+#   transactions: [ transaction ]  # A list of business transactions. Optional.
+#   services: [ string ]           # A list of services that the business application depends on. Required.
+# transaction:
+#   name: string                   # The display name of the transaction. Optional.
+#   path: string                   # The request path of a business transaction. Required.
+#   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
+businessApplications:

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometurbo
+  labels:
+    app: prometurbo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometurbo
+  template:
+    metadata:
+      labels:
+        app: prometurbo
+    spec:
+      # Update serviceAccount if needed
+      serviceAccountName: prometurbo
+      containers:
+        # Replace the image with desired version:8.7.5 or snapshot version:8.7.5-SNAPSHOT from icr.i
+        - image: icr.io/cpopen/turbonomic/prometurbo:8.7.5
+          imagePullPolicy: IfNotPresent
+          name: prometurbo
+          args:
+            - --v=2
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: prometurbo-config
+              mountPath: /etc/prometurbo
+              readOnly: true
+        - name: turbodif
+          # Replace the image with desired version:8.7.5 or snapshot version:8.7.5-SNAPSHOT from icr.io
+          image: icr.io/cpopen/turbonomic/turbodif:8.7.5
+          imagePullPolicy: IfNotPresent
+          args:
+            - --v=2
+          volumeMounts:
+          - name: turbodif-config
+            mountPath: /etc/turbodif
+            readOnly: true
+          - name: varlog
+            mountPath: /var/log
+      volumes:
+        - name: prometurbo-config
+          configMap:
+            name: prometurbo-config
+        - name: turbodif-config
+          configMap:
+            name: turbodif-config
+        - name: varlog
+          emptyDir: {}
+      restartPolicy: Always

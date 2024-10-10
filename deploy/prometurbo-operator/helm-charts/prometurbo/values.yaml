@@ -1,0 +1,107 @@
+# Default values for prometurbo.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+# Replace the image with desired version
+image:
+  prometurboRepository: icr.io/cpopen/turbonomic/prometurbo
+  prometurboTag: VERSION
+  turbodifRepository: icr.io/cpopen/turbonomic/turbodif
+  turbodifTag: VERSION
+  pullPolicy: IfNotPresent
+
+# Specify the name of the serviceaccount
+serviceAccountName: "prometurbo"
+
+# Specify 'prometurbo' role. A cluster role with this name will be created during deployment
+# If using a role name other than the pre-defined role names, cluster role will not be created. This role should be
+# existing in the cluster and should have the necessary permissions required for prometurbo to work accurately.
+roleName: "prometurbo"
+
+# Specify the name of clusterrolebinding
+roleBinding: "prometurbo-binding"
+
+#nameOverride: ""
+#fullnameOverride: ""
+
+# Turbonomic server version and address
+serverMeta:
+  version: VERSION
+  turboServer: https://Turbo_server_URL
+
+# Turbonomic server api user and password
+# The opsManagerUserName requires Turbo administrator role
+restAPIConfig:
+  turbonomicCredentialsSecretName: "turbonomic-credentials"
+  opsManagerUserName: Turbo_username
+  opsManagerPassword: Turbo_password
+
+# Turbo server registration process configuration
+sdkProtocolConfig:
+  registrationTimeoutSec: 300
+  restartOnRegistrationTimeout: false
+
+# Specify a unique target name
+targetName: Prometheus
+# Specify metric endpoint from Prometurbo
+targetAddress: http://127.0.0.1:8081/metrics
+
+# Logging level. Changing this value does not require restart of Prometurbo but takes about 1 minute to take effect
+logging:
+  level: 2
+
+args:
+  # logging level
+  logginglevel: 2
+  # When set to true, ignore merging a commodity if a commodity of the same type already exists
+  ignoreCommodityIfPresent: false
+
+resources: {}
+
+# Configure business applications here
+# [Schema]
+# businessApplications: [ businessApplication ]
+# businessApplication:
+#   name: string                   # The name of the business application. Required.
+#   from: string                   # The discovering source (target URL) of the business application. Required.
+#   transactions: [ transaction ]  # A list of business transactions. Optional.
+#   services: [ string ]           # A list of services that the business application depends on. Required.
+# transaction:
+#   name: string                   # The display name of the transaction. Optional.
+#   path: string                   # The request path of a business transaction. Required.
+#   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
+businessApplications:
+
+# Configure server config here.
+# This configuration is deprecated. Please use PrometheusServerConfig CR to configure servers.
+# [Schema]
+# servers: [ server1 ]
+servers:
+# server1
+#   url: string              # Metric server url
+#   username: string         #
+#   password: string         #
+#   clusterId: string        # k8s cluster id
+#   bearerToken: string      #
+#   exporters: [ string ]    #  list of names of configured exporter
+
+# Configure exporter config here.
+# This configuration is deprecated. Please use PrometheusQueryMappings CR to configure exporters.
+# [Schema]
+# exporters: [ exporter-foo ]
+exporters:
+# exporter-foo:
+#   type: string                          # `yaml:"type"`
+#   hostedOnVM: bool                      # `yaml:"hostedOnVM,omitempty"`
+#   metrics: [ metrics ]                  # `yaml:"metrics"`
+#   attributes: map[string] ValueMapping  # `yaml:"attributes"`
+# metrics:
+#   type: string                          # resource for which the query to the metric server is made
+#	queries: map[string]string            # map of query strings to the resource attribute type such as 'used', 'capacity'
+# ValueMapping:
+#   label: string                         # `yaml:"label"`
+#	matches: string                       # `yaml:"matches,omitempty"`
+#	as: string                            # `yaml:"as,omitempty"`
+#	isIdentifier: bool                    # `yaml:"isIdentifier"`

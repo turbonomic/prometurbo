@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: turbodif-config
+  namespace: turbo
+data:
+  turbodif-config.json: |-
+    {
+      "communicationConfig": {
+        "serverMeta": {
+          "version": "<TURBONOMIC_SERVER_VERSION>",
+          "turboServer": "https://<TURBO-SERVER-ADDRESS>:<PORT>"
+        },
+        "restAPIConfig": {
+          "opsManagerUserName": "<TURBO-SERVER-USERNAME>",
+          "opsManagerPassword": "<TURBO-SERVER-PASSWORD>"
+        },
+        "sdkProtocolConfig": {
+           "registrationTimeoutSec": 300,
+           "restartOnRegistrationTimeout": false
+        }
+      },
+      "targetConfig": {
+        "targetName": "Prometheus",
+        "targetAddress": "http://127.0.0.1:8081/metrics"
+      }
+    }
+  turbo-autoreload.config: |-
+    {
+        "logging": {
+           "level": 2
+        }
+    }

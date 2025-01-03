@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometurbo
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metrics.turbonomic.io
+    resources:
+      - prometheusquerymappings
+      - prometheusserverconfigs
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update

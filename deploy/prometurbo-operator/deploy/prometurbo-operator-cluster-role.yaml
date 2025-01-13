@@ -1,0 +1,66 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometurbo-operator
+rules:
+  - apiGroups:
+      - ""
+      - apps
+      - extensions
+    resources:
+      - nodes
+      - pods
+      - configmaps
+      - deployments
+      - replicasets
+      - replicationcontrollers
+      - serviceaccounts
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+      - apps
+      - extensions
+      - policy
+    resources:
+      - services
+      - secrets
+      - endpoints
+      - namespaces
+      - limitranges
+      - resourcequotas
+      - daemonsets
+      - persistentvolumes
+      - persistentvolumeclaims
+      - poddisruptionbudget
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - nodes/spec
+      - nodes/stats
+    verbs:
+      - get
+  - apiGroups:
+      - charts.helm.k8s.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - clusterrolebindings
+    verbs:
+      - '*'
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - get
+      - list
+      - update

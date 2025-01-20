@@ -1,0 +1,129 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometurbo-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometurbo-operator
+rules:
+  - apiGroups:
+      - ""
+      - apps
+      - extensions
+    resources:
+      - nodes
+      - pods
+      - configmaps
+      - deployments
+      - replicasets
+      - replicationcontrollers
+      - serviceaccounts
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+      - apps
+      - extensions
+      - policy
+    resources:
+      - services
+      - secrets
+      - endpoints
+      - namespaces
+      - limitranges
+      - resourcequotas
+      - daemonsets
+      - persistentvolumes
+      - persistentvolumeclaims
+      - poddisruptionbudget
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - nodes/spec
+      - nodes/stats
+    verbs:
+      - get
+  - apiGroups:
+      - charts.helm.k8s.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - clusterrolebindings
+    verbs:
+      - '*'
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - get
+      - list
+      - update
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: prometurbo-operator
+roleRef:
+  kind: ClusterRole
+  name: prometurbo-operator
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: prometurbo-operator
+    namespace: turbo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometurbo-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: prometurbo-operator
+  template:
+    metadata:
+      labels:
+        name: prometurbo-operator
+    spec:
+      serviceAccountName: prometurbo-operator
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - name: prometurbo-operator
+        image: icr.io/cpopen/prometurbo-operator:<PROMETURBO_OPERATOR_IMAGE_TAG>
+        imagePullPolicy: Always
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: "prometurbo-operator"
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+        - mountPath: /tmp
+          name: operator-tmpfs0
+      volumes:
+      - name: operator-tmpfs0
+        emptyDir: {}
+      terminationGracePeriodSeconds: 10

@@ -1,0 +1,202 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  # turbo is default value used in the samples provided
+  name: turbo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  # Use this yaml to create a service account to run prometurbo.
+  # Provide a value for name.
+  # Update the namespace value if required.
+  name: prometurbo
+  namespace: turbo
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: turbonomic-credentials
+  namespace: turbo
+type: Opaque
+data:
+  clientid: <BASE64encodedValue>
+  clientsecret: <BASE64encodedValue>
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometurbo
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metrics.turbonomic.io
+    resources:
+      - prometheusquerymappings
+      - prometheusserverconfigs
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+---
+kind: ClusterRoleBinding
+# For OpenShift 3.4-3.7 use apiVersion: v1
+# For kubernetes 1.9 use rbac.authorization.k8s.io/v1
+# For kubernetes 1.8 use rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  # Use this yaml to create a binding that will assign prometurbo ClusterRole to your prometurbo ServiceAccount
+  # Provide a value for the binding name, and update namespace of the ServiceAccount if needed
+  name: prometurbo-binding
+subjects:
+  - kind: ServiceAccount
+    name: prometurbo
+    namespace: turbo
+roleRef:
+  # User creating this resource must have permissions to add this policy to the SA
+  kind: ClusterRole
+  name: prometurbo
+  # For OpenShift v3.4 remove apiGroup line
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometurbo
+  namespace: turbo
+  labels:
+    app.kubernetes.io/name: prometurbo
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometurbo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prometurbo
+    spec:
+      # Update serviceAccount if needed
+      serviceAccountName: prometurbo
+      containers:
+        - name: prometurbo
+          # Replace the image tag with desired version
+          image: icr.io/cpopen/turbonomic/prometurbo:<PROMETURBO_IMAGE_TAG>
+          imagePullPolicy: IfNotPresent
+          args:
+            - --v=2
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: prometurbo-config
+              mountPath: /etc/prometurbo
+              readOnly: true
+        - name: turbodif
+          # Replace the image tag with desired version
+          image: icr.io/cpopen/turbonomic/turbodif:<TURBODIF_IMAGE_TAG>
+          imagePullPolicy: IfNotPresent
+          env:
+            # Do not change the following environment variable
+            - name: "TURBODIF_TARGET_TYPE_OVERWRITE"
+              value: "Prometheus"
+          args:
+            - --v=2
+          volumeMounts:
+          - name: turbodif-config
+            mountPath: /etc/turbodif
+            readOnly: true
+          - name: turbonomic-credentials-volume
+            mountPath: /etc/turbonomic-credentials
+            readOnly: true
+          - name: varlog
+            mountPath: /var/log
+      volumes:
+        - name: prometurbo-config
+          configMap:
+            name: prometurbo-config
+        - name: turbodif-config
+          configMap:
+            name: turbodif-config
+        - name: turbonomic-credentials-volume
+          secret:
+            defaultMode: 420
+            optional: true
+            secretName: turbonomic-credentials
+        - name: varlog
+          emptyDir: {}
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: turbodif-config
+  namespace: turbo
+data:
+  turbodif-config.json: |-
+    {
+      "communicationConfig": {
+        "serverMeta": {
+          "turboServer": "https://<Turbo_server_URL>"
+        },
+        "restAPIConfig": {
+          "opsManagerUserName": "<Turbo_username>",
+          "opsManagerPassword": "<Turbo_password>"
+        },
+        "sdkProtocolConfig": {
+           "registrationTimeoutSec": 300,
+           "restartOnRegistrationTimeout": false
+        }
+      },
+      "targetConfig": {
+        "targetName": <Cluster_name>,
+        "targetAddress": "http://127.0.0.1:8081/metrics"
+      }
+    }
+  turbo-autoreload.config: |-
+    {
+        "logging": {
+           "level": 2
+        }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometurbo-config
+  namespace: turbo
+data:
+  businessapp.config: |-
+    # This configuration defines business applications and their associated business transactions
+    # and dependent services.
+    #
+    # [Schema]
+    # businessApplications: [ businessApplication ]
+    # businessApplication:
+    #   name: string                   # The name of the business application. Required.
+    #   from: string                   # The discovering source (target URL) of the business application. Required.
+    #   transactions: [ transaction ]  # A list of business transactions. Optional.
+    #   services: [ string ]           # A list of services that the business application depends on. Required.
+    # transaction:
+    #   name: string                   # The display name of the transaction. Optional.
+    #   path: string                   # The request path of a business transaction. Required.
+    #   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
+    businessApplications:
+  turbo-autoreload.config: |-
+    {
+        "logging": {
+           "level": 2
+        }
+    }
+---

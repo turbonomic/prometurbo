@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: turbodif-config
+  namespace: turbo
+data:
+  turbodif-config.json: |-
+    {
+      "communicationConfig": {
+        "serverMeta": {
+          "turboServer": "https://<Turbo_server_URL>"
+        },
+        "restAPIConfig": {
+          "opsManagerUserName": "<Turbo_username>",
+          "opsManagerPassword": "<Turbo_password>"
+        },
+        "sdkProtocolConfig": {
+           "registrationTimeoutSec": 300,
+           "restartOnRegistrationTimeout": false
+        }
+      },
+      "targetConfig": {
+        "targetName": <Cluster_name>,
+        "targetAddress": "http://127.0.0.1:8081/metrics"
+      }
+    }
+  turbo-autoreload.config: |-
+    {
+        "logging": {
+           "level": 2
+        }
+    }

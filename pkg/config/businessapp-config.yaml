@@ -1,0 +1,68 @@
+# This configuration defines business applications and their associated business transactions
+# and dependent services.
+#
+# [Schema]
+# businessApplications: [ businessApplication ]
+# businessApplication:
+#   name: string                   # The name of the business application. Required.
+#   from: string                   # The discovering source (target URL) of the business application. Required.
+#   transactions: [ transaction ]  # A list of business transactions. Optional.
+#   services: [ string ]           # A list of mandatory services that the business application depends on. Required.
+#   optionalServices: [ string ]   # A list of optional services that the business application depends on. Optional.
+# transaction:
+#   name: string                   # The display name of the transaction. Optional.
+#   path: string                   # The request path of a business transaction. Required.
+#   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
+businessApplications:
+  - name: Turbonomic
+    from: http://prometheus-server:9090
+    transactions:
+      - name: supplychains
+        path: /supplychains
+        dependOn:
+          - repository
+          - topology-processor
+      - path: /plan
+        dependOn:
+          - plan-orchestrator
+          - topology-processor
+          - group
+          - market
+          - cost
+          - action-orchestrator
+          - history
+          - repository
+      - name: status
+        path: /stats/{statistic_Uuid}
+        dependOn:
+          - history
+          - plan-orchestrator
+          - group
+    services:
+      - action-orchestrator
+      - api
+      - auth
+      - cost
+      - group
+      - history
+      - market
+      - plan-orchestrator
+      - repository
+      - topology-processor
+    optionalServices:
+      - db
+      - mediation-aws
+      - mediation-actionscript
+      - mediation-appdynamics
+      - mediation-appinsights
+      - mediation-awsbilling
+      - mediation-awscost
+      - mediation-azure
+      - mediation-azurecost
+      - mediation-azureea
+      - mediation-azuresp
+      - mediation-azurevolumes
+      - mediation-gcp
+      - mediation-gcpcost
+      - mediation-vcenter
+      - mediation-vcenterbrowsing

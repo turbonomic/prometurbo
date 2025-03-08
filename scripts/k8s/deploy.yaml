@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: appmetric
+  labels:
+    app: appmetric
+spec:
+  ports:
+  - name: http
+    port: 8081
+  selector:
+    app: appmetric
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: appmetric
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: appmetric
+    spec:
+      containers:
+      - image: docker.io/vmturbo/appmetric:v2.0
+        imagePullPolicy: Always
+        name: appmetric
+        args:
+        - --v=3
+        ports:
+        - containerPort: 8081

@@ -1,0 +1,8 @@
+---
+- version: v1alpha1
+  group: charts.helm.k8s.io
+  kind: Prometurbo
+  chart: /opt/helm/helm-charts/prometurbo
+  overrideValues:
+    image.relatedprome: $RELATED_IMAGE_PROMETURBO
+    image.relatedturbo: $RELATED_IMAGE_TURBODIF

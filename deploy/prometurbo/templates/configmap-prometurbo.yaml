@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometurbo-config-{{ .Release.Name }}
+data:
+  {{- if or .Values.servers .Values.exporters }}
+  prometheus.config: |-
+  {{- if .Values.servers }}
+      # This configuration defines the Prometheus servers and metrics to scrape.
+      # This configuration is deprecated. Please use PrometheusServerConfig CR to configure servers.
+      # [Schema]
+      # server
+      #   url: string              # `yaml:"url"`
+      #   username: string         # `yaml:"username"`
+      #   password: string         # `yaml:"password"`
+      #   clusterId: string        # `yaml:"clusterId"`
+      #   bearerToken: string      # `yaml:"bearerToken"`
+      #   exporters: [ string ]    #`yaml:"exporters"`
+      servers:
+  {{ toYaml .Values.servers | indent 6 }}
+  {{- end }}
+  {{- if .Values.exporters }}
+      # This configuration is deprecated. Please use PrometheusQueryMappings CR to configure exporters.
+      # [Schema]
+      # exporter:
+      #   type: string                            # `yaml:"type"`
+      #   hostedOnVM: bool                        # `yaml:"hostedOnVM,omitempty"`
+      #   metrics: [ metrics ]                    # `yaml:"metrics"`
+      #   attributes: map[string] ValueMapping    # `yaml:"attributes"`
+      #   metrics:
+      #     type: string                          # `yaml:"type"`
+      #     queries: map[string]string            # `yaml:"queries"`
+      #   ValueMapping:
+      #     label: string                         # `yaml:"label"`
+      #     matches: string                       # `yaml:"matches,omitempty"`
+      #     as: string                            # `yaml:"as,omitempty"`
+      #     isIdentifier: bool                    # `yaml:"isIdentifier"`
+      exporters:
+  {{ toYaml .Values.exporters | indent 6 }}
+  {{- end }}
+{{- end }}
+
+  businessapp.config: |-
+    # This configuration defines business applications and their associated business transactions
+    # and dependent services.
+    #
+    # [Schema]
+    # businessApplications: [ businessApplication ]
+    # businessApplication:
+    #   name: string                   # The name of the business application. Required.
+    #   from: string                   # The discovering source (target URL) of the business application. Required.
+    #   transactions: [ transaction ]  # A list of business transactions. Optional.
+    #   services: [ string ]           # A list of services that the business application depends on. Required.
+    # transaction:
+    #   name: string                   # The display name of the transaction. Optional.
+    #   path: string                   # The request path of a business transaction. Required.
+    #   dependOn: [ string ]           # The list of services that the business transaction depends on. Required.
+    businessApplications:
+{{- if .Values.businessApplications }}
+{{ toYaml .Values.businessApplications | indent 6 }}
+{{- end }}
+  turbo-autoreload.config: |-
+    {
+      "logging": {
+        "level": {{ .Values.logging.level }}
+      }
+    }
